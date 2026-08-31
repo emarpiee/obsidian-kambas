@@ -1,0 +1,14 @@
+import { readFileSync, writeFileSync } from 'fs';
+
+let manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
+let pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const { minAppVersion } = manifest;
+
+manifest.version = pkg.version;
+manifest.description = pkg.description;
+manifest.id = pkg.name;
+writeFileSync('manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
+
+let versions = JSON.parse(readFileSync('versions.json', 'utf8'));
+versions[pkg.version] = minAppVersion;
+writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');

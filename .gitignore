@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build Artifacts
+main.js
+styles.css
+*.js.map
+*.css.map
+
+# Local Data/Settings
+data.json
+data.json.bak
+.hotreload
+.env
+
+# IDE Settings
+.vscode/
+.idea/
+*.iml
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+*.tmp
+.syncthing.*
+
+# Logs
+npm-debug.log*
+
+temp/
+todo/
+coverage/
+/.kilo
+src/test_archive
