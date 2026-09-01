@@ -376,10 +376,10 @@ export class CanvasImageHandler {
 
 		if (lowerKey === 'h' || lowerKey === 'v' || lowerKey === 'g') {
 			void this.toggleSelectedImageTransform(activeView, lowerKey);
-		} else if (key === '=' || key === '+') {
+		} else if (key === '=' || key === '+' || key === '2') {
 			evt.preventDefault();
 			this.zoomCanvas(activeView, 1);
-		} else if (key === '-') {
+		} else if (key === '-' || key === '1') {
 			evt.preventDefault();
 			this.zoomCanvas(activeView, -1);
 		}
