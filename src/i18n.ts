@@ -17,6 +17,7 @@ export interface TranslationSchema {
 	flipHorizontal: string;
 	flipVertical: string;
 	toggleGrayscale: string;
+	changeOpacity: string;
 	resetSize: string;
 }
 
@@ -34,6 +35,7 @@ const en: TranslationSchema = {
 	flipHorizontal: 'Flip horizontal',
 	flipVertical: 'Flip vertical',
 	toggleGrayscale: 'Toggle grayscale',
+	changeOpacity: 'Change opacity',
 	resetSize: 'Reset to original size',
 };
 
@@ -51,6 +53,7 @@ const zh: TranslationSchema = {
 	flipHorizontal: '水平翻转',
 	flipVertical: '垂直翻转',
 	toggleGrayscale: '切换灰度',
+	changeOpacity: '更改不透明度',
 	resetSize: '重置为原始大小',
 };
 
@@ -68,6 +71,7 @@ const zhTW: TranslationSchema = {
 	flipHorizontal: '水平翻轉',
 	flipVertical: '垂直翻轉',
 	toggleGrayscale: '切換灰階',
+	changeOpacity: '更改不透明度',
 	resetSize: '重置為原始大小',
 };
 
@@ -85,6 +89,7 @@ const es: TranslationSchema = {
 	flipHorizontal: 'Voltear horizontalmente',
 	flipVertical: 'Voltear verticalmente',
 	toggleGrayscale: 'Alternar escala de grises',
+	changeOpacity: 'Cambiar opacidad',
 	resetSize: 'Restablecer al tamaño original',
 };
 
@@ -102,6 +107,7 @@ const fr: TranslationSchema = {
 	flipHorizontal: 'Retourner horizontalement',
 	flipVertical: 'Retourner verticalement',
 	toggleGrayscale: 'Basculer les niveaux de gris',
+	changeOpacity: 'Modifier l’opacité',
 	resetSize: 'Réinitialiser à la taille d’origine',
 };
 
@@ -119,6 +125,7 @@ const de: TranslationSchema = {
 	flipHorizontal: 'Horizontal spiegeln',
 	flipVertical: 'Vertikal spiegeln',
 	toggleGrayscale: 'Graustufen umschalten',
+	changeOpacity: 'Deckkraft ändern',
 	resetSize: 'Auf Originalgröße zurücksetzen',
 };
 
@@ -136,6 +143,7 @@ const ja: TranslationSchema = {
 	flipHorizontal: '左右反転',
 	flipVertical: '上下反転',
 	toggleGrayscale: '白黒切り替え',
+	changeOpacity: '不透明度を変更',
 	resetSize: '元のサイズに戻す',
 };
 
@@ -153,6 +161,7 @@ const ko: TranslationSchema = {
 	flipHorizontal: '좌우 반전',
 	flipVertical: '상하 반전',
 	toggleGrayscale: '흑백 전환',
+	changeOpacity: '불투명도 변경',
 	resetSize: '원래 크기로 복원',
 };
 
@@ -170,6 +179,7 @@ const ru: TranslationSchema = {
 	flipHorizontal: 'Отразить по горизонтали',
 	flipVertical: 'Отразить по вертикали',
 	toggleGrayscale: 'Переключить оттенки серого',
+	changeOpacity: 'Изменить прозрачность',
 	resetSize: 'Сбросить до исходного размера',
 };
 
@@ -187,6 +197,7 @@ const pt: TranslationSchema = {
 	flipHorizontal: 'Inverter horizontalmente',
 	flipVertical: 'Inverter verticalmente',
 	toggleGrayscale: 'Alternar escala de cinza',
+	changeOpacity: 'Alterar opacidade',
 	resetSize: 'Redefinir para o tamanho original',
 };
 
@@ -204,6 +215,7 @@ const it: TranslationSchema = {
 	flipHorizontal: 'Capovolgi orizzontalmente',
 	flipVertical: 'Capovolgi verticalmente',
 	toggleGrayscale: 'Attiva/disattiva scala di grigi',
+	changeOpacity: 'Cambia opacità',
 	resetSize: 'Ripristina dimensione originale',
 };
 

@@ -247,7 +247,7 @@ export class CanvasImageHandler {
 			if (!nodeEl) return;
 
 			// Extract link URL or data directly from canvas node object memory (0ms delay)
-			const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } }).unknownData;
+			const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number } }).unknownData;
 			const nodeUrl = unknownData?.url;
 			const isLinkDataImg = unknownData?.type === 'link' && nodeUrl?.startsWith('data:image/');
 
@@ -281,14 +281,84 @@ export class CanvasImageHandler {
 				}
 			}
 
-			// Apply stored transforms
+			// Apply stored transforms & opacity
 			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
 			if (img && unknownData) {
 				img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
 				img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 				img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
 			}
+
+			// Apply opacity to any canvas node element (images, text, cards, groups, files)
+			if (unknownData?.kambasOpacity !== undefined) {
+				nodeEl.setCssProps({ opacity: String(unknownData.kambasOpacity) });
+			} else {
+				nodeEl.setCssProps({ opacity: '' });
+			}
 		});
+	}
+
+	public setSelectedNodeOpacity(
+		activeView: CanvasItemView,
+		opacity: number,
+		targetNodeEl?: Element | null
+	): void {
+		const file = activeView.file;
+		if (!file) return;
+
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		const selectedNodeIds: string[] = [];
+
+		canvas.nodes.forEach((canvasNode, id) => {
+			const nodeEl = canvasNode.nodeEl;
+			if (!nodeEl) return;
+
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+
+			if (isExplicitlySelected || isTargetNode) {
+				selectedNodeIds.push(id);
+
+				const rawNode = canvasNode as unknown as { unknownData?: { kambasOpacity?: number } };
+				if (!rawNode.unknownData) rawNode.unknownData = {};
+				rawNode.unknownData.kambasOpacity = opacity;
+
+				nodeEl.setCssProps({ opacity: String(opacity) });
+			}
+		});
+
+		if (selectedNodeIds.length === 0) return;
+
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				void this.persistOpacity(file, selectedNodeIds, opacity);
+			}
+		} else {
+			void this.persistOpacity(file, selectedNodeIds, opacity);
+		}
+	}
+
+	private async persistOpacity(file: TFile, selectedNodeIds: string[], opacity: number): Promise<void> {
+		const content = await this.app.vault.read(file);
+		let data: CanvasFileData;
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!data.nodes) return;
+		let modified = false;
+		data.nodes.forEach((node) => {
+			if (node.id && selectedNodeIds.includes(node.id)) {
+				node.kambasOpacity = opacity;
+				modified = true;
+			}
+		});
+		if (modified) this.scheduleVaultModify(file, data);
 	}
 
 	private handleKeyDown = (evt: KeyboardEvent): void => {

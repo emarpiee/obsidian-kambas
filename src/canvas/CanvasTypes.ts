@@ -16,6 +16,7 @@ export interface CanvasNodeData {
 	kambasFlipH?: boolean;
 	kambasFlipV?: boolean;
 	kambasGrayscale?: boolean;
+	kambasOpacity?: number; // 0–1, default 1 (fully opaque)
 	originalWidth?: number;
 	originalHeight?: number;
 	isLocked?: boolean;

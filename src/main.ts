@@ -2,6 +2,7 @@ import { ItemView, Menu, Plugin } from 'obsidian';
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
 import { CanvasItemView } from './canvas/CanvasTypes';
 import { getText } from './i18n';
+import { OpacityModal } from './modals/OpacityModal';
 import { DEFAULT_SETTINGS, KambasSettings, KambasSettingTab } from './settings';
 
 export default class KambasPlugin extends Plugin {
@@ -39,8 +40,13 @@ export default class KambasPlugin extends Plugin {
 			const canvas = activeView.canvas;
 			if (!canvas?.nodes) return;
 
-			// Check if any selected node (or target node) is a kambas image or native image
 			let hasAnyImage = false;
+			let isFlippedH = false;
+			let isFlippedV = false;
+			let isGrayscaled = false;
+			let isResized = false;
+			let currentOpacity = 1;
+
 			canvas.nodes.forEach((canvasNode) => {
 				const el = canvasNode.nodeEl;
 				if (!el) return;
@@ -49,30 +55,12 @@ export default class KambasPlugin extends Plugin {
 					if (el.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(el)) {
 						hasAnyImage = true;
 					}
-				}
-			});
 
-			if (!hasAnyImage && targetNodeEl) {
-				hasAnyImage = Boolean(targetNodeEl.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(targetNodeEl));
-			}
-
-			if (!hasAnyImage) return;
-
-			// Check transform states and resize state for active indicators
-			let isFlippedH = false;
-			let isFlippedV = false;
-			let isGrayscaled = false;
-			let isResized = false;
-
-			canvas.nodes.forEach((canvasNode) => {
-				const el = canvasNode.nodeEl;
-				if (!el) return;
-				const isSel = el.classList.contains('is-selected') || (targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
-				if (isSel) {
-					const unknownData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; originalWidth?: number; originalHeight?: number } }).unknownData;
+					const unknownData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; originalWidth?: number; originalHeight?: number } }).unknownData;
 					if (unknownData?.kambasFlipH) isFlippedH = true;
 					if (unknownData?.kambasFlipV) isFlippedV = true;
 					if (unknownData?.kambasGrayscale) isGrayscaled = true;
+					if (unknownData?.kambasOpacity !== undefined) currentOpacity = unknownData.kambasOpacity;
 
 					const rawNode = canvasNode as unknown as { width?: number; height?: number };
 					const img = el.querySelector<HTMLImageElement>('img');
@@ -87,33 +75,52 @@ export default class KambasPlugin extends Plugin {
 				}
 			});
 
+			if (!hasAnyImage && targetNodeEl) {
+				hasAnyImage = Boolean(targetNodeEl.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(targetNodeEl));
+			}
+
 			const t = getText();
 			menu.addSeparator();
 
-			menu.addItem((item) => {
-				item.setTitle(t.flipHorizontal)
-					.setIcon('flip-horizontal')
-					.setChecked(isFlippedH)
-					.onClick(() => {
-						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'h', targetNodeEl);
-					});
-			});
+			if (hasAnyImage) {
+				menu.addItem((item) => {
+					item.setTitle(t.flipHorizontal)
+						.setIcon('flip-horizontal')
+						.setChecked(isFlippedH)
+						.onClick(() => {
+							void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'h', targetNodeEl);
+						});
+				});
 
-			menu.addItem((item) => {
-				item.setTitle(t.flipVertical)
-					.setIcon('flip-vertical')
-					.setChecked(isFlippedV)
-					.onClick(() => {
-						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'v', targetNodeEl);
-					});
-			});
+				menu.addItem((item) => {
+					item.setTitle(t.flipVertical)
+						.setIcon('flip-vertical')
+						.setChecked(isFlippedV)
+						.onClick(() => {
+							void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'v', targetNodeEl);
+						});
+				});
 
+				menu.addItem((item) => {
+					item.setTitle(t.toggleGrayscale)
+						.setIcon('contrast')
+						.setChecked(isGrayscaled)
+						.onClick(() => {
+							void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'g', targetNodeEl);
+						});
+				});
+			}
+
+			// Opacity is supported on any canvas element (text cards, images, files, groups)
 			menu.addItem((item) => {
-				item.setTitle(t.toggleGrayscale)
-					.setIcon('contrast')
-					.setChecked(isGrayscaled)
+				const opacityPct = Math.round(currentOpacity * 100);
+				item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
+					.setIcon('droplet')
+					.setChecked(currentOpacity < 1)
 					.onClick(() => {
-						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'g', targetNodeEl);
+						new OpacityModal(this.app, currentOpacity, (opacity) => {
+							this.canvasImageHandler.setSelectedNodeOpacity(activeView, opacity, targetNodeEl);
+						}).open();
 					});
 			});
 
