@@ -179,11 +179,11 @@ export class CanvasImageHandler {
 	}
 
 	/** Toggle flip/grayscale on a native canvas file image node. */
-	public async toggleNativeImageTransform(
+	public toggleNativeImageTransform(
 		activeView: CanvasItemView,
 		nodeEl: Element,
 		key: string
-	): Promise<void> {
+	): void {
 		const file = activeView.file;
 		if (!file) return;
 
@@ -191,41 +191,40 @@ export class CanvasImageHandler {
 		if (!canvas?.nodes) return;
 
 		// Find the node ID by matching nodeEl in the canvas map
+		let canvasNodeObj: unknown = null;
 		let nodeId: string | null = null;
 		canvas.nodes.forEach((node, id) => {
 			if (node.nodeEl && (node.nodeEl === nodeEl || nodeEl.contains(node.nodeEl) || node.nodeEl.contains(nodeEl))) {
+				canvasNodeObj = node;
 				nodeId = id;
 			}
 		});
-		if (!nodeId) return;
+		if (!nodeId || !canvasNodeObj) return;
+
+		const unknownData = (canvasNodeObj as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } }).unknownData;
+		if (unknownData) {
+			if (key === 'h') unknownData.kambasFlipH = !unknownData.kambasFlipH;
+			if (key === 'v') unknownData.kambasFlipV = !unknownData.kambasFlipV;
+			if (key === 'g') unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
+		}
 
 		// Apply CSS class immediately for instant feedback
 		const img = this.getNativeImageElement(nodeEl);
-		if (img) {
-			if (key === 'h') img.classList.toggle('kambas-img-flip-h');
-			if (key === 'v') img.classList.toggle('kambas-img-flip-v');
-			if (key === 'g') img.classList.toggle('kambas-img-grayscale');
+		if (img && unknownData) {
+			img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
+			img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+			img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
 		}
 
-		// Persist to canvas JSON (debounced)
-		const content = await this.app.vault.read(file);
-		let data: CanvasFileData;
-		try {
-			data = JSON.parse(content) as CanvasFileData;
-		} catch {
-			return;
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				void this.persistImageTransform(file, [nodeId], key);
+			}
+		} else {
+			void this.persistImageTransform(file, [nodeId], key);
 		}
-
-		if (!data.nodes) return;
-		const foundNodeId = nodeId;
-		data.nodes.forEach((node) => {
-			if (node.id !== foundNodeId) return;
-			if (key === 'h') node.kambasFlipH = !node.kambasFlipH;
-			if (key === 'v') node.kambasFlipV = !node.kambasFlipV;
-			if (key === 'g') node.kambasGrayscale = !node.kambasGrayscale;
-		});
-
-		this.scheduleVaultModify(file, data);
 	}
 
 	private scheduleVaultModify(file: TFile, data: CanvasFileData): void {
@@ -269,13 +268,11 @@ export class CanvasImageHandler {
 			}
 
 			// Apply stored transforms
-			if (unknownData?.kambasFlipH || unknownData?.kambasFlipV || unknownData?.kambasGrayscale) {
-				const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
-				if (img) {
-					img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
-					img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
-					img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
-				}
+			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+			if (img && unknownData) {
+				img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
+				img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+				img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
 			}
 		});
 	}
@@ -326,18 +323,39 @@ export class CanvasImageHandler {
 			}
 		});
 
-		// 1. Apply DOM class changes immediately for instant UI responsiveness
-		selectedNodeEls.forEach((nodeEl) => {
-			const img = nodeEl.querySelector('img');
-			if (img) {
-				if (key === 'h') img.classList.toggle('kambas-img-flip-h');
-				if (key === 'v') img.classList.toggle('kambas-img-flip-v');
-				if (key === 'g') img.classList.toggle('kambas-img-grayscale');
+		// 1. Apply DOM class changes & update in-memory unknownData immediately for native undo/redo tracking
+		canvas.nodes.forEach((canvasNode, id) => {
+			if (!selectedNodeIds.includes(id)) return;
+
+			const unknownData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } }).unknownData;
+			if (unknownData) {
+				if (key === 'h') unknownData.kambasFlipH = !unknownData.kambasFlipH;
+				if (key === 'v') unknownData.kambasFlipV = !unknownData.kambasFlipV;
+				if (key === 'g') unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
+			}
+
+			const nodeEl = canvasNode.nodeEl;
+			if (nodeEl) {
+				const img = nodeEl.querySelector('img');
+				if (img && unknownData) {
+					img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
+					img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+					img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
+				}
 			}
 		});
 
-		// 2. Perform in-memory data update and debounce disk persistence asynchronously
-		void this.persistImageTransform(file, selectedNodeIds, key);
+		// 2. Request native canvas save so undo/redo history stack records the transform state change
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				// Fallback to vault modify if requestSave is unavailable
+				void this.persistImageTransform(file, selectedNodeIds, key);
+			}
+		} else {
+			void this.persistImageTransform(file, selectedNodeIds, key);
+		}
 	}
 
 	private async persistImageTransform(file: TFile, selectedNodeIds: string[], key: string): Promise<void> {
