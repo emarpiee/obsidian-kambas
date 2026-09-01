@@ -32,6 +32,10 @@ export interface CanvasElement {
 	zoomToBbox?: (bbox: { x: number; y: number; width: number; height: number }) => void;
 	zoomToSelection?: () => void;
 	zoomToFit?: () => void;
+	zoomBy?: (delta: number) => void;
+	zoomIn?: () => void;
+	zoomOut?: () => void;
+	zoom?: number;
 	createMediaNode?: (options: {
 		url?: string;
 		file?: TFile;

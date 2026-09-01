@@ -18,6 +18,10 @@ export interface TranslationSchema {
 	flipVertical: string;
 	toggleGrayscale: string;
 	changeOpacity: string;
+	copyImageToClipboard: string;
+	moveSelectedMedia: string;
+	copySelectedMedia: string;
+	convertToEmbed: string;
 	resetSize: string;
 }
 
@@ -30,12 +34,16 @@ const en: TranslationSchema = {
 	modalDescription: (filename: string) => `How would you like to store "${filename}"?`,
 	applyRemaining: (count: number) => `Apply choice to remaining ${count} images`,
 	saveToVault: 'Save to vault',
-	embedInCanvas: 'Embed in canvas file (PureRef model)',
+	embedInCanvas: 'Embed in canvas',
 
 	flipHorizontal: 'Flip horizontal',
 	flipVertical: 'Flip vertical',
 	toggleGrayscale: 'Toggle grayscale',
 	changeOpacity: 'Change opacity',
+	copyImageToClipboard: 'Copy image to clipboard',
+	moveSelectedMedia: 'Move media to...',
+	copySelectedMedia: 'Copy media to...',
+	convertToEmbed: 'Embed in canvas...',
 	resetSize: 'Reset to original size',
 };
 
@@ -48,12 +56,16 @@ const zh: TranslationSchema = {
 	modalDescription: (filename: string) => `您希望如何存储 "${filename}"？`,
 	applyRemaining: (count: number) => `将选择应用到剩余的 ${count} 张图像`,
 	saveToVault: '保存到宝库',
-	embedInCanvas: '嵌入到画布文件（PureRef 模式）',
+	embedInCanvas: '嵌入到画布',
 
 	flipHorizontal: '水平翻转',
 	flipVertical: '垂直翻转',
 	toggleGrayscale: '切换灰度',
 	changeOpacity: '更改不透明度',
+	copyImageToClipboard: '复制图像到剪贴板',
+	moveSelectedMedia: '移动媒体到...',
+	copySelectedMedia: '复制媒体到...',
+	convertToEmbed: '嵌入到画布...',
 	resetSize: '重置为原始大小',
 };
 
@@ -66,12 +78,16 @@ const zhTW: TranslationSchema = {
 	modalDescription: (filename: string) => `您希望如何儲存 "${filename}"？`,
 	applyRemaining: (count: number) => `將選擇套用至剩餘的 ${count} 張影像`,
 	saveToVault: '儲存至寶庫',
-	embedInCanvas: '嵌入至畫布檔案（PureRef 模式）',
+	embedInCanvas: '嵌入至畫布',
 
 	flipHorizontal: '水平翻轉',
 	flipVertical: '垂直翻轉',
 	toggleGrayscale: '切換灰階',
 	changeOpacity: '更改不透明度',
+	copyImageToClipboard: '複製影像至剪貼簿',
+	moveSelectedMedia: '移動媒體到...',
+	copySelectedMedia: '複製媒體到...',
+	convertToEmbed: '嵌入至畫布...',
 	resetSize: '重置為原始大小',
 };
 
@@ -84,12 +100,16 @@ const es: TranslationSchema = {
 	modalDescription: (filename: string) => `¿Cómo desea guardar "${filename}"?`,
 	applyRemaining: (count: number) => `Aplicar opción a las ${count} imágenes restantes`,
 	saveToVault: 'Guardar en la bóveda',
-	embedInCanvas: 'Incrustar en el archivo de lienzo (modelo PureRef)',
+	embedInCanvas: 'Incrustar en el lienzo',
 
 	flipHorizontal: 'Voltear horizontalmente',
 	flipVertical: 'Voltear verticalmente',
 	toggleGrayscale: 'Alternar escala de grises',
 	changeOpacity: 'Cambiar opacidad',
+	copyImageToClipboard: 'Copiar imagen al portapapeles',
+	moveSelectedMedia: 'Mover medios a...',
+	copySelectedMedia: 'Copiar medios a...',
+	convertToEmbed: 'Incrustar en el lienzo...',
 	resetSize: 'Restablecer al tamaño original',
 };
 
@@ -102,12 +122,16 @@ const fr: TranslationSchema = {
 	modalDescription: (filename: string) => `Comment souhaitez-vous stocker « ${filename} » ?`,
 	applyRemaining: (count: number) => `Appliquer le choix aux ${count} images restantes`,
 	saveToVault: 'Enregistrer dans le coffre',
-	embedInCanvas: 'Intégrer dans le fichier canevas (modèle PureRef)',
+	embedInCanvas: 'Intégrer dans le canevas',
 
 	flipHorizontal: 'Retourner horizontalement',
 	flipVertical: 'Retourner verticalement',
 	toggleGrayscale: 'Basculer les niveaux de gris',
 	changeOpacity: 'Modifier l’opacité',
+	copyImageToClipboard: 'Copier l’image dans le presse-papiers',
+	moveSelectedMedia: 'Déplacer les médias vers...',
+	copySelectedMedia: 'Copier les médias vers...',
+	convertToEmbed: 'Intégrer dans le canevas...',
 	resetSize: 'Réinitialiser à la taille d’origine',
 };
 
@@ -120,12 +144,16 @@ const de: TranslationSchema = {
 	modalDescription: (filename: string) => `Wie möchten Sie „${filename}“ speichern?`,
 	applyRemaining: (count: number) => `Auswahl auf die verbleibenden ${count} Bilder anwenden`,
 	saveToVault: 'Im Tresor speichern',
-	embedInCanvas: 'In Canvas-Datei einbetten (PureRef-Modell)',
+	embedInCanvas: 'In Canvas einbetten',
 
 	flipHorizontal: 'Horizontal spiegeln',
 	flipVertical: 'Vertikal spiegeln',
 	toggleGrayscale: 'Graustufen umschalten',
 	changeOpacity: 'Deckkraft ändern',
+	copyImageToClipboard: 'Bild in Zwischenablage kopieren',
+	moveSelectedMedia: 'Medien verschieben nach...',
+	copySelectedMedia: 'Medien kopieren nach...',
+	convertToEmbed: 'In Canvas einbetten...',
 	resetSize: 'Auf Originalgröße zurücksetzen',
 };
 
@@ -138,12 +166,16 @@ const ja: TranslationSchema = {
 	modalDescription: (filename: string) => `「${filename}」をどのように保存しますか？`,
 	applyRemaining: (count: number) => `残りの${count}枚の画像にこの選択を適用`,
 	saveToVault: '保管庫に保存',
-	embedInCanvas: 'キャンバスファイルに埋め込む（PureRefモデル）',
+	embedInCanvas: 'キャンバスに埋め込む',
 
 	flipHorizontal: '左右反転',
 	flipVertical: '上下反転',
 	toggleGrayscale: '白黒切り替え',
 	changeOpacity: '不透明度を変更',
+	copyImageToClipboard: '画像をクリップボードにコピー',
+	moveSelectedMedia: 'メディアを移動...',
+	copySelectedMedia: 'メディアをコピー...',
+	convertToEmbed: 'キャンバスに埋め込む...',
 	resetSize: '元のサイズに戻す',
 };
 
@@ -156,12 +188,16 @@ const ko: TranslationSchema = {
 	modalDescription: (filename: string) => `"${filename}"을(를) 어떻게 저장하시겠습니까?`,
 	applyRemaining: (count: number) => `남은 이미지 ${count}개에 선택 적용`,
 	saveToVault: '보관함에 저장',
-	embedInCanvas: '캔버스 파일에 임베드 (PureRef 모델)',
+	embedInCanvas: '캔버스에 임베드',
 
 	flipHorizontal: '좌우 반전',
 	flipVertical: '상하 반전',
 	toggleGrayscale: '흑백 전환',
 	changeOpacity: '불투명도 변경',
+	copyImageToClipboard: '이미지를 클립보드에 복사',
+	moveSelectedMedia: '미디어 이동...',
+	copySelectedMedia: '미디어 복사...',
+	convertToEmbed: '캔버스에 임베드...',
 	resetSize: '원래 크기로 복원',
 };
 
@@ -174,12 +210,16 @@ const ru: TranslationSchema = {
 	modalDescription: (filename: string) => `Как вы хотите сохранить «${filename}»?`,
 	applyRemaining: (count: number) => `Применить выбор к оставшимся ${count} изображениям`,
 	saveToVault: 'Сохранить в хранилище',
-	embedInCanvas: 'Встроить в файл холста (модель PureRef)',
+	embedInCanvas: 'Встроить в холст',
 
 	flipHorizontal: 'Отразить по горизонтали',
 	flipVertical: 'Отразить по вертикали',
 	toggleGrayscale: 'Переключить оттенки серого',
 	changeOpacity: 'Изменить прозрачность',
+	copyImageToClipboard: 'Скопировать изображение в буфер обмена',
+	moveSelectedMedia: 'Переместить медиа в...',
+	copySelectedMedia: 'Скопировать медиа в...',
+	convertToEmbed: 'Встроить в холст...',
 	resetSize: 'Сбросить до исходного размера',
 };
 
@@ -192,12 +232,16 @@ const pt: TranslationSchema = {
 	modalDescription: (filename: string) => `Como você gostaria de armazenar "${filename}"?`,
 	applyRemaining: (count: number) => `Aplicar escolha às ${count} imagens restantes`,
 	saveToVault: 'Salvar no cofre',
-	embedInCanvas: 'Incorporar no arquivo de tela (modelo PureRef)',
+	embedInCanvas: 'Incorporar na tela',
 
 	flipHorizontal: 'Inverter horizontalmente',
 	flipVertical: 'Inverter verticalmente',
 	toggleGrayscale: 'Alternar escala de cinza',
 	changeOpacity: 'Alterar opacidade',
+	copyImageToClipboard: 'Copiar imagem para a área de transferência',
+	moveSelectedMedia: 'Mover mídia para...',
+	copySelectedMedia: 'Copiar mídia para...',
+	convertToEmbed: 'Incorporar na tela...',
 	resetSize: 'Redefinir para o tamanho original',
 };
 
@@ -210,12 +254,16 @@ const it: TranslationSchema = {
 	modalDescription: (filename: string) => `Come desideri memorizzare "${filename}"?`,
 	applyRemaining: (count: number) => `Applica scelta alle restanti ${count} immagini`,
 	saveToVault: 'Salva nella cassaforte',
-	embedInCanvas: 'Incorpora nel file tela (modello PureRef)',
+	embedInCanvas: 'Incorpora nella tela',
 
 	flipHorizontal: 'Capovolgi orizzontalmente',
 	flipVertical: 'Capovolgi verticalmente',
 	toggleGrayscale: 'Attiva/disattiva scala di grigi',
 	changeOpacity: 'Cambia opacità',
+	copyImageToClipboard: 'Copia immagine negli appunti',
+	moveSelectedMedia: 'Sposta media in...',
+	copySelectedMedia: 'Copia media in...',
+	convertToEmbed: 'Incorpora nella tela...',
 	resetSize: 'Ripristina dimensione originale',
 };
 

@@ -2,6 +2,7 @@ import { ItemView, Menu, Plugin } from 'obsidian';
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
 import { CanvasItemView } from './canvas/CanvasTypes';
 import { getText } from './i18n';
+import { FolderSuggestModal } from './modals/FolderSuggestModal';
 import { OpacityModal } from './modals/OpacityModal';
 import { DEFAULT_SETTINGS, KambasSettings, KambasSettingTab } from './settings';
 
@@ -41,6 +42,9 @@ export default class KambasPlugin extends Plugin {
 			if (!canvas?.nodes) return;
 
 			let hasAnyImage = false;
+			let hasAnyMedia = false;
+			let hasNativeImage = false;
+			let selectedImageCount = 0;
 			let isFlippedH = false;
 			let isFlippedV = false;
 			let isGrayscaled = false;
@@ -54,9 +58,22 @@ export default class KambasPlugin extends Plugin {
 				if (isSel) {
 					if (el.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(el)) {
 						hasAnyImage = true;
+						hasAnyMedia = true;
+						selectedImageCount++;
 					}
 
-					const unknownData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; originalWidth?: number; originalHeight?: number } }).unknownData;
+					const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; file?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; originalWidth?: number; originalHeight?: number } }).unknownData;
+					if (unknownData?.type === 'file' || (unknownData?.type === 'link' && unknownData?.url?.startsWith('data:image/'))) {
+						hasAnyMedia = true;
+					}
+
+					if (unknownData?.type === 'file' && unknownData?.file) {
+						const ext = unknownData.file.split('.').pop()?.toLowerCase() || '';
+						if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'avif', 'tiff', 'tif'].includes(ext)) {
+							hasNativeImage = true;
+						}
+					}
+
 					if (unknownData?.kambasFlipH) isFlippedH = true;
 					if (unknownData?.kambasFlipV) isFlippedV = true;
 					if (unknownData?.kambasGrayscale) isGrayscaled = true;
@@ -77,13 +94,14 @@ export default class KambasPlugin extends Plugin {
 
 			if (!hasAnyImage && targetNodeEl) {
 				hasAnyImage = Boolean(targetNodeEl.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(targetNodeEl));
+				if (hasAnyImage) hasAnyMedia = true;
 			}
 
 			const t = getText();
 			menu.addSeparator();
 
 			if (hasAnyImage) {
-				menu.addItem((item) => {
+				menu.addItem((item: import('obsidian').MenuItem) => {
 					item.setTitle(t.flipHorizontal)
 						.setIcon('flip-horizontal')
 						.setChecked(isFlippedH)
@@ -92,7 +110,7 @@ export default class KambasPlugin extends Plugin {
 						});
 				});
 
-				menu.addItem((item) => {
+				menu.addItem((item: import('obsidian').MenuItem) => {
 					item.setTitle(t.flipVertical)
 						.setIcon('flip-vertical')
 						.setChecked(isFlippedV)
@@ -101,7 +119,7 @@ export default class KambasPlugin extends Plugin {
 						});
 				});
 
-				menu.addItem((item) => {
+				menu.addItem((item: import('obsidian').MenuItem) => {
 					item.setTitle(t.toggleGrayscale)
 						.setIcon('contrast')
 						.setChecked(isGrayscaled)
@@ -112,7 +130,7 @@ export default class KambasPlugin extends Plugin {
 			}
 
 			// Opacity is supported on any canvas element (text cards, images, files, groups)
-			menu.addItem((item) => {
+			menu.addItem((item: import('obsidian').MenuItem) => {
 				const opacityPct = Math.round(currentOpacity * 100);
 				item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
 					.setIcon('droplet')
@@ -125,11 +143,57 @@ export default class KambasPlugin extends Plugin {
 			});
 
 			if (isResized) {
-				menu.addItem((item) => {
+				menu.addItem((item: import('obsidian').MenuItem) => {
 					item.setTitle(t.resetSize)
 						.setIcon('rotate-ccw')
 						.onClick(() => {
 							this.canvasImageHandler.resetSelectedImageSize(activeView, targetNodeEl);
+						});
+				});
+			}
+
+			if (hasAnyMedia || hasNativeImage) {
+				menu.addSeparator();
+			}
+
+			if (hasAnyMedia) {
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(t.moveSelectedMedia)
+						.setIcon('folder-output')
+						.onClick(() => {
+							new FolderSuggestModal(this.app, (folder) => {
+								void this.canvasImageHandler.moveSelectedMediaToFolder(activeView, folder, targetNodeEl);
+							}).open();
+						});
+				});
+
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(t.copySelectedMedia)
+						.setIcon('folder-input')
+						.onClick(() => {
+							new FolderSuggestModal(this.app, (folder) => {
+								void this.canvasImageHandler.copySelectedMediaToFolder(activeView, folder, targetNodeEl);
+							}).open();
+						});
+				});
+			}
+
+			if (hasNativeImage) {
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(t.convertToEmbed)
+						.setIcon('file-input')
+						.onClick(() => {
+							void this.canvasImageHandler.convertSelectedVaultImagesToEmbed(activeView, targetNodeEl);
+						});
+				});
+			}
+
+			if (selectedImageCount === 1) {
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(t.copyImageToClipboard)
+						.setIcon('copy')
+						.onClick(() => {
+							void this.canvasImageHandler.copySelectedImagesToClipboard(activeView, targetNodeEl);
 						});
 				});
 			}

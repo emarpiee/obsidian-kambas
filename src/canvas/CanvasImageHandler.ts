@@ -1,4 +1,5 @@
-import { App, ItemView, TFile } from 'obsidian';
+import { App, ItemView, TFile, TFolder } from 'obsidian';
+import { ConvertEmbedChoiceResult, ConvertToEmbedModal, VaultFileAction } from '../modals/ConvertToEmbedModal';
 import { ImageIngestionModal, StorageChoice } from '../modals/ImageIngestionModal';
 import {
 	arrayBufferToBase64DataUrl,
@@ -6,7 +7,7 @@ import {
 	getImageDimensions,
 	saveFileToVault,
 } from '../utils/imageUtils';
-import { CanvasFileData, CanvasItemView, CanvasNodeData } from './CanvasTypes';
+import { CanvasFileData, CanvasItemView, CanvasNodeData, IMAGE_EXTENSIONS } from './CanvasTypes';
 
 export interface PendingImage {
 	filename: string;
@@ -370,9 +371,65 @@ export class CanvasImageHandler {
 			return;
 		}
 
-		const key = evt.key.toLowerCase();
-		if (key === 'h' || key === 'v' || key === 'g') {
-			void this.toggleSelectedImageTransform(activeView, key);
+		const key = evt.key;
+		const lowerKey = key.toLowerCase();
+
+		if (lowerKey === 'h' || lowerKey === 'v' || lowerKey === 'g') {
+			void this.toggleSelectedImageTransform(activeView, lowerKey);
+		} else if (key === '=' || key === '+') {
+			evt.preventDefault();
+			this.zoomCanvas(activeView, 1);
+		} else if (key === '-') {
+			evt.preventDefault();
+			this.zoomCanvas(activeView, -1);
+		}
+	};
+
+	private zoomCanvas(activeView: CanvasItemView, direction: number): void {
+		const canvas = activeView.canvas;
+		if (!canvas) return;
+
+		if (typeof canvas.zoomBy === 'function') {
+			try {
+				canvas.zoomBy(direction > 0 ? 0.2 : -0.2);
+				return;
+			} catch {
+				// Fallback
+			}
+		}
+
+		if (direction > 0 && typeof canvas.zoomIn === 'function') {
+			try {
+				canvas.zoomIn();
+				return;
+			} catch {
+				// Fallback
+			}
+		}
+
+		if (direction < 0 && typeof canvas.zoomOut === 'function') {
+			try {
+				canvas.zoomOut();
+				return;
+			} catch {
+				// Fallback
+			}
+		}
+
+		// Fallback: simulate wheel event for zooming canvas
+		const canvasEl = (activeView as unknown as { containerEl?: HTMLElement }).containerEl?.querySelector('.canvas') ?? document.querySelector('.canvas');
+		if (canvasEl) {
+			const deltaY = direction > 0 ? -120 : 120;
+			const rect = canvasEl.getBoundingClientRect();
+			const wheelEvt = new WheelEvent('wheel', {
+				clientX: rect.left + rect.width / 2,
+				clientY: rect.top + rect.height / 2,
+				deltaY,
+				ctrlKey: true,
+				bubbles: true,
+				cancelable: true,
+			});
+			canvasEl.dispatchEvent(wheelEvt);
 		}
 	};
 
@@ -511,6 +568,491 @@ export class CanvasImageHandler {
 		}
 	}
 
+	public async copySelectedImagesToClipboard(
+		activeView: CanvasItemView,
+		targetNodeEl?: Element | null
+	): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		const targetNodes: Array<{ nodeEl: HTMLElement; rawNode: { file?: TFile | string; unknownData?: { file?: string } } }> = [];
+
+		canvas.nodes.forEach((nodeObj) => {
+			const nodeEl = nodeObj.nodeEl;
+			if (!nodeEl) return;
+
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+
+			if (isExplicitlySelected || isTargetNode) {
+				targetNodes.push({ nodeEl, rawNode: nodeObj as { file?: TFile | string; unknownData?: { file?: string } } });
+			}
+		});
+
+		if (targetNodes.length === 0) return;
+
+		for (const { nodeEl, rawNode } of targetNodes) {
+			try {
+				let pngBlob: Blob | null = null;
+
+				// Path A: Check if node is a vault TFile or path
+				const filePath = (rawNode.file instanceof TFile ? rawNode.file.path : rawNode.file) || rawNode.unknownData?.file;
+				if (filePath) {
+					const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
+					if (abstractFile instanceof TFile) {
+						const arrayBuffer = await this.app.vault.readBinary(abstractFile);
+						const mime = `image/${abstractFile.extension.toLowerCase() === 'jpg' ? 'jpeg' : abstractFile.extension.toLowerCase()}`;
+						const rawBlob = new Blob([arrayBuffer], { type: mime });
+
+						if (mime.includes('png')) {
+							pngBlob = rawBlob;
+						} else {
+							const bitmap = await createImageBitmap(rawBlob);
+							const canvasEl = createEl('canvas');
+							canvasEl.width = bitmap.width;
+							canvasEl.height = bitmap.height;
+							const ctx = canvasEl.getContext('2d');
+							ctx?.drawImage(bitmap, 0, 0);
+							pngBlob = await new Promise<Blob>((resolve) => canvasEl.toBlob((b) => resolve(b || rawBlob), 'image/png'));
+						}
+					}
+				}
+
+				// Path B: Fallback to HTMLImageElement rendering (embedded base64 or rendered <img> element)
+				if (!pngBlob) {
+					const img = nodeEl.querySelector<HTMLImageElement>('.kambas-embedded-img') ?? this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+					if (img) {
+						const src = img.src;
+						if (src.startsWith('data:')) {
+							const parts = src.split(',');
+							const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+							const bstr = atob(parts[1]);
+							let n = bstr.length;
+							const u8arr = new Uint8Array(n);
+							while (n--) {
+								u8arr[n] = bstr.charCodeAt(n);
+							}
+							const rawBlob = new Blob([u8arr], { type: mime });
+							if (mime.includes('png')) {
+								pngBlob = rawBlob;
+							} else {
+								const bitmap = await createImageBitmap(rawBlob);
+								const canvasEl = createEl('canvas');
+								canvasEl.width = bitmap.width;
+								canvasEl.height = bitmap.height;
+								const ctx = canvasEl.getContext('2d');
+								ctx?.drawImage(bitmap, 0, 0);
+								pngBlob = await new Promise<Blob>((resolve) => canvasEl.toBlob((b) => resolve(b || rawBlob), 'image/png'));
+							}
+						} else {
+							// Draw rendered image onto HTML5 canvas
+							const canvasEl = createEl('canvas');
+							canvasEl.width = img.naturalWidth || img.width || 400;
+							canvasEl.height = img.naturalHeight || img.height || 300;
+							const ctx = canvasEl.getContext('2d');
+							if (ctx) {
+								ctx.drawImage(img, 0, 0);
+								pngBlob = await new Promise<Blob | null>((resolve) => canvasEl.toBlob((b) => resolve(b), 'image/png'));
+							}
+						}
+					}
+				}
+
+				if (pngBlob) {
+					await navigator.clipboard.write([
+						new ClipboardItem({ 'image/png': pngBlob }),
+					]);
+				}
+			} catch {
+				// Continue to next image if one fails
+			}
+		}
+	}
+
+	public async moveSelectedMediaToFolder(
+		activeView: CanvasItemView,
+		targetFolder: TFolder,
+		targetNodeEl?: Element | null
+	): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		const file = activeView.file;
+		if (!file) return;
+
+		const selectedNodes: Array<{ id: string; nodeObj: unknown }> = [];
+
+		canvas.nodes.forEach((nodeObj, id) => {
+			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
+			if (!nodeEl) return;
+
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+
+			if (isExplicitlySelected || isTargetNode) {
+				selectedNodes.push({ id, nodeObj });
+			}
+		});
+
+		if (selectedNodes.length === 0) return;
+
+		const content = await this.app.vault.read(file);
+		let canvasFileData: CanvasFileData;
+		try {
+			canvasFileData = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!canvasFileData.nodes) return;
+
+		let modified = false;
+
+		for (const { id, nodeObj } of selectedNodes) {
+			const rawNodeObj = nodeObj as {
+				file?: TFile | string;
+				url?: string;
+				nodeEl?: HTMLElement;
+				unknownData?: { type?: string; url?: string; file?: string };
+			};
+
+			const canvasNodeData = canvasFileData.nodes.find((n) => n.id === id);
+			if (!canvasNodeData) continue;
+
+			// Case 1: Native vault media file node (type === 'file')
+			if (canvasNodeData.type === 'file' && canvasNodeData.file) {
+				const abstractFile = this.app.vault.getAbstractFileByPath(canvasNodeData.file);
+				if (abstractFile instanceof TFile) {
+					const newPath = targetFolder.path === '/' ? abstractFile.name : `${targetFolder.path}/${abstractFile.name}`;
+					if (abstractFile.path !== newPath) {
+						await this.app.fileManager.renameFile(abstractFile, newPath);
+						canvasNodeData.file = newPath;
+						if (rawNodeObj.unknownData) rawNodeObj.unknownData.file = newPath;
+						modified = true;
+					}
+				}
+			}
+			// Case 2: Embedded base64 image link node (type === 'link' with data:image/...)
+			else if (canvasNodeData.type === 'link' && canvasNodeData.url?.startsWith('data:image/')) {
+				const dataUrl = canvasNodeData.url;
+				const parts = dataUrl.split(',');
+				const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+				const ext = mime.split('/')[1] || 'png';
+				const bstr = atob(parts[1]);
+				let n = bstr.length;
+				const u8arr = new Uint8Array(n);
+				while (n--) {
+					u8arr[n] = bstr.charCodeAt(n);
+				}
+				const filename = `embedded_image_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+				const savedPath = await saveFileToVault(this.app, targetFolder.path, filename, u8arr.buffer);
+
+				const savedFile = this.app.vault.getAbstractFileByPath(savedPath);
+				if (savedFile instanceof TFile && typeof canvas.createFileNode === 'function') {
+					// 1. Preserve position, size & transform data
+					const pos = { x: canvasNodeData.x, y: canvasNodeData.y };
+					const size = { width: canvasNodeData.width, height: canvasNodeData.height };
+					const flipH = canvasNodeData.kambasFlipH;
+					const flipV = canvasNodeData.kambasFlipV;
+					const grayscale = canvasNodeData.kambasGrayscale;
+					const opacity = canvasNodeData.kambasOpacity;
+
+					// 2. Remove old link node from canvas
+					const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
+					if (typeof rawCanvas.removeNode === 'function') {
+						try {
+							rawCanvas.removeNode(nodeObj);
+						} catch {
+							// Fallback
+						}
+					}
+
+					// 3. Create native Obsidian file node
+					canvas.createFileNode({
+						file: savedFile,
+						pos,
+						size,
+						save: true,
+					});
+
+					// 4. Find newly created file node and apply preserved transform properties
+					const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
+						const rawN = n as unknown as { file?: TFile | string; unknownData?: { file?: string } };
+						return rawN.file === savedFile || rawN.file === savedPath || rawN.unknownData?.file === savedPath;
+					});
+
+					if (newCanvasNode) {
+						const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number } };
+						if (!rawN.unknownData) rawN.unknownData = {};
+						if (flipH) rawN.unknownData.kambasFlipH = flipH;
+						if (flipV) rawN.unknownData.kambasFlipV = flipV;
+						if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
+						if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
+					}
+
+					modified = true;
+				}
+			}
+		}
+
+		if (modified) {
+			if (typeof canvas.requestSave === 'function') {
+				try {
+					canvas.requestSave();
+				} catch {
+					// Save requested
+				}
+			}
+
+			window.setTimeout(() => {
+				this.scanAndRestoreTransforms(activeView);
+			}, 100);
+		}
+	}
+
+	public async copySelectedMediaToFolder(
+		activeView: CanvasItemView,
+		targetFolder: TFolder,
+		targetNodeEl?: Element | null
+	): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		const file = activeView.file;
+		if (!file) return;
+
+		const selectedNodes: Array<{ id: string; nodeObj: unknown }> = [];
+
+		canvas.nodes.forEach((nodeObj, id) => {
+			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
+			if (!nodeEl) return;
+
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+
+			if (isExplicitlySelected || isTargetNode) {
+				selectedNodes.push({ id, nodeObj });
+			}
+		});
+
+		if (selectedNodes.length === 0) return;
+
+		const content = await this.app.vault.read(file);
+		let canvasFileData: CanvasFileData;
+		try {
+			canvasFileData = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!canvasFileData.nodes) return;
+
+		for (const { id } of selectedNodes) {
+			const canvasNodeData = canvasFileData.nodes.find((n) => n.id === id);
+			if (!canvasNodeData) continue;
+
+			// Case 1: Native vault media file node (type === 'file') -> copy vault file to target directory with -copy-NN formatting
+			if (canvasNodeData.type === 'file' && canvasNodeData.file) {
+				const abstractFile = this.app.vault.getAbstractFileByPath(canvasNodeData.file);
+				if (abstractFile instanceof TFile) {
+					const extIdx = abstractFile.name.lastIndexOf('.');
+					const base = extIdx !== -1 ? abstractFile.name.substring(0, extIdx) : abstractFile.name;
+					const ext = extIdx !== -1 ? abstractFile.name.substring(extIdx) : '';
+
+					let counter = 1;
+					let targetName = `${base}-copy-${String(counter).padStart(2, '0')}${ext}`;
+					let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+
+					while (this.app.vault.getAbstractFileByPath(targetPath)) {
+						counter++;
+						targetName = `${base}-copy-${String(counter).padStart(2, '0')}${ext}`;
+						targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					}
+
+					await this.app.vault.copy(abstractFile, targetPath);
+				}
+			}
+			// Case 2: Embedded base64 image link node (type === 'link' with data:image/...) -> copy/export base64 to target directory
+			else if (canvasNodeData.type === 'link' && canvasNodeData.url?.startsWith('data:image/')) {
+				const dataUrl = canvasNodeData.url;
+				const parts = dataUrl.split(',');
+				const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+				const ext = mime.split('/')[1] || 'png';
+				const bstr = atob(parts[1]);
+				let n = bstr.length;
+				const u8arr = new Uint8Array(n);
+				while (n--) {
+					u8arr[n] = bstr.charCodeAt(n);
+				}
+
+				const base = 'embedded_image';
+				let counter = 1;
+				let targetName = `${base}-copy-${String(counter).padStart(2, '0')}.${ext}`;
+				let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+
+				while (this.app.vault.getAbstractFileByPath(targetPath)) {
+					counter++;
+					targetName = `${base}-copy-${String(counter).padStart(2, '0')}.${ext}`;
+					targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+				}
+
+				await this.app.vault.createBinary(targetPath, u8arr.buffer);
+			}
+		}
+	}
+
+	public async convertSelectedVaultImagesToEmbed(
+		activeView: CanvasItemView,
+		targetNodeEl?: Element | null
+	): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		const file = activeView.file;
+		if (!file) return;
+
+		// Collect all selected native file nodes that represent images
+		const targetNodes: Array<{ id: string; nodeObj: unknown; tfile: TFile; filename: string }> = [];
+
+		canvas.nodes.forEach((nodeObj, id) => {
+			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
+			if (!nodeEl) return;
+
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+
+			if (isExplicitlySelected || isTargetNode) {
+				const rawNodeObj = nodeObj as { file?: TFile | string; unknownData?: { file?: string } };
+				const filePath = (rawNodeObj.file instanceof TFile ? rawNodeObj.file.path : rawNodeObj.file) || rawNodeObj.unknownData?.file;
+				if (filePath) {
+					const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
+					if (abstractFile instanceof TFile && IMAGE_EXTENSIONS.has(abstractFile.extension.toLowerCase())) {
+						targetNodes.push({ id, nodeObj, tfile: abstractFile, filename: abstractFile.name });
+					}
+				}
+			}
+		});
+
+		if (targetNodes.length === 0) return;
+
+		let currentAction: VaultFileAction | null = null;
+		let applyToAllRemaining = false;
+
+		const filesToDelete: TFile[] = [];
+
+		const content = await this.app.vault.read(file);
+		let canvasFileData: CanvasFileData;
+		try {
+			canvasFileData = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!canvasFileData.nodes) return;
+
+		let modified = false;
+
+		for (let i = 0; i < targetNodes.length; i++) {
+			const { id, nodeObj, tfile, filename } = targetNodes[i];
+			const remainingCount = targetNodes.length - i;
+
+			if (!applyToAllRemaining || !currentAction) {
+				const res = await new Promise<ConvertEmbedChoiceResult>((resolve) => {
+					const modal = new ConvertToEmbedModal(
+						this.app,
+						filename,
+						remainingCount,
+						(result) => resolve(result)
+					);
+					modal.open();
+				});
+				currentAction = res.action;
+				applyToAllRemaining = res.applyToAll;
+			}
+
+			if (currentAction === 'cancel') {
+				break;
+			}
+
+			const canvasNodeData = canvasFileData.nodes.find((n) => n.id === id);
+			if (!canvasNodeData) continue;
+
+			// Read vault image file and encode to base64 data URL
+			const arrayBuffer = await this.app.vault.readBinary(tfile);
+			const mimeType = `image/${tfile.extension.toLowerCase() === 'jpg' ? 'jpeg' : tfile.extension.toLowerCase()}`;
+			const dataUrl = arrayBufferToBase64DataUrl(arrayBuffer, mimeType);
+
+			// 1. Preserve position, size & transform data
+			const pos = { x: canvasNodeData.x, y: canvasNodeData.y };
+			const size = { width: canvasNodeData.width, height: canvasNodeData.height };
+			const flipH = canvasNodeData.kambasFlipH;
+			const flipV = canvasNodeData.kambasFlipV;
+			const grayscale = canvasNodeData.kambasGrayscale;
+			const opacity = canvasNodeData.kambasOpacity;
+
+			// 2. Remove old native file node from canvas
+			const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
+			if (typeof rawCanvas.removeNode === 'function') {
+				try {
+					rawCanvas.removeNode(nodeObj);
+				} catch {
+					// Fallback
+				}
+			}
+
+			// 3. Create link node storing embedded base64 data URL
+			if (typeof canvas.createLinkNode === 'function') {
+				canvas.createLinkNode({
+					url: dataUrl,
+					pos,
+					size,
+					save: true,
+				});
+
+				// 4. Find newly created link node and apply preserved transform properties
+				const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
+					const rawN = n as unknown as { url?: string; unknownData?: { url?: string } };
+					return rawN.url === dataUrl || rawN.unknownData?.url === dataUrl;
+				});
+
+				if (newCanvasNode) {
+					const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number } };
+					if (!rawN.unknownData) rawN.unknownData = {};
+					if (flipH) rawN.unknownData.kambasFlipH = flipH;
+					if (flipV) rawN.unknownData.kambasFlipV = flipV;
+					if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
+					if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
+				}
+
+				modified = true;
+			}
+
+			if (currentAction === 'delete') {
+				filesToDelete.push(tfile);
+			}
+		}
+
+		if (modified) {
+			if (typeof canvas.requestSave === 'function') {
+				try {
+					canvas.requestSave();
+				} catch {
+					// Save requested
+				}
+			}
+
+			window.setTimeout(() => {
+				this.scanAndRestoreTransforms(activeView);
+			}, 100);
+		}
+
+		// Delete original files if requested
+		for (const fileToDelete of filesToDelete) {
+			try {
+				await this.app.fileManager.trashFile(fileToDelete);
+			} catch {
+				// Continue if trash fails
+			}
+		}
+	}
+
 	private async persistImageTransform(file: TFile, selectedNodeIds: string[], key: string): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
@@ -626,6 +1168,10 @@ export class CanvasImageHandler {
 				});
 				currentChoice = res.choice;
 				applyToAllRemaining = res.applyToAll;
+			}
+
+			if (currentChoice === 'cancel') {
+				break;
 			}
 
 			const pos = this.getCanvasPosition(canvasView, evt, i);

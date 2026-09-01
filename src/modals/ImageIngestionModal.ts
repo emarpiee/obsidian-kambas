@@ -1,7 +1,7 @@
 import { App, Modal, Setting } from 'obsidian';
 import { getText } from '../i18n';
 
-export type StorageChoice = 'vault' | 'embed';
+export type StorageChoice = 'vault' | 'embed' | 'cancel';
 
 export interface IngestionChoiceResult {
 	choice: StorageChoice;
@@ -74,8 +74,8 @@ export class ImageIngestionModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		if (!this.resolved) {
-			// Default fallback if modal dismissed without selecting
-			this.onChoose({ choice: 'embed', applyToAll: false });
+			// User dismissed modal (e.g. clicked X or pressed Escape) -> cancel ingestion
+			this.onChoose({ choice: 'cancel', applyToAll: false });
 		}
 	}
 }
