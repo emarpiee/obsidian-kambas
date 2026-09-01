@@ -330,28 +330,42 @@ export class CanvasImageHandler {
 
 			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+			const hasImg = nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl);
 
-			if ((isExplicitlySelected || isTargetNode) && nodeEl.querySelector('.kambas-embedded-img')) {
+			if ((isExplicitlySelected || isTargetNode) && hasImg) {
 				selectedNodeEls.push(nodeEl);
 				selectedNodeIds.push(id);
 			}
 		});
 
+		// If nothing explicitly selected, fall back to target node
+		if (selectedNodeIds.length === 0 && targetNodeEl) {
+			canvas.nodes.forEach((node, id) => {
+				const nodeEl = node.nodeEl;
+				if (nodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))) {
+					selectedNodeIds.push(id);
+				}
+			});
+		}
+
 		// 1. Apply DOM class changes & update in-memory unknownData immediately for native undo/redo tracking
 		canvas.nodes.forEach((canvasNode, id) => {
 			if (!selectedNodeIds.includes(id)) return;
 
-			const unknownData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } }).unknownData;
-			if (unknownData) {
-				if (key === 'h') unknownData.kambasFlipH = !unknownData.kambasFlipH;
-				if (key === 'v') unknownData.kambasFlipV = !unknownData.kambasFlipV;
-				if (key === 'g') unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
+			const rawNode = canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } };
+			if (!rawNode.unknownData) {
+				rawNode.unknownData = {};
 			}
+			const unknownData = rawNode.unknownData;
+
+			if (key === 'h') unknownData.kambasFlipH = !unknownData.kambasFlipH;
+			if (key === 'v') unknownData.kambasFlipV = !unknownData.kambasFlipV;
+			if (key === 'g') unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
 
 			const nodeEl = canvasNode.nodeEl;
 			if (nodeEl) {
-				const img = nodeEl.querySelector('img');
-				if (img && unknownData) {
+				const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+				if (img) {
 					img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
 					img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 					img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
@@ -364,11 +378,66 @@ export class CanvasImageHandler {
 			try {
 				canvas.requestSave();
 			} catch {
-				// Fallback to vault modify if requestSave is unavailable
 				void this.persistImageTransform(file, selectedNodeIds, key);
 			}
 		} else {
 			void this.persistImageTransform(file, selectedNodeIds, key);
+		}
+	}
+
+	public resetSelectedImageSize(
+		activeView: CanvasItemView,
+		targetNodeEl?: Element | null
+	): void {
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		canvas.nodes.forEach((nodeObj) => {
+			const nodeEl = nodeObj.nodeEl;
+			if (!nodeEl) return;
+
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+
+			if (isExplicitlySelected || isTargetNode) {
+				const rawNode = nodeObj as unknown as {
+					width: number;
+					height: number;
+					unknownData?: { width?: number; height?: number; originalWidth?: number; originalHeight?: number };
+					resize?: (size: { width: number; height: number }) => void;
+				};
+
+				const img = nodeEl.querySelector<HTMLImageElement>('img');
+				const origW = rawNode.unknownData?.originalWidth ?? img?.naturalWidth;
+				const origH = rawNode.unknownData?.originalHeight ?? img?.naturalHeight;
+
+				if (origW && origH) {
+					if (typeof rawNode.resize === 'function') {
+						try {
+							rawNode.resize({ width: origW, height: origH });
+						} catch {
+							rawNode.width = origW;
+							rawNode.height = origH;
+						}
+					} else {
+						rawNode.width = origW;
+						rawNode.height = origH;
+					}
+
+					if (rawNode.unknownData) {
+						rawNode.unknownData.width = origW;
+						rawNode.unknownData.height = origH;
+					}
+				}
+			}
+		});
+
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				// Save requested
+			}
 		}
 	}
 
@@ -570,6 +639,8 @@ export class CanvasImageHandler {
 				y,
 				width,
 				height,
+				originalWidth: width,
+				originalHeight: height,
 			});
 			window.setTimeout(() => {
 				this.scanAndRestoreTransforms(canvasView);
@@ -594,6 +665,8 @@ export class CanvasImageHandler {
 				y,
 				width,
 				height,
+				originalWidth: width,
+				originalHeight: height,
 			});
 		}
 	}

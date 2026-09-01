@@ -58,12 +58,42 @@ export default class KambasPlugin extends Plugin {
 
 			if (!hasAnyImage) return;
 
+			// Check transform states and resize state for active indicators
+			let isFlippedH = false;
+			let isFlippedV = false;
+			let isGrayscaled = false;
+			let isResized = false;
+
+			canvas.nodes.forEach((canvasNode) => {
+				const el = canvasNode.nodeEl;
+				if (!el) return;
+				const isSel = el.classList.contains('is-selected') || (targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
+				if (isSel) {
+					const unknownData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; originalWidth?: number; originalHeight?: number } }).unknownData;
+					if (unknownData?.kambasFlipH) isFlippedH = true;
+					if (unknownData?.kambasFlipV) isFlippedV = true;
+					if (unknownData?.kambasGrayscale) isGrayscaled = true;
+
+					const rawNode = canvasNode as unknown as { width?: number; height?: number };
+					const img = el.querySelector<HTMLImageElement>('img');
+					const origW = unknownData?.originalWidth ?? img?.naturalWidth;
+					const origH = unknownData?.originalHeight ?? img?.naturalHeight;
+
+					if (rawNode.width && rawNode.height && origW && origH) {
+						if (Math.abs(rawNode.width - origW) > 2 || Math.abs(rawNode.height - origH) > 2) {
+							isResized = true;
+						}
+					}
+				}
+			});
+
 			const t = getText();
 			menu.addSeparator();
 
 			menu.addItem((item) => {
 				item.setTitle(t.flipHorizontal)
 					.setIcon('flip-horizontal')
+					.setChecked(isFlippedH)
 					.onClick(() => {
 						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'h', targetNodeEl);
 					});
@@ -72,6 +102,7 @@ export default class KambasPlugin extends Plugin {
 			menu.addItem((item) => {
 				item.setTitle(t.flipVertical)
 					.setIcon('flip-vertical')
+					.setChecked(isFlippedV)
 					.onClick(() => {
 						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'v', targetNodeEl);
 					});
@@ -80,10 +111,21 @@ export default class KambasPlugin extends Plugin {
 			menu.addItem((item) => {
 				item.setTitle(t.toggleGrayscale)
 					.setIcon('contrast')
+					.setChecked(isGrayscaled)
 					.onClick(() => {
 						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'g', targetNodeEl);
 					});
 			});
+
+			if (isResized) {
+				menu.addItem((item) => {
+					item.setTitle(t.resetSize)
+						.setIcon('rotate-ccw')
+						.onClick(() => {
+							this.canvasImageHandler.resetSelectedImageSize(activeView, targetNodeEl);
+						});
+				});
+			}
 		};
 
 		// Single node context menu

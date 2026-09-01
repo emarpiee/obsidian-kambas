@@ -12,10 +12,12 @@ export interface CanvasNodeData {
 	url?: string;
 	subpath?: string;
 	style?: Record<string, unknown>;
-	// Kambas transform & read-only lock properties
+	// Kambas transform, dimensions & read-only lock properties
 	kambasFlipH?: boolean;
 	kambasFlipV?: boolean;
 	kambasGrayscale?: boolean;
+	originalWidth?: number;
+	originalHeight?: number;
 	isLocked?: boolean;
 }
 
