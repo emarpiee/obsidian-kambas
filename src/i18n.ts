@@ -1,0 +1,218 @@
+import { getLanguage, moment } from 'obsidian';
+
+export interface TranslationSchema {
+	// Settings Tab
+	settingsHeading: string;
+	hideImageLabelName: string;
+	hideImageLabelDesc: string;
+
+	// Modal
+	modalTitle: string;
+	modalDescription: (filename: string) => string;
+	applyRemaining: (count: number) => string;
+	saveToVault: string;
+	embedInCanvas: string;
+
+	// Context Menu & Hotkeys
+	flipHorizontal: string;
+	flipVertical: string;
+	toggleGrayscale: string;
+}
+
+const en: TranslationSchema = {
+	settingsHeading: 'Display & canvas',
+	hideImageLabelName: 'Hide image label',
+	hideImageLabelDesc: 'Hide the base64 URL / data label header displayed above embedded canvas image cards.',
+
+	modalTitle: 'Add image to canvas',
+	modalDescription: (filename: string) => `How would you like to store "${filename}"?`,
+	applyRemaining: (count: number) => `Apply choice to remaining ${count} images`,
+	saveToVault: 'Save to vault',
+	embedInCanvas: 'Embed in canvas file (PureRef model)',
+
+	flipHorizontal: 'Flip horizontal',
+	flipVertical: 'Flip vertical',
+	toggleGrayscale: 'Toggle grayscale',
+};
+
+const zh: TranslationSchema = {
+	settingsHeading: '显示与画布',
+	hideImageLabelName: '隐藏图像标签',
+	hideImageLabelDesc: '隐藏嵌入式画布图像卡片上方显示的 base64 URL / 数据标签标头。',
+
+	modalTitle: '添加图像到画布',
+	modalDescription: (filename: string) => `您希望如何存储 "${filename}"？`,
+	applyRemaining: (count: number) => `将选择应用到剩余的 ${count} 张图像`,
+	saveToVault: '保存到宝库',
+	embedInCanvas: '嵌入到画布文件（PureRef 模式）',
+
+	flipHorizontal: '水平翻转',
+	flipVertical: '垂直翻转',
+	toggleGrayscale: '切换灰度',
+};
+
+const zhTW: TranslationSchema = {
+	settingsHeading: '顯示與畫布',
+	hideImageLabelName: '隱藏影像標籤',
+	hideImageLabelDesc: '隱藏嵌入式畫布影像卡片上方顯示的 base64 URL / 資料標籤標頭。',
+
+	modalTitle: '新增影像至畫布',
+	modalDescription: (filename: string) => `您希望如何儲存 "${filename}"？`,
+	applyRemaining: (count: number) => `將選擇套用至剩餘的 ${count} 張影像`,
+	saveToVault: '儲存至寶庫',
+	embedInCanvas: '嵌入至畫布檔案（PureRef 模式）',
+
+	flipHorizontal: '水平翻轉',
+	flipVertical: '垂直翻轉',
+	toggleGrayscale: '切換灰階',
+};
+
+const es: TranslationSchema = {
+	settingsHeading: 'Visualización y lienzo',
+	hideImageLabelName: 'Ocultar etiqueta de imagen',
+	hideImageLabelDesc: 'Oculta la cabecera de la etiqueta base64 URL / datos que se muestra sobre las tarjetas de imagen insertadas.',
+
+	modalTitle: 'Añadir imagen al lienzo',
+	modalDescription: (filename: string) => `¿Cómo desea guardar "${filename}"?`,
+	applyRemaining: (count: number) => `Aplicar opción a las ${count} imágenes restantes`,
+	saveToVault: 'Guardar en la bóveda',
+	embedInCanvas: 'Incrustar en el archivo de lienzo (modelo PureRef)',
+
+	flipHorizontal: 'Voltear horizontalmente',
+	flipVertical: 'Voltear verticalmente',
+	toggleGrayscale: 'Alternar escala de grises',
+};
+
+const fr: TranslationSchema = {
+	settingsHeading: 'Affichage et canevas',
+	hideImageLabelName: 'Masquer l’étiquette de l’image',
+	hideImageLabelDesc: 'Masquer l’en-tête de l’étiquette URL / données base64 affiché au-dessus des cartes d’images intégrées.',
+
+	modalTitle: 'Ajouter une image au canevas',
+	modalDescription: (filename: string) => `Comment souhaitez-vous stocker « ${filename} » ?`,
+	applyRemaining: (count: number) => `Appliquer le choix aux ${count} images restantes`,
+	saveToVault: 'Enregistrer dans le coffre',
+	embedInCanvas: 'Intégrer dans le fichier canevas (modèle PureRef)',
+
+	flipHorizontal: 'Retourner horizontalement',
+	flipVertical: 'Retourner verticalement',
+	toggleGrayscale: 'Basculer les niveaux de gris',
+};
+
+const de: TranslationSchema = {
+	settingsHeading: 'Anzeige & Canvas',
+	hideImageLabelName: 'Bildbeschriftung ausblenden',
+	hideImageLabelDesc: 'Blendet die Base64-URL-/-Datenbeschriftung aus, die über eingebetteten Bildkarten angezeigt wird.',
+
+	modalTitle: 'Bild zum Canvas hinzufügen',
+	modalDescription: (filename: string) => `Wie möchten Sie „${filename}“ speichern?`,
+	applyRemaining: (count: number) => `Auswahl auf die verbleibenden ${count} Bilder anwenden`,
+	saveToVault: 'Im Tresor speichern',
+	embedInCanvas: 'In Canvas-Datei einbetten (PureRef-Modell)',
+
+	flipHorizontal: 'Horizontal spiegeln',
+	flipVertical: 'Vertikal spiegeln',
+	toggleGrayscale: 'Graustufen umschalten',
+};
+
+const ja: TranslationSchema = {
+	settingsHeading: '表示とキャンバス',
+	hideImageLabelName: '画像ラベルを非表示',
+	hideImageLabelDesc: '埋め込まれたキャンバス画像カードの上に表示されるbase64 URL / データラベルヘッダーを非表示にします。',
+
+	modalTitle: 'キャンバスに画像を追加',
+	modalDescription: (filename: string) => `「${filename}」をどのように保存しますか？`,
+	applyRemaining: (count: number) => `残りの${count}枚の画像にこの選択を適用`,
+	saveToVault: '保管庫に保存',
+	embedInCanvas: 'キャンバスファイルに埋め込む（PureRefモデル）',
+
+	flipHorizontal: '左右反転',
+	flipVertical: '上下反転',
+	toggleGrayscale: '白黒切り替え',
+};
+
+const ko: TranslationSchema = {
+	settingsHeading: '표시 및 캔버스',
+	hideImageLabelName: '이미지 레이블 숨기기',
+	hideImageLabelDesc: '임베디드 캔버스 이미지 카드 위에 표시되는 base64 URL / 데이터 레이블 헤더를 숨깁니다.',
+
+	modalTitle: '캔버스에 이미지 추가',
+	modalDescription: (filename: string) => `"${filename}"을(를) 어떻게 저장하시겠습니까?`,
+	applyRemaining: (count: number) => `남은 이미지 ${count}개에 선택 적용`,
+	saveToVault: '보관함에 저장',
+	embedInCanvas: '캔버스 파일에 임베드 (PureRef 모델)',
+
+	flipHorizontal: '좌우 반전',
+	flipVertical: '상하 반전',
+	toggleGrayscale: '흑백 전환',
+};
+
+const ru: TranslationSchema = {
+	settingsHeading: 'Отображение и холст',
+	hideImageLabelName: 'Скрыть метку изображения',
+	hideImageLabelDesc: 'Скрыть заголовок метки base64 URL / данных над встроенными карточками изображений.',
+
+	modalTitle: 'Добавить изображение на холст',
+	modalDescription: (filename: string) => `Как вы хотите сохранить «${filename}»?`,
+	applyRemaining: (count: number) => `Применить выбор к оставшимся ${count} изображениям`,
+	saveToVault: 'Сохранить в хранилище',
+	embedInCanvas: 'Встроить в файл холста (модель PureRef)',
+
+	flipHorizontal: 'Отразить по горизонтали',
+	flipVertical: 'Отразить по вертикали',
+	toggleGrayscale: 'Переключить оттенки серого',
+};
+
+const pt: TranslationSchema = {
+	settingsHeading: 'Exibição e tela',
+	hideImageLabelName: 'Ocultar rótulo da imagem',
+	hideImageLabelDesc: 'Ocultar o cabeçalho do rótulo de dados / URL base64 exibido acima dos cartões de imagem incorporados.',
+
+	modalTitle: 'Adicionar imagem à tela',
+	modalDescription: (filename: string) => `Como você gostaria de armazenar "${filename}"?`,
+	applyRemaining: (count: number) => `Aplicar escolha às ${count} imagens restantes`,
+	saveToVault: 'Salvar no cofre',
+	embedInCanvas: 'Incorporar no arquivo de tela (modelo PureRef)',
+
+	flipHorizontal: 'Inverter horizontalmente',
+	flipVertical: 'Inverter verticalmente',
+	toggleGrayscale: 'Alternar escala de cinza',
+};
+
+const it: TranslationSchema = {
+	settingsHeading: 'Visualizzazione e tela',
+	hideImageLabelName: 'Nascondi etichetta immagine',
+	hideImageLabelDesc: 'Nasconde l’intestazione dell’etichetta dati / URL base64 visualizzata sopra le schede immagine incorporate.',
+
+	modalTitle: 'Aggiungi immagine alla tela',
+	modalDescription: (filename: string) => `Come desideri memorizzare "${filename}"?`,
+	applyRemaining: (count: number) => `Applica scelta alle restanti ${count} immagini`,
+	saveToVault: 'Salva nella cassaforte',
+	embedInCanvas: 'Incorpora nel file tela (modello PureRef)',
+
+	flipHorizontal: 'Capovolgi orizzontalmente',
+	flipVertical: 'Capovolgi verticalmente',
+	toggleGrayscale: 'Attiva/disattiva scala di grigi',
+};
+
+const localeMap: Record<string, TranslationSchema> = {
+	en,
+	'zh-cn': zh,
+	zh,
+	'zh-tw': zhTW,
+	es,
+	fr,
+	de,
+	ja,
+	ko,
+	ru,
+	pt,
+	'pt-br': pt,
+	it,
+};
+
+export function getText(): TranslationSchema {
+	const lang = getLanguage() || moment.locale() || 'en';
+	const normalizedLang = lang.toLowerCase();
+	return localeMap[normalizedLang] || localeMap[normalizedLang.split('-')[0]] || en;
+}
