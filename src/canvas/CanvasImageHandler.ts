@@ -253,17 +253,31 @@ export class CanvasImageHandler {
 
 			if (isLinkDataImg && nodeUrl) {
 				const container = nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
-				const existingImg = container.querySelector<HTMLImageElement>('img.kambas-embedded-img');
+				let existingImg = container.querySelector<HTMLImageElement>('img.kambas-embedded-img');
 				if (!existingImg) {
 					container.empty();
-					container.createEl('img', {
+					existingImg = container.createEl('img', {
 						cls: 'kambas-embedded-img',
 						attr: {
 							src: nodeUrl,
 							draggable: 'false',
-							style: 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:fill;display:block;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;',
+							style: 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;display:block;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;',
 						},
 					});
+				}
+
+				// Lock parent node aspect ratio to natural image dimensions
+				const rawNode = canvasNode as unknown as { aspectRatio?: number; isAspectPreserved?: boolean; width?: number; height?: number };
+				if (existingImg.complete && existingImg.naturalWidth && existingImg.naturalHeight) {
+					rawNode.aspectRatio = existingImg.naturalWidth / existingImg.naturalHeight;
+					rawNode.isAspectPreserved = true;
+				} else {
+					existingImg.addEventListener('load', () => {
+						if (existingImg?.naturalWidth && existingImg?.naturalHeight) {
+							rawNode.aspectRatio = existingImg.naturalWidth / existingImg.naturalHeight;
+							rawNode.isAspectPreserved = true;
+						}
+					}, { once: true });
 				}
 			}
 
