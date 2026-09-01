@@ -31,52 +31,77 @@ export default class KambasPlugin extends Plugin {
 		this.registerEvent(this.app.workspace.on('active-leaf-change', updateActiveCanvas));
 		this.registerEvent(this.app.workspace.on('layout-change', updateActiveCanvas));
 
-		// Append our image options to Obsidian's native canvas node context menu
+		// Helper to append image transform items to a menu if any image node is selected
+		const addTransformItemsToMenu = (menu: Menu, targetNodeEl?: HTMLElement): void => {
+			const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+			if (!activeView || activeView.getViewType() !== 'canvas') return;
+
+			const canvas = activeView.canvas;
+			if (!canvas?.nodes) return;
+
+			// Check if any selected node (or target node) is a kambas image or native image
+			let hasAnyImage = false;
+			canvas.nodes.forEach((canvasNode) => {
+				const el = canvasNode.nodeEl;
+				if (!el) return;
+				const isSel = el.classList.contains('is-selected') || (targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
+				if (isSel) {
+					if (el.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(el)) {
+						hasAnyImage = true;
+					}
+				}
+			});
+
+			if (!hasAnyImage && targetNodeEl) {
+				hasAnyImage = Boolean(targetNodeEl.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(targetNodeEl));
+			}
+
+			if (!hasAnyImage) return;
+
+			const t = getText();
+			menu.addSeparator();
+
+			menu.addItem((item) => {
+				item.setTitle(t.flipHorizontal)
+					.setIcon('flip-horizontal')
+					.onClick(() => {
+						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'h', targetNodeEl);
+					});
+			});
+
+			menu.addItem((item) => {
+				item.setTitle(t.flipVertical)
+					.setIcon('flip-vertical')
+					.onClick(() => {
+						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'v', targetNodeEl);
+					});
+			});
+
+			menu.addItem((item) => {
+				item.setTitle(t.toggleGrayscale)
+					.setIcon('contrast')
+					.onClick(() => {
+						void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'g', targetNodeEl);
+					});
+			});
+		};
+
+		// Single node context menu
 		this.registerEvent(
 			(this.app.workspace as unknown as {
 				on(event: 'canvas:node-menu', handler: (menu: Menu, node: unknown) => void): import('obsidian').EventRef;
 			}).on('canvas:node-menu', (menu: Menu, node: unknown) => {
 				const canvasNode = node as { nodeEl?: HTMLElement };
-				const nodeEl = canvasNode.nodeEl;
-				if (!nodeEl) return;
+				addTransformItemsToMenu(menu, canvasNode.nodeEl);
+			})
+		);
 
-				const isKambas = Boolean(nodeEl.querySelector('.kambas-embedded-img'));
-				const nativeImg = this.canvasImageHandler.getNativeImageElement(nodeEl);
-				if (!isKambas && !nativeImg) return;
-
-				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
-				if (!activeView) return;
-
-				const t = getText();
-
-				menu.addSeparator();
-
-				menu.addItem((item) => {
-					item.setTitle(t.flipHorizontal)
-						.setIcon('flip-horizontal')
-						.onClick(() => {
-							if (isKambas) void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'h', nodeEl);
-							else void this.canvasImageHandler.toggleNativeImageTransform(activeView, nodeEl, 'h');
-						});
-				});
-
-				menu.addItem((item) => {
-					item.setTitle(t.flipVertical)
-						.setIcon('flip-vertical')
-						.onClick(() => {
-							if (isKambas) void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'v', nodeEl);
-							else void this.canvasImageHandler.toggleNativeImageTransform(activeView, nodeEl, 'v');
-						});
-				});
-
-				menu.addItem((item) => {
-					item.setTitle(t.toggleGrayscale)
-						.setIcon('contrast')
-						.onClick(() => {
-							if (isKambas) void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'g', nodeEl);
-							else void this.canvasImageHandler.toggleNativeImageTransform(activeView, nodeEl, 'g');
-						});
-				});
+		// Multi-selection context menu
+		this.registerEvent(
+			(this.app.workspace as unknown as {
+				on(event: 'canvas:selection-menu', handler: (menu: Menu) => void): import('obsidian').EventRef;
+			}).on('canvas:selection-menu', (menu: Menu) => {
+				addTransformItemsToMenu(menu);
 			})
 		);
 	}
