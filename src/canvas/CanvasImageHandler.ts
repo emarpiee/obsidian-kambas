@@ -523,7 +523,7 @@ export class CanvasImageHandler {
 
 		// Also check DOM elements if edges map is unavailable or target specified
 		if (targetEdgeEl) {
-			const edgeGroup = (targetEdgeEl as HTMLElement).closest('.canvas-edge') ?? (targetEdgeEl as HTMLElement);
+			const edgeGroup = (targetEdgeEl as HTMLElement).closest('.canvas-edge') ?? (targetEdgeEl);
 			(edgeGroup as HTMLElement).setCssProps?.({ opacity: String(opacity) });
 		}
 

@@ -1,10 +1,14 @@
 {
 	"id": "kambas",
 	"name": "Kambas",
-	"version": "0.1.0",
+	"version": "0.0.0",
 	"minAppVersion": "1.10.0",
 	"description": "Kambas plugin for Obsidian.",
 	"author": "emarpiee",
 	"authorUrl": "https://github.com/emarpiee",
-	"isDesktopOnly": false
+	"isDesktopOnly": false,
+	"fundingUrl": {
+		"Ko-fi": "https://ko-fi.com/emarpiee",
+		"PayPal": "https://paypal.me/emarpiee"
+	}
 }
