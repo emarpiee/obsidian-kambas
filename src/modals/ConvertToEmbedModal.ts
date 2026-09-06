@@ -29,16 +29,16 @@ export class ConvertToEmbedModal extends Modal {
 		const { contentEl, titleEl } = this;
 		contentEl.empty();
 
-		titleEl.setText('Embed image in canvas');
+		titleEl.setText('Embed media in canvas file');
 
 		const descP = contentEl.createEl('p');
-		descP.setText(`Converting "${this.filename}" to an embedded canvas image. What would you like to do with the original image file in your vault?`);
+		descP.setText(`Embedding "${this.filename}" directly into the canvas file. What would you like to do with the original vault file?`);
 
 		let applyAll = false;
 
 		if (this.remainingCount > 1) {
 			new Setting(contentEl)
-				.setName(`Apply choice to remaining ${this.remainingCount - 1} images`)
+				.setName(`Apply choice to remaining ${this.remainingCount - 1} media files`)
 				.addToggle((toggle) =>
 					toggle.setValue(false).onChange((v) => {
 						applyAll = v;
