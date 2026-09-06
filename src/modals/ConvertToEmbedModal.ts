@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+import { getText } from '../i18n';
 
 export type VaultFileAction = 'delete' | 'keep' | 'cancel';
 
@@ -28,17 +29,18 @@ export class ConvertToEmbedModal extends Modal {
 	onOpen(): void {
 		const { contentEl, titleEl } = this;
 		contentEl.empty();
+		const t = getText();
 
-		titleEl.setText('Embed media in canvas file');
+		titleEl.setText(t.convertModalTitle);
 
 		const descP = contentEl.createEl('p');
-		descP.setText(`Embedding "${this.filename}" directly into the canvas file. What would you like to do with the original vault file?`);
+		descP.setText(t.convertModalDesc(this.filename));
 
 		let applyAll = false;
 
 		if (this.remainingCount > 1) {
 			new Setting(contentEl)
-				.setName(`Apply choice to remaining ${this.remainingCount - 1} media files`)
+				.setName(t.applyRemainingConvert(this.remainingCount - 1))
 				.addToggle((toggle) =>
 					toggle.setValue(false).onChange((v) => {
 						applyAll = v;
@@ -49,7 +51,7 @@ export class ConvertToEmbedModal extends Modal {
 		const btnContainer = contentEl.createDiv({ cls: 'modal-button-container' });
 
 		const deleteBtn = btnContainer.createEl('button', {
-			text: 'Delete original file',
+			text: t.deleteOriginalFile,
 			cls: 'mod-warning',
 		});
 		deleteBtn.addEventListener('click', () => {
@@ -59,7 +61,7 @@ export class ConvertToEmbedModal extends Modal {
 		});
 
 		const keepBtn = btnContainer.createEl('button', {
-			text: 'Keep original file',
+			text: t.keepOriginalFile,
 			cls: 'mod-cta',
 		});
 		keepBtn.addEventListener('click', () => {

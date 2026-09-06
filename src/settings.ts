@@ -71,18 +71,18 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		// Canvas Keyboard Pan Controls Section
 		new Setting(containerEl)
-			.setName('Keyboard pan controls')
+			.setName(t.keyboardPanHeading)
 			.setHeading();
 
 		const keyboardPanViewContainer = containerEl.createDiv();
 		keyboardPanViewContainer.appendChild(this.renderPanView(this.plugin.settings.keyboardPan.keys, null));
 
 		new Setting(containerEl)
-			.setName('Pan controls')
-			.setDesc('Which set of keys pan the canvas.')
+			.setName(t.panControlsName)
+			.setDesc(t.panControlsDesc)
 			.addExtraButton((button) => {
 				button.setIcon('rotate-ccw');
-				button.setTooltip('Restore default');
+				button.setTooltip(t.restoreDefaultTooltip);
 				button.onClick(async () => {
 					this.cleanupKeyListener();
 					this.plugin.settings.keyboardPan.keys = {
@@ -97,7 +97,7 @@ export class KambasSettingTab extends PluginSettingTab {
 				});
 			})
 			.addButton((button) => {
-				button.setButtonText('Update pan controls');
+				button.setButtonText(t.updatePanControlsButton);
 				button.onClick(() => {
 					this.cleanupKeyListener();
 					this.activeDirection = Direction.North;
@@ -149,11 +149,11 @@ export class KambasSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Maximum pan speed')
-			.setDesc('Canvas units to pan by')
+			.setName(t.maxPanSpeedName)
+			.setDesc(t.maxPanSpeedDesc)
 			.addExtraButton((button) => {
 				button.setIcon('rotate-ccw');
-				button.setTooltip('Restore default');
+				button.setTooltip(t.restoreDefaultTooltip);
 				button.onClick(async () => {
 					this.plugin.settings.keyboardPan.maxSpeed = DEFAULT_KEYBOARD_PAN_SETTINGS.maxSpeed;
 					await this.plugin.saveSettings();
@@ -172,18 +172,18 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		// Canvas Keyboard Zoom Controls Section
 		new Setting(containerEl)
-			.setName('Keyboard zoom controls')
+			.setName(t.keyboardZoomHeading)
 			.setHeading();
 
 		const keyboardZoomViewContainer = containerEl.createDiv();
 		keyboardZoomViewContainer.appendChild(this.renderZoomView(this.plugin.settings.keyboardPan.keys, null));
 
 		new Setting(containerEl)
-			.setName('Zoom controls')
-			.setDesc('Which set of keys zoom in and out on the canvas.')
+			.setName(t.zoomControlsName)
+			.setDesc(t.zoomControlsDesc)
 			.addExtraButton((button) => {
 				button.setIcon('rotate-ccw');
-				button.setTooltip('Restore default');
+				button.setTooltip(t.restoreDefaultTooltip);
 				button.onClick(async () => {
 					this.cleanupKeyListener();
 					this.plugin.settings.keyboardPan.keys = {
@@ -196,7 +196,7 @@ export class KambasSettingTab extends PluginSettingTab {
 				});
 			})
 			.addButton((button) => {
-				button.setButtonText('Update zoom controls');
+				button.setButtonText(t.updateZoomControlsButton);
 				button.onClick(() => {
 					this.cleanupKeyListener();
 					this.activeDirection = Direction.ZoomIn;
@@ -242,11 +242,11 @@ export class KambasSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Zoom speed')
-			.setDesc('Rate of zoom change per frame')
+			.setName(t.zoomSpeedName)
+			.setDesc(t.zoomSpeedDesc)
 			.addExtraButton((button) => {
 				button.setIcon('rotate-ccw');
-				button.setTooltip('Restore default');
+				button.setTooltip(t.restoreDefaultTooltip);
 				button.onClick(async () => {
 					this.plugin.settings.keyboardPan.zoomSpeed = DEFAULT_KEYBOARD_PAN_SETTINGS.zoomSpeed;
 					await this.plugin.saveSettings();
@@ -280,7 +280,8 @@ export class KambasSettingTab extends PluginSettingTab {
 		const assignedValues = Object.values(keys);
 		const uniqueValues = new Set(assignedValues);
 		if (uniqueValues.size < assignedValues.length) {
-			new Notice('Duplicate key bindings are not allowed. Please choose unique keys for each action.');
+			const t = getText();
+			new Notice(t.duplicateKeyNotice);
 			this.cleanupKeyListener();
 			this.display();
 			return;

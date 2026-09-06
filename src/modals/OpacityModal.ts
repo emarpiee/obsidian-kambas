@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+import { getText } from '../i18n';
 
 export class OpacityModal extends Modal {
 	private currentOpacity: number;
@@ -13,7 +14,9 @@ export class OpacityModal extends Modal {
 	onOpen(): void {
 		const { contentEl, titleEl } = this;
 		contentEl.empty();
-		titleEl.setText('Change opacity');
+		const t = getText();
+
+		titleEl.setText(t.opacityModalTitle);
 
 		let selectedOpacity = this.currentOpacity;
 
@@ -31,11 +34,11 @@ export class OpacityModal extends Modal {
 		// Buttons
 		const btnRow = contentEl.createDiv({ cls: 'kambas-opacity-buttons' });
 
-		const cancelBtn = btnRow.createEl('button', { text: 'Cancel' });
+		const cancelBtn = btnRow.createEl('button', { text: t.cancelBtn });
 		cancelBtn.addEventListener('click', () => this.close());
 
 		const applyBtn = btnRow.createEl('button', {
-			text: 'Apply',
+			text: t.applyBtn,
 			cls: 'mod-cta',
 		});
 		applyBtn.addEventListener('click', () => {

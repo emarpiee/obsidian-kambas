@@ -1,4 +1,5 @@
 import { App, FuzzySuggestModal, TFolder } from 'obsidian';
+import { getText } from '../i18n';
 
 export class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
 	private onChoose: (folder: TFolder) => void;
@@ -6,7 +7,7 @@ export class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
 	constructor(app: App, onChoose: (folder: TFolder) => void) {
 		super(app);
 		this.onChoose = onChoose;
-		this.setPlaceholder('Select target folder...');
+		this.setPlaceholder(getText().selectTargetFolderPlaceholder);
 	}
 
 	getItems(): TFolder[] {
@@ -27,7 +28,7 @@ export class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
 	}
 
 	getItemText(folder: TFolder): string {
-		return folder.path === '/' ? '/ (Vault Root)' : folder.path;
+		return folder.path === '/' ? getText().vaultRootLabel : folder.path;
 	}
 
 	onChooseItem(folder: TFolder): void {
