@@ -106,7 +106,7 @@ Obsidian `.canvas` files store node definitions in a JSON array. Each node conta
 - **Hide Media Label**: Suppress the native base64/URL header text banner displayed above data URI nodes for cleaner canvas cards.
 
 ### Keyboard Canvas Navigation
-- **Keyboard Panning**: Pan the active canvas using directional key bindings (`WASD` or `Arrow Keys`) with configurable maximum pan speed.
+- **Keyboard Panning**: Pan the active canvas using directional key bindings (`WASD` or `Arrow Keys`) with configurable maximum pan speed (inspired by and based on [obsidian-canvas-pan](https://github.com/nathonius/obsidian-canvas-pan)).
 - **Keyboard Zooming**: Zoom in and out using keyboard shortcuts (`+` / `-`) with adjustable zoom speed.
 
 ---
