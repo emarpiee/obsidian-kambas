@@ -1,3 +1,6 @@
+> [!NOTE]
+WORK IN PROGRESS
+
 # Kambas
 
 Kambas is an Obsidian plugin that extends native Canvas functionality with image manipulations, inline media embedding, file organization tools, and keyboard-driven canvas navigation.
@@ -49,6 +52,7 @@ Kambas allows you to convert or ingest media directly as inline Base64 Data URIs
 
 While inline embedding offers portability and vault cleanliness, there are trade-offs to consider:
 
+- **File Type Scope**: Inline Base64 conversion and visual transformations (flip, grayscale, original size reset) are strictly limited to standard web image formats (e.g., PNG, JPG/JPEG, WebP, GIF, SVG). Non-image attachments (PDFs, audio, video, markdown files) cannot be converted to embedded image URIs or transformed with image filters.
 - **File Size Inflation**: Base64 encoding increases binary image data size by approximately 33%. Storing multiple large images directly inside a `.canvas` file will significantly increase the raw file size.
 - **Performance Impact on Large Boards**: Loading `.canvas` files containing dozens of high-resolution embedded Base64 images can increase memory consumption and cause latency during initial canvas rendering or JSON parsing.
 - **Vault Search & Indexing**: Embedded Base64 strings add long data blocks to `.canvas` text files, which can create noise during global text searches. Embedded images are also invisible to vault asset managers that index file attachments.
@@ -160,15 +164,6 @@ Access settings under **Obsidian Settings** > **Kambas**:
 
 ---
 
-## Support & Funding
-
-If you find Kambas useful in your workflow, consider supporting ongoing development:
-
-- **[Ko-fi](https://ko-fi.com/emarpiee)**
-- **[PayPal](https://paypal.me/emarpiee)**
-
----
-
 ## Development
 
 ### Prerequisites
@@ -193,9 +188,13 @@ npm run test
 # Build production bundle
 npm run build
 ```
-
 ---
 
-## License
+## Support & Funding
 
-Distributed under the [MIT License](LICENSE).
+If you find Kambas useful in your workflow, consider supporting ongoing development:
+
+- **[Ko-fi](https://ko-fi.com/emarpiee)**
+- **[PayPal](https://paypal.me/emarpiee)**
+
+
