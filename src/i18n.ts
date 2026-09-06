@@ -18,6 +18,7 @@ export interface TranslationSchema {
 	flipVertical: string;
 	toggleGrayscale: string;
 	changeOpacity: string;
+	awayMode: string;
 	copyImageToClipboard: string;
 	moveSelectedMedia: string;
 	copySelectedMedia: string;
@@ -40,6 +41,7 @@ const en: TranslationSchema = {
 	flipVertical: 'Flip vertical',
 	toggleGrayscale: 'Toggle grayscale',
 	changeOpacity: 'Change opacity',
+	awayMode: 'Away mode',
 	copyImageToClipboard: 'Copy media to clipboard',
 	moveSelectedMedia: 'Move media to...',
 	copySelectedMedia: 'Copy media to...',
@@ -62,6 +64,7 @@ const zh: TranslationSchema = {
 	flipVertical: '垂直翻转',
 	toggleGrayscale: '切换灰度',
 	changeOpacity: '更改不透明度',
+	awayMode: '离开模式',
 	copyImageToClipboard: '复制媒体到剪贴板',
 	moveSelectedMedia: '移动媒体到...',
 	copySelectedMedia: '复制媒体到...',
@@ -84,6 +87,7 @@ const zhTW: TranslationSchema = {
 	flipVertical: '垂直翻轉',
 	toggleGrayscale: '切換灰階',
 	changeOpacity: '更改不透明度',
+	awayMode: '離開模式',
 	copyImageToClipboard: '複製媒體至剪貼簿',
 	moveSelectedMedia: '移動媒體到...',
 	copySelectedMedia: '複製媒體到...',
@@ -106,6 +110,7 @@ const es: TranslationSchema = {
 	flipVertical: 'Voltear verticalmente',
 	toggleGrayscale: 'Alternar escala de grises',
 	changeOpacity: 'Cambiar opacidad',
+	awayMode: 'Modo ausente',
 	copyImageToClipboard: 'Copiar medios al portapapeles',
 	moveSelectedMedia: 'Mover medios a...',
 	copySelectedMedia: 'Copiar medios a...',
@@ -128,6 +133,7 @@ const fr: TranslationSchema = {
 	flipVertical: 'Retourner verticalement',
 	toggleGrayscale: 'Basculer les niveaux de gris',
 	changeOpacity: 'Modifier l’opacité',
+	awayMode: 'Mode Absent',
 	copyImageToClipboard: 'Copier le média dans le presse-papiers',
 	moveSelectedMedia: 'Déplacer les médias vers...',
 	copySelectedMedia: 'Copier les médias vers...',
@@ -150,6 +156,7 @@ const de: TranslationSchema = {
 	flipVertical: 'Vertikal spiegeln',
 	toggleGrayscale: 'Graustufen umschalten',
 	changeOpacity: 'Deckkraft ändern',
+	awayMode: 'Abwesend-Modus',
 	copyImageToClipboard: 'Medien in Zwischenablage kopieren',
 	moveSelectedMedia: 'Medien verschieben nach...',
 	copySelectedMedia: 'Medien kopieren nach...',
@@ -172,6 +179,7 @@ const ja: TranslationSchema = {
 	flipVertical: '上下反転',
 	toggleGrayscale: '白黒切り替え',
 	changeOpacity: '不透明度を変更',
+	awayMode: 'アウェイモード',
 	copyImageToClipboard: 'メディアをクリップボードにコピー',
 	moveSelectedMedia: 'メディアを移動...',
 	copySelectedMedia: 'メディアをコピー...',
@@ -194,6 +202,7 @@ const ko: TranslationSchema = {
 	flipVertical: '상하 반전',
 	toggleGrayscale: '흑백 전환',
 	changeOpacity: '불투명도 변경',
+	awayMode: '자리 비움 모드',
 	copyImageToClipboard: '미디어를 클립보드에 복사',
 	moveSelectedMedia: '미디어 이동...',
 	copySelectedMedia: '미디어 복사...',
@@ -216,6 +225,7 @@ const ru: TranslationSchema = {
 	flipVertical: 'Отразить по вертикали',
 	toggleGrayscale: 'Переключить оттенки серого',
 	changeOpacity: 'Изменить прозрачность',
+	awayMode: 'Режим «Отсутствие»',
 	copyImageToClipboard: 'Скопировать медиа в буфер обмена',
 	moveSelectedMedia: 'Переместить медиа в...',
 	copySelectedMedia: 'Скопировать медиа в...',
@@ -238,6 +248,7 @@ const pt: TranslationSchema = {
 	flipVertical: 'Inverter verticalmente',
 	toggleGrayscale: 'Alternar escala de cinza',
 	changeOpacity: 'Alterar opacidade',
+	awayMode: 'Modo ausente',
 	copyImageToClipboard: 'Copiar mídia para a área de transferência',
 	moveSelectedMedia: 'Mover mídia para...',
 	copySelectedMedia: 'Copiar mídia para...',
@@ -260,6 +271,7 @@ const it: TranslationSchema = {
 	flipVertical: 'Capovolgi verticalmente',
 	toggleGrayscale: 'Attiva/disattiva scala di grigi',
 	changeOpacity: 'Cambia opacità',
+	awayMode: 'Modalità assente',
 	copyImageToClipboard: 'Copia media negli appunti',
 	moveSelectedMedia: 'Sposta media in...',
 	copySelectedMedia: 'Copia media in...',

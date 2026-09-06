@@ -22,20 +22,33 @@ export interface CanvasNodeData {
 	isLocked?: boolean;
 }
 
+export interface CanvasEdgeData {
+	id?: string;
+	fromNode?: string;
+	toNode?: string;
+	kambasOpacity?: number; // 0–1, default 1
+	[key: string]: unknown;
+}
+
 export interface CanvasFileData {
 	nodes?: CanvasNodeData[];
-	edges?: Record<string, unknown>[];
+	edges?: CanvasEdgeData[];
 }
 
 export interface CanvasElement {
+	tx?: number;
+	ty?: number;
+	zoom?: number;
+	markViewportChanged?: () => void;
+	panTo?: (x: number, y: number) => void;
 	nodes?: Map<string, { nodeEl?: HTMLElement; x: number; y: number; width: number; height: number }>;
+	edges?: Map<string, { lineGroupEl?: HTMLElement; lineElement?: HTMLElement; lineEndGroupEl?: HTMLElement; unknownData?: { kambasOpacity?: number } }>;
 	zoomToBbox?: (bbox: { x: number; y: number; width: number; height: number }) => void;
 	zoomToSelection?: () => void;
 	zoomToFit?: () => void;
 	zoomBy?: (delta: number) => void;
 	zoomIn?: () => void;
 	zoomOut?: () => void;
-	zoom?: number;
 	createMediaNode?: (options: {
 		url?: string;
 		file?: TFile;

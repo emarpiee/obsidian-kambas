@@ -49,25 +49,30 @@ export class CanvasImageHandler {
 	// MutationObserver: automatic mounting for link-type image nodes
 	// ──────────────────────────────────────────────────────────────────────────
 
+	private rescanTimeoutId: number | null = null;
+
+	private scheduleRescan(activeView: CanvasItemView): void {
+		if (this.rescanTimeoutId !== null) return;
+		this.rescanTimeoutId = window.setTimeout(() => {
+			this.rescanTimeoutId = null;
+			this.scanAndRestoreTransforms(activeView);
+		}, 60);
+	}
+
 	private startEditGuard(): void {
 		this.editGuardObserver = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
-				if (mutation.type === 'childList') {
-					for (const added of Array.from(mutation.addedNodes)) {
+				if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+					for (let i = 0; i < mutation.addedNodes.length; i++) {
+						const added = mutation.addedNodes[i];
 						if (added.nodeType !== Node.ELEMENT_NODE) continue;
 						const el = added as HTMLElement;
-
-						const canvasNodeEl = el.classList?.contains('canvas-node') ? el : el.closest?.('.canvas-node');
-						if (canvasNodeEl || el.classList?.contains('canvas') || el.closest?.('.canvas')) {
+						if (el.classList?.contains('canvas-node') || el.classList?.contains('canvas-node-content') || el.closest?.('.canvas-node')) {
 							const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
 							if (activeView?.getViewType() === 'canvas') {
-								window.setTimeout(() => {
-									this.scanAndRestoreTransforms(activeView);
-								}, 10);
-								window.setTimeout(() => {
-									this.scanAndRestoreTransforms(activeView);
-								}, 100);
+								this.scheduleRescan(activeView);
 							}
+							break;
 						}
 					}
 				}
@@ -76,12 +81,10 @@ export class CanvasImageHandler {
 
 		this.editGuardObserver.observe(document.body, {
 			subtree: true,
-			attributes: true,
-			attributeFilter: ['class'],
 			childList: true,
 		});
 
-		// Listen to keyup (Ctrl+V) and mouseup (Alt+Drag duplication) to immediately refresh canvas link nodes
+		// Listen to keyup (Ctrl+V) and mouseup (Alt+Drag duplication) to refresh canvas link nodes
 		window.addEventListener('keyup', this.handleKeyUpCheck, true);
 		window.addEventListener('mouseup', this.handleMouseUpCheck, true);
 	}
@@ -90,12 +93,7 @@ export class CanvasImageHandler {
 		if (evt.key === 'v' || evt.key === 'V' || evt.key === 'z' || evt.key === 'Z' || evt.key === 'y' || evt.key === 'Y') {
 			const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
 			if (activeView?.getViewType() === 'canvas') {
-				window.setTimeout(() => {
-					this.scanAndRestoreTransforms(activeView);
-				}, 10);
-				window.setTimeout(() => {
-					this.scanAndRestoreTransforms(activeView);
-				}, 100);
+				this.scheduleRescan(activeView);
 			}
 		}
 	};
@@ -103,12 +101,7 @@ export class CanvasImageHandler {
 	private handleMouseUpCheck = (): void => {
 		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
 		if (activeView?.getViewType() === 'canvas') {
-			window.setTimeout(() => {
-				this.scanAndRestoreTransforms(activeView);
-			}, 10);
-			window.setTimeout(() => {
-				this.scanAndRestoreTransforms(activeView);
-			}, 100);
+			this.scheduleRescan(activeView);
 		}
 	};
 
@@ -297,6 +290,116 @@ export class CanvasImageHandler {
 				nodeEl.setCssProps({ opacity: '' });
 			}
 		});
+
+		// Apply individual edge stored opacity
+		if (canvas.edges) {
+			canvas.edges.forEach((edge) => {
+				const uData = edge.unknownData;
+				const op = uData?.kambasOpacity;
+				if (op !== undefined) {
+					if (edge.lineGroupEl) edge.lineGroupEl.setCssProps({ opacity: String(op) });
+					else if (edge.lineElement) edge.lineElement.setCssProps({ opacity: String(op) });
+					if (edge.lineEndGroupEl) edge.lineEndGroupEl.setCssProps({ opacity: String(op) });
+				}
+			});
+		}
+
+		// Check if canvas wrapper/edges should be restored or hidden
+		const canvasEl = (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl ?? document.querySelector('.canvas-wrapper');
+		if (canvasEl) {
+			const edgesEl = canvasEl.querySelector<HTMLElement>('.canvas-edges');
+			if (edgesEl) {
+				// If all nodes are at opacity 0, keep edges hidden
+				let allNodesZero = canvas.nodes.size > 0;
+				canvas.nodes.forEach((node) => {
+					const uData = (node as unknown as { unknownData?: { kambasOpacity?: number } }).unknownData;
+					if (uData?.kambasOpacity !== 0) {
+						allNodesZero = false;
+					}
+				});
+				if (allNodesZero) {
+					edgesEl.setCssProps({ opacity: '0' });
+					canvasEl.classList.add('kambas-away-mode');
+				} else {
+					edgesEl.setCssProps({ opacity: '' });
+					canvasEl.classList.remove('kambas-away-mode');
+				}
+			}
+		}
+	}
+
+	public setAwayMode(activeView: CanvasItemView): void {
+		const file = activeView.file;
+		if (!file) return;
+
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		// Determine if currently in Away Mode (i.e. all nodes are opacity 0)
+		let currentlyAway = canvas.nodes.size > 0;
+		canvas.nodes.forEach((node) => {
+			const uData = (node as unknown as { unknownData?: { kambasOpacity?: number } }).unknownData;
+			if (uData?.kambasOpacity !== 0) {
+				currentlyAway = false;
+			}
+		});
+
+		// Toggle target opacity: if currently away, restore to 1; otherwise set to 0
+		const targetOpacity = currentlyAway ? 1 : 0;
+		const selectedNodeIds: string[] = [];
+
+		canvas.nodes.forEach((canvasNode, id) => {
+			selectedNodeIds.push(id);
+			const rawNode = canvasNode as unknown as { unknownData?: { kambasOpacity?: number } };
+			if (!rawNode.unknownData) rawNode.unknownData = {};
+			rawNode.unknownData.kambasOpacity = targetOpacity;
+
+			if (canvasNode.nodeEl) {
+				canvasNode.nodeEl.setCssProps({ opacity: String(targetOpacity) });
+			}
+		});
+
+		// Also toggle all edges/paths and arrows inside canvas container
+		if (canvas.edges) {
+			canvas.edges.forEach((canvasEdge) => {
+				if (!canvasEdge.unknownData) canvasEdge.unknownData = {};
+				canvasEdge.unknownData.kambasOpacity = targetOpacity;
+
+				if (canvasEdge.lineGroupEl) {
+					canvasEdge.lineGroupEl.setCssProps({ opacity: String(targetOpacity) });
+				} else if (canvasEdge.lineElement) {
+					canvasEdge.lineElement.setCssProps({ opacity: String(targetOpacity) });
+				}
+				if (canvasEdge.lineEndGroupEl) {
+					canvasEdge.lineEndGroupEl.setCssProps({ opacity: String(targetOpacity) });
+				}
+			});
+		}
+
+		const canvasEl = (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl ?? document.querySelector('.canvas-wrapper');
+		if (canvasEl) {
+			const edgesEl = canvasEl.querySelector<HTMLElement>('.canvas-edges');
+			if (edgesEl) {
+				edgesEl.setCssProps({ opacity: String(targetOpacity) });
+			}
+			if (targetOpacity === 0) {
+				canvasEl.classList.add('kambas-away-mode');
+			} else {
+				canvasEl.classList.remove('kambas-away-mode');
+			}
+		}
+
+		if (selectedNodeIds.length === 0) return;
+
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				void this.persistOpacity(file, selectedNodeIds, targetOpacity);
+			}
+		} else {
+			void this.persistOpacity(file, selectedNodeIds, targetOpacity);
+		}
 	}
 
 	public setSelectedNodeOpacity(
@@ -330,6 +433,25 @@ export class CanvasImageHandler {
 			}
 		});
 
+		// Check if any edge needs opacity restored
+		const canvasEl = (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl ?? document.querySelector('.canvas-wrapper');
+		if (canvasEl) {
+			const edgesEl = canvasEl.querySelector<HTMLElement>('.canvas-edges');
+			if (edgesEl) {
+				let allNodesZero = canvas.nodes.size > 0;
+				canvas.nodes.forEach((node) => {
+					const uData = (node as unknown as { unknownData?: { kambasOpacity?: number } }).unknownData;
+					if (uData?.kambasOpacity !== 0) {
+						allNodesZero = false;
+					}
+				});
+				if (!allNodesZero) {
+					edgesEl.setCssProps({ opacity: '' });
+					canvasEl.classList.remove('kambas-away-mode');
+				}
+			}
+		}
+
 		if (selectedNodeIds.length === 0) return;
 
 		if (typeof canvas.requestSave === 'function') {
@@ -341,6 +463,98 @@ export class CanvasImageHandler {
 		} else {
 			void this.persistOpacity(file, selectedNodeIds, opacity);
 		}
+	}
+
+	public setSelectedEdgeOpacity(
+		activeView: CanvasItemView,
+		opacity: number,
+		targetEdgeEl?: Element | null,
+		targetEdgeObj?: unknown
+	): void {
+		const file = activeView.file;
+		if (!file) return;
+
+		const canvas = activeView.canvas;
+		if (!canvas) return;
+
+		const selectedEdgeIds: string[] = [];
+
+		if (targetEdgeObj) {
+			const edgeObj = targetEdgeObj as { id?: string; unknownData?: { kambasOpacity?: number }; lineGroupEl?: HTMLElement; lineElement?: HTMLElement; lineEndGroupEl?: HTMLElement };
+			if (!edgeObj.unknownData) edgeObj.unknownData = {};
+			edgeObj.unknownData.kambasOpacity = opacity;
+
+			if (edgeObj.id) selectedEdgeIds.push(edgeObj.id);
+
+			if (edgeObj.lineGroupEl) {
+				edgeObj.lineGroupEl.setCssProps({ opacity: String(opacity) });
+			} else if (edgeObj.lineElement) {
+				edgeObj.lineElement.setCssProps({ opacity: String(opacity) });
+			}
+			if (edgeObj.lineEndGroupEl) {
+				edgeObj.lineEndGroupEl.setCssProps({ opacity: String(opacity) });
+			}
+		}
+
+		// Target matching edges or all selected edges in canvas.edges
+		const edges = canvas.edges;
+		if (edges) {
+			edges.forEach((canvasEdge, id) => {
+				const edgeContainer = canvasEdge.lineGroupEl ?? canvasEdge.lineElement;
+				const isTargetEdge = (targetEdgeEl && edgeContainer && (edgeContainer === targetEdgeEl || edgeContainer.contains(targetEdgeEl) || targetEdgeEl.contains(edgeContainer))) || (targetEdgeObj && canvasEdge === targetEdgeObj);
+				const isExplicitlySelected = edgeContainer?.classList.contains('is-selected');
+
+				if (isExplicitlySelected || isTargetEdge) {
+					if (!selectedEdgeIds.includes(id)) selectedEdgeIds.push(id);
+					if (!canvasEdge.unknownData) canvasEdge.unknownData = {};
+					canvasEdge.unknownData.kambasOpacity = opacity;
+
+					if (canvasEdge.lineGroupEl) {
+						canvasEdge.lineGroupEl.setCssProps({ opacity: String(opacity) });
+					} else if (canvasEdge.lineElement) {
+						canvasEdge.lineElement.setCssProps({ opacity: String(opacity) });
+					}
+					if (canvasEdge.lineEndGroupEl) {
+						canvasEdge.lineEndGroupEl.setCssProps({ opacity: String(opacity) });
+					}
+				}
+			});
+		}
+
+		// Also check DOM elements if edges map is unavailable or target specified
+		if (targetEdgeEl) {
+			const edgeGroup = (targetEdgeEl as HTMLElement).closest('.canvas-edge') ?? (targetEdgeEl as HTMLElement);
+			(edgeGroup as HTMLElement).setCssProps?.({ opacity: String(opacity) });
+		}
+
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				if (selectedEdgeIds.length > 0) void this.persistEdgeOpacity(file, selectedEdgeIds, opacity);
+			}
+		} else {
+			if (selectedEdgeIds.length > 0) void this.persistEdgeOpacity(file, selectedEdgeIds, opacity);
+		}
+	}
+
+	private async persistEdgeOpacity(file: TFile, selectedEdgeIds: string[], opacity: number): Promise<void> {
+		const content = await this.app.vault.read(file);
+		let data: CanvasFileData;
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!data.edges) return;
+		let modified = false;
+		data.edges.forEach((edge) => {
+			if (edge.id && selectedEdgeIds.includes(edge.id)) {
+				edge.kambasOpacity = opacity;
+				modified = true;
+			}
+		});
+		if (modified) this.scheduleVaultModify(file, data);
 	}
 
 	private async persistOpacity(file: TFile, selectedNodeIds: string[], opacity: number): Promise<void> {
@@ -376,60 +590,6 @@ export class CanvasImageHandler {
 
 		if (lowerKey === 'h' || lowerKey === 'v' || lowerKey === 'g') {
 			void this.toggleSelectedImageTransform(activeView, lowerKey);
-		} else if (key === '=' || key === '+' || key === '2') {
-			evt.preventDefault();
-			this.zoomCanvas(activeView, 1);
-		} else if (key === '-' || key === '1') {
-			evt.preventDefault();
-			this.zoomCanvas(activeView, -1);
-		}
-	};
-
-	private zoomCanvas(activeView: CanvasItemView, direction: number): void {
-		const canvas = activeView.canvas;
-		if (!canvas) return;
-
-		if (typeof canvas.zoomBy === 'function') {
-			try {
-				canvas.zoomBy(direction > 0 ? 0.2 : -0.2);
-				return;
-			} catch {
-				// Fallback
-			}
-		}
-
-		if (direction > 0 && typeof canvas.zoomIn === 'function') {
-			try {
-				canvas.zoomIn();
-				return;
-			} catch {
-				// Fallback
-			}
-		}
-
-		if (direction < 0 && typeof canvas.zoomOut === 'function') {
-			try {
-				canvas.zoomOut();
-				return;
-			} catch {
-				// Fallback
-			}
-		}
-
-		// Fallback: simulate wheel event for zooming canvas
-		const canvasEl = (activeView as unknown as { containerEl?: HTMLElement }).containerEl?.querySelector('.canvas') ?? document.querySelector('.canvas');
-		if (canvasEl) {
-			const deltaY = direction > 0 ? -120 : 120;
-			const rect = canvasEl.getBoundingClientRect();
-			const wheelEvt = new WheelEvent('wheel', {
-				clientX: rect.left + rect.width / 2,
-				clientY: rect.top + rect.height / 2,
-				deltaY,
-				ctrlKey: true,
-				bubbles: true,
-				cancelable: true,
-			});
-			canvasEl.dispatchEvent(wheelEvt);
 		}
 	};
 

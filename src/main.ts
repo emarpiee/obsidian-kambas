@@ -1,5 +1,6 @@
 import { ItemView, Menu, Plugin } from 'obsidian';
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
+import { CanvasKeyboardPan } from './canvas/CanvasKeyboardPan';
 import { CanvasItemView } from './canvas/CanvasTypes';
 import { getText } from './i18n';
 import { FolderSuggestModal } from './modals/FolderSuggestModal';
@@ -9,12 +10,16 @@ import { DEFAULT_SETTINGS, KambasSettings, KambasSettingTab } from './settings';
 export default class KambasPlugin extends Plugin {
 	public settings!: KambasSettings;
 	private canvasImageHandler!: CanvasImageHandler;
+	public canvasKeyboardPan!: CanvasKeyboardPan;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
 
 		this.canvasImageHandler = new CanvasImageHandler(this.app);
 		this.canvasImageHandler.registerEvents();
+
+		this.canvasKeyboardPan = new CanvasKeyboardPan(this, () => this.settings.keyboardPan);
+		this.canvasKeyboardPan.registerEvents();
 
 		// Add Settings Tab to Obsidian Settings
 		this.addSettingTab(new KambasSettingTab(this.app, this));
@@ -217,6 +222,51 @@ export default class KambasPlugin extends Plugin {
 				addTransformItemsToMenu(menu);
 			})
 		);
+
+		// Canvas edge right-click context menu
+		this.registerEvent(
+			(this.app.workspace as unknown as {
+				on(event: 'canvas:edge-menu', handler: (menu: Menu, edge: unknown) => void): import('obsidian').EventRef;
+			}).on('canvas:edge-menu', (menu: Menu, edge: unknown) => {
+				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				if (!activeView || activeView.getViewType() !== 'canvas') return;
+				const t = getText();
+
+				const canvasEdge = edge as { lineGroupEl?: HTMLElement; lineElement?: HTMLElement; unknownData?: { kambasOpacity?: number } };
+				const targetEl = canvasEdge.lineGroupEl ?? canvasEdge.lineElement;
+				const currentOpacity = canvasEdge.unknownData?.kambasOpacity ?? 1;
+				const opacityPct = Math.round(currentOpacity * 100);
+
+				menu.addSeparator();
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
+						.setIcon('droplet')
+						.setChecked(currentOpacity < 1)
+						.onClick(() => {
+							new OpacityModal(this.app, currentOpacity, (opacity) => {
+								this.canvasImageHandler.setSelectedEdgeOpacity(activeView, opacity, targetEl, canvasEdge);
+							}).open();
+						});
+				});
+			})
+		);
+
+		// Register native Obsidian command for Away Mode (only visible when focused in canvas)
+		this.addCommand({
+			id: 'toggle-away-mode',
+			name: getText().awayMode,
+			icon: 'eye-off',
+			checkCallback: (checking: boolean) => {
+				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				if (activeView && activeView.getViewType() === 'canvas') {
+					if (!checking) {
+						this.canvasImageHandler.setAwayMode(activeView);
+					}
+					return true;
+				}
+				return false;
+			},
+		});
 	}
 
 	onunload(): void {
@@ -224,10 +274,26 @@ export default class KambasPlugin extends Plugin {
 		if (this.canvasImageHandler) {
 			this.canvasImageHandler.unregisterEvents();
 		}
+		if (this.canvasKeyboardPan) {
+			this.canvasKeyboardPan.stopPan(true);
+		}
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<KambasSettings>);
+		const data = (await this.loadData()) as Partial<KambasSettings> | null;
+		this.settings = {
+			...DEFAULT_SETTINGS,
+			...data,
+			keyboardPan: {
+				...DEFAULT_SETTINGS.keyboardPan,
+				...(data?.keyboardPan || {}),
+				keys: {
+					...DEFAULT_SETTINGS.keyboardPan.keys,
+					...(data?.keyboardPan?.keys || {}),
+				},
+				maxSpeed: data?.keyboardPan?.maxSpeed ?? DEFAULT_SETTINGS.keyboardPan.maxSpeed,
+			},
+		};
 	}
 
 	async saveSettings(): Promise<void> {
