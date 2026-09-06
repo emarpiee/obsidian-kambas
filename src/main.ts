@@ -1,3 +1,4 @@
+import './main.css';
 import { ItemView, Menu, Plugin } from 'obsidian';
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
 import { CanvasKeyboardPan } from './canvas/CanvasKeyboardPan';

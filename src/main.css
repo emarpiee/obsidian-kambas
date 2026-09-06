@@ -1,0 +1,245 @@
+/* Kambas plugin styles */
+
+/* Ensure canvas node wrapper housing embedded images clips cleanly without scrollbar space & transparent background */
+.canvas .canvas-nodes .canvas-node:has(.kambas-embedded-img),
+.canvas .canvas-nodes .canvas-node:has(.kambas-embedded-img) .canvas-node-container,
+.canvas .canvas-nodes .canvas-node:has(.kambas-embedded-img) .canvas-node-content,
+.canvas-node-container:has(.kambas-embedded-img),
+.canvas-node-content:has(.kambas-embedded-img) {
+	padding: 0;
+	margin: 0;
+	overflow: hidden;
+	scrollbar-gutter: auto;
+	background: transparent;
+	background-color: transparent;
+	box-shadow: none;
+}
+
+/* Ensure node container allows click-through to parent canvas node selection */
+.canvas-node:has(.kambas-embedded-img) .canvas-node-content {
+	pointer-events: none;
+}
+
+.canvas .canvas-nodes .canvas-node {
+	transition: opacity 0.15s ease;
+}
+
+/* Remove scrollbar-gutter and scrollbar widths on all nested elements */
+.canvas-node:has(.kambas-embedded-img) *,
+.canvas-node-content:has(.kambas-embedded-img) * {
+	scrollbar-gutter: auto;
+	scrollbar-width: none;
+}
+
+/* Hide base64 URL data label header above link image cards when setting enabled */
+body.kambas-hide-labels .canvas-node:has(.kambas-embedded-img) .canvas-node-label,
+body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-embedded-img) {
+	display: none;
+}
+
+.canvas-node:has(.kambas-embedded-img) *::-webkit-scrollbar,
+.canvas-node-content:has(.kambas-embedded-img) *::-webkit-scrollbar {
+	display: none;
+	width: 0;
+	height: 0;
+}
+
+.kambas-embedded-img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	pointer-events: none;
+	user-select: none;
+	-webkit-user-drag: none;
+	transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+
+
+/* Image Transformation utility classes */
+.kambas-img-flip-h {
+	transform: scaleX(-1);
+}
+
+.kambas-img-flip-v {
+	transform: scaleY(-1);
+}
+
+.kambas-img-flip-h.kambas-img-flip-v {
+	transform: scale(-1, -1);
+}
+
+.kambas-img-grayscale {
+	filter: grayscale(100%);
+}
+
+/* Opacity slider modal */
+.modal:has(.kambas-opacity-buttons) .setting-item {
+	border-top: none;
+	padding: 12px 0 0 0;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+}
+
+.modal:has(.kambas-opacity-buttons) .setting-item-info {
+	display: none;
+}
+
+.modal:has(.kambas-opacity-buttons) .setting-item-control {
+	width: 100%;
+	justify-content: stretch;
+}
+
+.modal:has(.kambas-opacity-buttons) .setting-item-control input[type="range"] {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.kambas-opacity-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding-top: 12px;
+}
+
+/* Canvas Keyboard Pan & Zoom Controls Styles */
+.pan-kb-container {
+	display: flex;
+	gap: 32px;
+	align-items: flex-start;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	background-color: var(--background-secondary-alt);
+	border-radius: 8px;
+}
+
+.pan-kb-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pan-kb-section-title {
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.pan-kb-cross-grid {
+	display: grid;
+	grid-template-areas:
+		".          .          label-north .          ."
+		".          .          key-north   .          ."
+		"label-west key-west    key-south   key-east   label-east"
+		".          .          label-south .          .";
+	gap: 4px;
+	align-items: center;
+	justify-items: center;
+}
+
+.pan-key-north { grid-area: key-north; }
+.pan-label-north { grid-area: label-north; }
+.pan-key-west { grid-area: key-west; }
+.pan-label-west { grid-area: label-west; }
+.pan-key-south { grid-area: key-south; }
+.pan-label-south { grid-area: label-south; }
+.pan-key-east { grid-area: key-east; }
+.pan-label-east { grid-area: label-east; }
+
+.pan-kb-zoom-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	justify-content: center;
+	height: 100%;
+}
+
+.pan-kb-zoom-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pan-kb {
+	width: 36px;
+	height: 36px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 6px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	transition: all 0.2s ease;
+}
+
+.pan-kb svg.svg-icon {
+	width: 20px;
+	height: 20px;
+	color: var(--text-normal);
+}
+
+.pan-kb-label {
+	min-width: 24px;
+	height: 24px;
+	padding: 0 6px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--text-muted);
+}
+
+.pan-kb.active {
+	background-color: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent, #ffffff);
+	box-shadow: 0 0 8px var(--interactive-accent);
+	transform: scale(1.1);
+}
+
+.pan-kb.active svg.svg-icon {
+	color: var(--text-on-accent, #ffffff);
+	stroke: var(--text-on-accent, #ffffff);
+}
+
+.pan-kb-label.active {
+	color: var(--interactive-accent);
+	font-weight: bold;
+	animation: kambas-pulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes kambas-pulse {
+	0% {
+		opacity: 0.7;
+		transform: scale(1.05);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1.2);
+	}
+}
+
+/* Away Mode CSS rules for hiding canvas edges, paths, arrowheads, SVG markers, line ends */
+.kambas-away-mode .canvas-edges,
+.kambas-away-mode .canvas-edges *,
+.kambas-away-mode svg.canvas-edges path,
+.kambas-away-mode svg.canvas-edges marker,
+.kambas-away-mode svg.canvas-edges polyline,
+.kambas-away-mode svg.canvas-edges polygon,
+.kambas-away-mode svg.canvas-edges circle,
+.kambas-away-mode .canvas-path,
+.kambas-away-mode .canvas-arrow {
+	opacity: 0 !important;
+	visibility: hidden !important;
+}
+
