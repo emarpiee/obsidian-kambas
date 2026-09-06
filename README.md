@@ -6,7 +6,7 @@ Kambas is an Obsidian plugin that extends native Canvas functionality with image
 
 ## Design Context & Use Case
 
-Kambas was created specifically for **small-scale projects, independent mood boards, visual brainstorming sessions, and portable reference boards**.
+Kambas was created specifically for **small-scale projects, independent mood boards, visual brainstorming sessions, and portable reference boards**, bringing a **PureRef**-like workflow directly into Obsidian Canvas.
 
 When assembling quick mood boards or short-lived visual notes, standard Obsidian behavior creates permanent media attachment files in your vault for every pasted asset. This rapidly clutters your vault directory with single-use files that outlive the project itself.
 
