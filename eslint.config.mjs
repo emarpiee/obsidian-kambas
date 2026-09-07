@@ -55,14 +55,5 @@ export default tseslint.config(
       quotes: 'off',
       'no-mixed-spaces-and-tabs': 'off',
     },
-  },
-  {
-    files: ['src/test/**/*.ts', 'src/test/**/*.tsx'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-    },
   }
 );

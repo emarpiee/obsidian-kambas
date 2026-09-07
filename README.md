@@ -182,9 +182,6 @@ npm run dev
 # Run typecheck & lint checks
 npm run health
 
-# Execute test suite
-npm run test
-
 # Build production bundle
 npm run build
 ```
