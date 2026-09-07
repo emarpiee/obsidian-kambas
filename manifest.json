@@ -1,7 +1,7 @@
 {
 	"id": "kambas",
 	"name": "Kambas",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"minAppVersion": "1.10.0",
 	"description": "Kambas plugin for Obsidian.",
 	"author": "emarpiee",
