@@ -1,4 +1,5 @@
-## Changelog (Upcoming Release since 0.0.3) (9/7/2026)
+## Changelog (Upcoming Release since 0.0.4) (9/7/2026)
 
-* ci: add release and CI GitHub Actions workflows (4ba2ddc)
-* Added CHANGELOG.md (3fedeaf)
+* Add MIT License to the project (aa2a042)
+* chore: remove !important flags in css (78d31ff)
+* chore: update plugin description (309acc6)
