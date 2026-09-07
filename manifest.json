@@ -2,7 +2,7 @@
 	"id": "kambas",
 	"name": "Kambas",
 	"version": "0.0.5",
-	"minAppVersion": "1.10.0",
+	"minAppVersion": "1.13.0",
 	"description": "Extend core plugin Canvas with PureRef-like image controls, inline Base64 embedding, and adjustable navigations.",
 	"author": "emarpiee",
 	"authorUrl": "https://github.com/emarpiee",
