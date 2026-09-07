@@ -1,4 +1,4 @@
-## Changelog for 0.0.3 (9/7/2026)
+## Changelog (Upcoming Release since 0.0.3) (9/7/2026)
 
-* 0.0.3 (7c1fda0)
-* Added CHANGELOG.md (a6c8deb)
+* ci: add release and CI GitHub Actions workflows (4ba2ddc)
+* Added CHANGELOG.md (3fedeaf)
