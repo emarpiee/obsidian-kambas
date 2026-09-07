@@ -1,7 +1,7 @@
 {
 	"name": "kambas",
 	"version": "0.0.4",
-	"description": "Kambas plugin for Obsidian.",
+	"description": "Extend core plugin Canvas with PureRef-like image controls, inline Base64 embedding, and adjustable navigations.",
 	"main": "main.js",
 	"scripts": {
 		"typecheck": "tsc --noemit",
