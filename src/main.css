@@ -239,7 +239,8 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 .kambas-away-mode svg.canvas-edges circle,
 .kambas-away-mode .canvas-path,
 .kambas-away-mode .canvas-arrow {
-	opacity: 0 !important;
-	visibility: hidden !important;
+	opacity: 0;
+	visibility: hidden;
 }
+
 
