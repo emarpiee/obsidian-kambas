@@ -16,7 +16,7 @@ export default class KambasPlugin extends Plugin {
 	async onload(): Promise<void> {
 		await this.loadSettings();
 
-		this.canvasImageHandler = new CanvasImageHandler(this.app);
+		this.canvasImageHandler = new CanvasImageHandler(this.app, this);
 		this.canvasImageHandler.registerEvents();
 
 		this.canvasKeyboardPan = new CanvasKeyboardPan(this, () => this.settings.keyboardPan);
@@ -54,6 +54,7 @@ export default class KambasPlugin extends Plugin {
 			let isFlippedH = false;
 			let isFlippedV = false;
 			let isGrayscaled = false;
+			let isPaletteOn = false;
 			let isResized = false;
 			let currentOpacity = 1;
 
@@ -68,7 +69,7 @@ export default class KambasPlugin extends Plugin {
 						selectedImageCount++;
 					}
 
-					const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; file?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; originalWidth?: number; originalHeight?: number } }).unknownData;
+					const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; file?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number; originalWidth?: number; originalHeight?: number } }).unknownData;
 					if (unknownData?.type === 'file' || (unknownData?.type === 'link' && unknownData?.url?.startsWith('data:image/'))) {
 						hasAnyMedia = true;
 					}
@@ -83,6 +84,7 @@ export default class KambasPlugin extends Plugin {
 					if (unknownData?.kambasFlipH) isFlippedH = true;
 					if (unknownData?.kambasFlipV) isFlippedV = true;
 					if (unknownData?.kambasGrayscale) isGrayscaled = true;
+					if (unknownData?.kambasPalette) isPaletteOn = true;
 					if (unknownData?.kambasOpacity !== undefined) currentOpacity = unknownData.kambasOpacity;
 
 					const rawNode = canvasNode as unknown as { width?: number; height?: number };
@@ -131,6 +133,15 @@ export default class KambasPlugin extends Plugin {
 						.setChecked(isGrayscaled)
 						.onClick(() => {
 							void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'g', targetNodeEl);
+						});
+				});
+
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(t.togglePalette)
+						.setIcon('palette')
+						.setChecked(isPaletteOn)
+						.onClick(() => {
+							void this.canvasImageHandler.toggleSelectedImagePalette(activeView, targetNodeEl);
 						});
 				});
 			}

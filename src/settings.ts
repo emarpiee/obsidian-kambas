@@ -5,11 +5,13 @@ import type KambasPlugin from './main';
 
 export interface KambasSettings {
 	hideImageLabel: boolean;
+	paletteSwatchCount: number; // 3 to 10 swatches
 	keyboardPan: CanvasKeyboardPanSettings;
 }
 
 export const DEFAULT_SETTINGS: KambasSettings = {
 	hideImageLabel: true,
+	paletteSwatchCount: 5,
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
 
@@ -66,6 +68,20 @@ export class KambasSettingTab extends PluginSettingTab {
 						this.plugin.settings.hideImageLabel = value;
 						await this.plugin.saveSettings();
 						this.plugin.applySettingsCss();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t.paletteSwatchCountName ?? 'Color palette swatches')
+			.setDesc(t.paletteSwatchCountDesc ?? 'Number of dominant colors to display when the color palette is enabled on an image (3–10).')
+			.addSlider((slider) =>
+				slider
+					.setLimits(3, 10, 1)
+					.setValue(this.plugin.settings.paletteSwatchCount ?? 5)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.paletteSwatchCount = value;
+						await this.plugin.saveSettings();
 					})
 			);
 

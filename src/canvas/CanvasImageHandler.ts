@@ -1,9 +1,10 @@
-import { App, ItemView, TFile, TFolder } from 'obsidian';
+import { App, ItemView, Notice, TFile, TFolder } from 'obsidian';
 import { ConvertEmbedChoiceResult, ConvertToEmbedModal, VaultFileAction } from '../modals/ConvertToEmbedModal';
 import { ImageIngestionModal, StorageChoice } from '../modals/ImageIngestionModal';
 import {
 	arrayBufferToBase64DataUrl,
 	blobToBase64,
+	extractImagePalette,
 	getImageDimensions,
 	saveFileToVault,
 } from '../utils/imageUtils';
@@ -18,12 +19,14 @@ export interface PendingImage {
 
 export class CanvasImageHandler {
 	private app: App;
+	private plugin: import('../main').default;
 	private editGuardObserver: MutationObserver | null = null;
 	private modifyTimer: number | null = null;
 	private lastMousePos: { x: number; y: number } | null = null;
 
-	constructor(app: App) {
+	constructor(app: App, plugin: import('../main').default) {
 		this.app = app;
+		this.plugin = plugin;
 	}
 
 	public registerEvents(): void {
@@ -252,7 +255,7 @@ export class CanvasImageHandler {
 			if (!nodeEl) return;
 
 			// Extract link URL or data directly from canvas node object memory (0ms delay)
-			const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number } }).unknownData;
+			const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number } }).unknownData;
 			const nodeUrl = unknownData?.url;
 			const isLinkDataImg = unknownData?.type === 'link' && nodeUrl?.startsWith('data:image/');
 
@@ -292,6 +295,38 @@ export class CanvasImageHandler {
 				img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
 				img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 				img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
+
+				// Handle palette overlay
+				let paletteEl = nodeEl.querySelector<HTMLElement>('.kambas-palette-bar');
+				if (unknownData.kambasPalette) {
+					const count = this.plugin?.settings?.paletteSwatchCount ?? 5;
+					if (!paletteEl || paletteEl.dataset.count !== String(count)) {
+						if (paletteEl) paletteEl.remove();
+						paletteEl = nodeEl.createDiv({ cls: 'kambas-palette-bar' });
+						paletteEl.dataset.count = String(count);
+						const imgSrc = img.src;
+						if (imgSrc) {
+							void extractImagePalette(imgSrc, count).then((swatches) => {
+								if (!paletteEl || !paletteEl.isConnected) return;
+								paletteEl.empty();
+								for (const hex of swatches) {
+									const swatch = paletteEl.createDiv({ cls: 'kambas-palette-swatch' });
+									swatch.style.backgroundColor = hex;
+									swatch.setAttribute('title', `${hex} (Click to copy)`);
+									swatch.addEventListener('click', (e) => {
+										e.stopPropagation();
+										e.preventDefault();
+										void navigator.clipboard.writeText(hex);
+										new Notice(`Copied ${hex} to clipboard!`);
+									});
+								}
+							});
+						}
+					}
+					paletteEl.classList.toggle('kambas-palette-grayscale', Boolean(unknownData.kambasGrayscale));
+				} else if (paletteEl) {
+					paletteEl.remove();
+				}
 			}
 
 			// Apply opacity to any canvas node element (images, text, cards, groups, files)
@@ -650,7 +685,7 @@ export class CanvasImageHandler {
 		canvas.nodes.forEach((canvasNode, id) => {
 			if (!selectedNodeIds.includes(id)) return;
 
-			const rawNode = canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } };
+			const rawNode = canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean } };
 			if (!rawNode.unknownData) {
 				rawNode.unknownData = {};
 			}
@@ -680,6 +715,62 @@ export class CanvasImageHandler {
 			}
 		} else {
 			void this.persistImageTransform(file, selectedNodeIds, key);
+		}
+	}
+
+	public async toggleSelectedImagePalette(
+		activeView: CanvasItemView,
+		targetNodeEl?: Element | null
+	): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		const selectedNodeEls: HTMLElement[] = [];
+		const selectedNodeIds: string[] = [];
+
+		canvas.nodes.forEach((node, id) => {
+			const nodeEl = node.nodeEl;
+			if (!nodeEl) return;
+
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+			const hasImg = nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl);
+
+			if ((isExplicitlySelected || isTargetNode) && hasImg) {
+				selectedNodeEls.push(nodeEl);
+				selectedNodeIds.push(id);
+			}
+		});
+
+		if (selectedNodeIds.length === 0 && targetNodeEl) {
+			canvas.nodes.forEach((node, id) => {
+				const nodeEl = node.nodeEl;
+				if (nodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))) {
+					selectedNodeIds.push(id);
+				}
+			});
+		}
+
+		if (selectedNodeIds.length === 0) return;
+
+		canvas.nodes.forEach((canvasNode, id) => {
+			if (!selectedNodeIds.includes(id)) return;
+			const rawNode = canvasNode as unknown as { unknownData?: { kambasPalette?: boolean } };
+			if (!rawNode.unknownData) rawNode.unknownData = {};
+			rawNode.unknownData.kambasPalette = !rawNode.unknownData.kambasPalette;
+		});
+
+		this.scanAndRestoreTransforms(activeView);
+
+		const file = activeView.file;
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette' as any);
+			}
+		} else {
+			if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette' as any);
 		}
 	}
 
@@ -1247,6 +1338,9 @@ export class CanvasImageHandler {
 					modified = true;
 				} else if (key === 'g') {
 					node.kambasGrayscale = !node.kambasGrayscale;
+					modified = true;
+				} else if (key === 'p' || key === 'palette') {
+					node.kambasPalette = !node.kambasPalette;
 					modified = true;
 				}
 			}

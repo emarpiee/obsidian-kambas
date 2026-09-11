@@ -81,6 +81,47 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	filter: grayscale(100%);
 }
 
+.kambas-palette-grayscale .kambas-palette-swatch {
+	filter: grayscale(100%);
+}
+
+/* Color palette overlay bar */
+.kambas-palette-bar {
+	position: absolute;
+	bottom: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	gap: 6px;
+	padding: 6px 10px;
+	background: rgba(0, 0, 0, 0.75);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 24px;
+	z-index: 10;
+	pointer-events: auto;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+	transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.kambas-palette-swatch {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	border: 1.5px solid rgba(255, 255, 255, 0.5);
+	cursor: pointer;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+	transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.kambas-palette-swatch:hover {
+	transform: scale(1.22);
+	border-color: #ffffff;
+	box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+
 /* Opacity slider modal */
 .modal:has(.kambas-opacity-buttons) .setting-item {
 	border-top: none;

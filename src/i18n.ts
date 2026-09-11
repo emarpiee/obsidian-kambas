@@ -5,6 +5,8 @@ export interface TranslationSchema {
 	settingsHeading: string;
 	hideImageLabelName: string;
 	hideImageLabelDesc: string;
+	paletteSwatchCountName?: string;
+	paletteSwatchCountDesc?: string;
 	keyboardPanHeading: string;
 	panControlsName: string;
 	panControlsDesc: string;
@@ -47,6 +49,7 @@ export interface TranslationSchema {
 	flipHorizontal: string;
 	flipVertical: string;
 	toggleGrayscale: string;
+	togglePalette: string;
 	changeOpacity: string;
 	awayMode: string;
 	copyImageToClipboard: string;
@@ -60,6 +63,8 @@ const en: TranslationSchema = {
 	settingsHeading: 'Display & canvas',
 	hideImageLabelName: 'Hide media label',
 	hideImageLabelDesc: 'Hide the base64 URL / data label header displayed above embedded canvas media cards.',
+	paletteSwatchCountName: 'Color palette swatches',
+	paletteSwatchCountDesc: 'Number of dominant colors to display when the color palette is enabled on an image (3–10).',
 	keyboardPanHeading: 'Canvas keyboard pan controls',
 	panControlsName: 'Pan controls',
 	panControlsDesc: 'Which set of keys pan the canvas.',
@@ -97,6 +102,7 @@ const en: TranslationSchema = {
 	flipHorizontal: 'Flip horizontal',
 	flipVertical: 'Flip vertical',
 	toggleGrayscale: 'Toggle grayscale',
+	togglePalette: 'Color palette',
 	changeOpacity: 'Change opacity',
 	awayMode: 'Away mode',
 	copyImageToClipboard: 'Copy media to clipboard',
@@ -147,6 +153,7 @@ const zh: TranslationSchema = {
 	flipHorizontal: '水平翻转',
 	flipVertical: '垂直翻转',
 	toggleGrayscale: '切换灰度',
+	togglePalette: '调色板',
 	changeOpacity: '更改不透明度',
 	awayMode: '离开模式',
 	copyImageToClipboard: '复制媒体到剪贴板',
@@ -197,6 +204,7 @@ const zhTW: TranslationSchema = {
 	flipHorizontal: '水平翻轉',
 	flipVertical: '垂直翻轉',
 	toggleGrayscale: '切換灰階',
+	togglePalette: '調色板',
 	changeOpacity: '更改不透明度',
 	awayMode: '離開模式',
 	copyImageToClipboard: '複製媒體至剪貼簿',
@@ -247,6 +255,7 @@ const es: TranslationSchema = {
 	flipHorizontal: 'Voltear horizontalmente',
 	flipVertical: 'Voltear verticalmente',
 	toggleGrayscale: 'Alternar escala de grises',
+	togglePalette: 'Paleta de colores',
 	changeOpacity: 'Cambiar opacidad',
 	awayMode: 'Modo ausente',
 	copyImageToClipboard: 'Copiar medios al portapapeles',
@@ -297,6 +306,7 @@ const fr: TranslationSchema = {
 	flipHorizontal: 'Retourner horizontalement',
 	flipVertical: 'Retourner verticalement',
 	toggleGrayscale: 'Basculer les niveaux de gris',
+	togglePalette: 'Palette de couleurs',
 	changeOpacity: 'Modifier l’opacité',
 	awayMode: 'Mode Absent',
 	copyImageToClipboard: 'Copier le média dans le presse-papiers',
@@ -347,6 +357,7 @@ const de: TranslationSchema = {
 	flipHorizontal: 'Horizontal spiegeln',
 	flipVertical: 'Vertikal spiegeln',
 	toggleGrayscale: 'Graustufen umschalten',
+	togglePalette: 'Farbpalette',
 	changeOpacity: 'Deckkraft ändern',
 	awayMode: 'Abwesend-Modus',
 	copyImageToClipboard: 'Medien in Zwischenablage kopieren',
@@ -397,6 +408,7 @@ const ja: TranslationSchema = {
 	flipHorizontal: '左右反転',
 	flipVertical: '上下反転',
 	toggleGrayscale: '白黒切り替え',
+	togglePalette: 'カラーパレット',
 	changeOpacity: '不透明度を変更',
 	awayMode: 'アウェイモード',
 	copyImageToClipboard: 'メディアをクリップボードにコピー',
@@ -447,6 +459,7 @@ const ko: TranslationSchema = {
 	flipHorizontal: '좌우 반전',
 	flipVertical: '상하 반전',
 	toggleGrayscale: '흑백 전환',
+	togglePalette: '색상 팔레트',
 	changeOpacity: '불투명도 변경',
 	awayMode: '자리 비움 모드',
 	copyImageToClipboard: '미디어를 클립보드에 복사',
@@ -497,6 +510,7 @@ const ru: TranslationSchema = {
 	flipHorizontal: 'Отразить по горизонтали',
 	flipVertical: 'Отразить по вертикали',
 	toggleGrayscale: 'Переключить оттенки серого',
+	togglePalette: 'Цветовая палитра',
 	changeOpacity: 'Изменить прозрачность',
 	awayMode: 'Режим «Отсутствие»',
 	copyImageToClipboard: 'Скопировать медиа в буфер обмена',
@@ -547,6 +561,7 @@ const pt: TranslationSchema = {
 	flipHorizontal: 'Inverter horizontalmente',
 	flipVertical: 'Inverter verticalmente',
 	toggleGrayscale: 'Alternar escala de cinza',
+	togglePalette: 'Paleta de cores',
 	changeOpacity: 'Alterar opacidade',
 	awayMode: 'Modo ausente',
 	copyImageToClipboard: 'Copiar mídia para a área de transferência',
@@ -597,6 +612,7 @@ const it: TranslationSchema = {
 	flipHorizontal: 'Capovolgi orizzontalmente',
 	flipVertical: 'Capovolgi verticalmente',
 	toggleGrayscale: 'Attiva/disattiva scala di grigi',
+	togglePalette: 'Tavolozza dei colori',
 	changeOpacity: 'Cambia opacità',
 	awayMode: 'Modalità assente',
 	copyImageToClipboard: 'Copia media negli appunti',
@@ -647,6 +663,7 @@ const ar: TranslationSchema = {
 	flipHorizontal: 'قلب أفقي',
 	flipVertical: 'قلب رأسي',
 	toggleGrayscale: 'تبديل التدرج الرمادي',
+	togglePalette: 'لوحة الألوان',
 	changeOpacity: 'تغيير الشفافية',
 	awayMode: 'وضع الابتعاد',
 	copyImageToClipboard: 'نسخ الوسائط إلى الحافظة',
@@ -697,6 +714,7 @@ const he: TranslationSchema = {
 	flipHorizontal: 'הפוך אופקית',
 	flipVertical: 'הפוך אנכית',
 	toggleGrayscale: 'גווני אפור',
+	togglePalette: 'פלטת צבעים',
 	changeOpacity: 'שנה אטימות',
 	awayMode: 'מצב היעדרות',
 	copyImageToClipboard: 'העתק מדיה ללוח',
