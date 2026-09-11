@@ -90,3 +90,9 @@ export interface CanvasItemView {
 export const IMAGE_EXTENSIONS = new Set([
 	'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'avif', 'tiff', 'tif',
 ]);
+
+/** All media extensions accepted by the image swap picker (images + video) */
+export const MEDIA_EXTENSIONS = new Set([
+	'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'avif', 'tiff', 'tif',
+	'mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v', 'ogv',
+]);

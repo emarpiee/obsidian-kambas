@@ -213,6 +213,14 @@ export default class KambasPlugin extends Plugin {
 							void this.canvasImageHandler.copySelectedImagesToClipboard(activeView, targetNodeEl);
 						});
 				});
+
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(t.swapImage)
+						.setIcon('image')
+						.onClick(() => {
+							void this.canvasImageHandler.swapSelectedImage(activeView, targetNodeEl);
+						});
+				});
 			}
 		};
 

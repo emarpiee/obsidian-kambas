@@ -1,6 +1,8 @@
 import { App, ItemView, Notice, TFile, TFolder } from 'obsidian';
 import { ConvertEmbedChoiceResult, ConvertToEmbedModal, VaultFileAction } from '../modals/ConvertToEmbedModal';
 import { ImageIngestionModal, StorageChoice } from '../modals/ImageIngestionModal';
+import { ImageSwapModal } from '../modals/ImageSwapModal';
+import { getText } from '../i18n';
 import {
 	arrayBufferToBase64DataUrl,
 	blobToBase64,
@@ -1726,6 +1728,174 @@ export class CanvasImageHandler {
 		} catch (err) {
 			console.error('Error saving updated node to canvas file:', err);
 		}
+	}
+
+	// ──────────────────────────────────────────────────────────────────────────
+	// Image Swap
+	// ──────────────────────────────────────────────────────────────────────────
+
+	public async swapSelectedImage(
+		activeView: CanvasItemView,
+		targetNodeEl?: Element | null
+	): Promise<void> {
+		const canvasFile = activeView.file;
+		if (!canvasFile) return;
+
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		// Identify the single target node
+		let targetId: string | null = null;
+		let targetNodeObj: unknown = null;
+
+		canvas.nodes.forEach((node, id) => {
+			const nodeEl = node.nodeEl;
+			if (!nodeEl) return;
+			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+			const hasImg = nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl);
+			if ((isExplicitlySelected || isTargetNode) && hasImg) {
+				targetId = id;
+				targetNodeObj = node;
+			}
+		});
+
+		if (!targetId || !targetNodeObj) return;
+
+		// Open swap modal
+		const result = await new Promise<import('../modals/ImageSwapModal').SwapResult | null>((resolve) => {
+			new ImageSwapModal(this.app, (r) => resolve(r)).open();
+		});
+
+		if (!result) return; // cancelled
+
+		// Read new media dimensions to update aspect ratio
+		let newDims: { width: number; height: number } | null = null;
+		let newFileOrUrl: { type: 'file' | 'link'; file?: string; url?: string } | null = null;
+
+		if (result.source === 'vault' && result.tfile) {
+			const resourceUrl = this.app.vault.getResourcePath(result.tfile);
+			newDims = await getImageDimensions(resourceUrl);
+			newFileOrUrl = { type: 'file', file: result.tfile.path };
+		} else if (result.source === 'file' && result.file) {
+			newDims = await getImageDimensions(result.file);
+			if (result.storageChoice === 'embed') {
+				const buffer = await result.file.arrayBuffer();
+				const mimeType = result.file.type || `image/${result.file.name.split('.').pop()?.toLowerCase() || 'png'}`;
+				const dataUrl = arrayBufferToBase64DataUrl(buffer, mimeType);
+				newFileOrUrl = { type: 'link', url: dataUrl };
+			} else {
+				const vaultWithConfig = this.app.vault as unknown as { getConfig?: (key: string) => string };
+				const attachmentFolder = vaultWithConfig.getConfig?.('attachmentFolderPath') || '';
+				const buffer = await result.file.arrayBuffer();
+				const vaultPath = await saveFileToVault(this.app, attachmentFolder, result.file.name, buffer);
+				newFileOrUrl = { type: 'file', file: vaultPath };
+			}
+		}
+
+		if (!newFileOrUrl) return;
+
+		// Read canvas JSON
+		const content = await this.app.vault.read(canvasFile);
+		let data: CanvasFileData;
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!data.nodes) return;
+
+		const nodeData = data.nodes.find((n) => n.id === targetId);
+		if (!nodeData) return;
+
+		// Preserve position, transforms, and calculate new height based on new image aspect ratio
+		const currentWidth = nodeData.width;
+		let newHeight = nodeData.height;
+
+		if (newDims && newDims.width > 0 && newDims.height > 0) {
+			const aspectRatio = newDims.height / newDims.width;
+			newHeight = Math.round(currentWidth * aspectRatio);
+			nodeData.originalWidth = newDims.width;
+			nodeData.originalHeight = newDims.height;
+		}
+
+		nodeData.height = newHeight;
+
+		if (newFileOrUrl.type === 'file' && newFileOrUrl.file) {
+			nodeData.type = 'file';
+			nodeData.file = newFileOrUrl.file;
+			delete nodeData.url;
+		} else if (newFileOrUrl.type === 'link' && newFileOrUrl.url) {
+			nodeData.type = 'link';
+			nodeData.url = newFileOrUrl.url;
+			delete nodeData.file;
+		}
+
+		// Save patched JSON to vault file
+		await this.app.vault.modify(canvasFile, JSON.stringify(data, null, 2));
+
+		// Remove old canvas node from live view in-memory so Obsidian re-renders instantly
+		const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
+		if (typeof rawCanvas.removeNode === 'function') {
+			try {
+				rawCanvas.removeNode(targetNodeObj);
+			} catch {
+				// Fallback
+			}
+		}
+
+		// Re-create node live in memory
+		if (newFileOrUrl.type === 'file' && newFileOrUrl.file) {
+			const tfile = this.app.vault.getAbstractFileByPath(newFileOrUrl.file);
+			if (tfile && tfile instanceof TFile && typeof canvas.createFileNode === 'function') {
+				canvas.createFileNode({
+					file: tfile,
+					pos: { x: nodeData.x, y: nodeData.y },
+					size: { width: currentWidth, height: newHeight },
+					save: false,
+				});
+			}
+		} else if (newFileOrUrl.type === 'link' && newFileOrUrl.url && typeof canvas.createLinkNode === 'function') {
+			canvas.createLinkNode({
+				url: newFileOrUrl.url,
+				pos: { x: nodeData.x, y: nodeData.y },
+				size: { width: currentWidth, height: newHeight },
+				save: false,
+			});
+		}
+
+		// Transfer kambas transform properties (flip, grayscale, opacity, palette) to newly spawned live node
+		const flipH = nodeData.kambasFlipH;
+		const flipV = nodeData.kambasFlipV;
+		const grayscale = nodeData.kambasGrayscale;
+		const palette = nodeData.kambasPalette;
+		const opacity = nodeData.kambasOpacity;
+
+		const targetPathOrUrl = newFileOrUrl.file || newFileOrUrl.url;
+		const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
+			const rawN = n as unknown as { file?: { path?: string }; url?: string; unknownData?: { file?: string; url?: string } };
+			return rawN.file?.path === targetPathOrUrl || rawN.url === targetPathOrUrl || rawN.unknownData?.file === targetPathOrUrl || rawN.unknownData?.url === targetPathOrUrl;
+		});
+
+		if (newCanvasNode) {
+			const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number } };
+			if (!rawN.unknownData) rawN.unknownData = {};
+			if (flipH) rawN.unknownData.kambasFlipH = flipH;
+			if (flipV) rawN.unknownData.kambasFlipV = flipV;
+			if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
+			if (palette) rawN.unknownData.kambasPalette = palette;
+			if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
+		}
+
+		if (typeof canvas.requestSave === 'function') {
+			try { canvas.requestSave(); } catch { /* Handled */ }
+		}
+
+		window.setTimeout(() => {
+			this.scanAndRestoreTransforms(activeView);
+		}, 60);
+
+		new Notice(getText().swapSuccess);
 	}
 }
 

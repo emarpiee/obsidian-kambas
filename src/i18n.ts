@@ -57,6 +57,17 @@ export interface TranslationSchema {
 	copySelectedMedia: string;
 	convertToEmbed: string;
 	resetSize: string;
+	// Swap Image
+	swapImage: string;
+	swapModalTitle: string;
+	swapFromVault: string;
+	swapFromFile: string;
+	swapFromClipboard: string;
+	swapSearchPlaceholder: string;
+	swapDropZoneHint: string;
+	swapBrowseBtn: string;
+	swapBtn: string;
+	swapSuccess: string;
 }
 
 const en: TranslationSchema = {
@@ -110,6 +121,16 @@ const en: TranslationSchema = {
 	copySelectedMedia: 'Copy media to...',
 	convertToEmbed: 'Embed in canvas file...',
 	resetSize: 'Reset to original size',
+	swapImage: 'Swap image…',
+	swapModalTitle: 'Swap image',
+	swapFromVault: 'From vault',
+	swapFromFile: 'From file',
+	swapSearchPlaceholder: 'Search vault for media…',
+	swapDropZoneHint: 'Drop a media file here, or',
+	swapBrowseBtn: 'Browse…',
+	swapFromClipboard: 'Paste from clipboard',
+	swapBtn: 'Swap',
+	swapSuccess: 'Image swapped!',
 };
 
 const zh: TranslationSchema = {
@@ -161,6 +182,16 @@ const zh: TranslationSchema = {
 	copySelectedMedia: '复制媒体到...',
 	convertToEmbed: '嵌入到画布文件...',
 	resetSize: '重置为原始大小',
+	swapImage: '替换图片…',
+	swapModalTitle: '替换图片',
+	swapFromVault: '从库中选择',
+	swapFromFile: '从文件选择',
+	swapSearchPlaceholder: '在库中搜索媒体…',
+	swapDropZoneHint: '将媒体文件拖放至此，或',
+	swapBrowseBtn: '浏览…',
+	swapFromClipboard: '从剪贴板粘贴',
+	swapBtn: '替换',
+	swapSuccess: '图片已替换！',
 };
 
 const zhTW: TranslationSchema = {
@@ -212,6 +243,16 @@ const zhTW: TranslationSchema = {
 	copySelectedMedia: '複製媒體到...',
 	convertToEmbed: '嵌入至畫布檔案...',
 	resetSize: '重置為原始大小',
+	swapImage: '替換圖片…',
+	swapModalTitle: '替換圖片',
+	swapFromVault: '從庫中選擇',
+	swapFromFile: '從檔案選擇',
+	swapSearchPlaceholder: '在庫中搜尋媒體…',
+	swapDropZoneHint: '將媒體檔案拖放至此，或',
+	swapBrowseBtn: '瀏覽…',
+	swapFromClipboard: '從剪貼簿貼上',
+	swapBtn: '替換',
+	swapSuccess: '圖片已替換！',
 };
 
 const es: TranslationSchema = {
@@ -263,6 +304,16 @@ const es: TranslationSchema = {
 	copySelectedMedia: 'Copiar medios a...',
 	convertToEmbed: 'Incrustar en el archivo de lienzo...',
 	resetSize: 'Restablecer al tamaño original',
+	swapImage: 'Cambiar imagen…',
+	swapModalTitle: 'Cambiar imagen',
+	swapFromVault: 'Desde el vault',
+	swapFromFile: 'Desde archivo',
+	swapSearchPlaceholder: 'Buscar medios en el vault…',
+	swapDropZoneHint: 'Suelta un archivo multimedia aquí, o',
+	swapBrowseBtn: 'Explorar…',
+	swapFromClipboard: 'Pegar desde el portapapeles',
+	swapBtn: 'Cambiar',
+	swapSuccess: '¡Imagen cambiada!',
 };
 
 const fr: TranslationSchema = {
@@ -314,6 +365,16 @@ const fr: TranslationSchema = {
 	copySelectedMedia: 'Copier les médias vers...',
 	convertToEmbed: 'Intégrer dans le fichier de canevas...',
 	resetSize: 'Réinitialiser à la taille d’origine',
+	swapImage: 'Remplacer l’image…',
+	swapModalTitle: 'Remplacer l’image',
+	swapFromVault: 'Depuis le coffre',
+	swapFromFile: 'Depuis un fichier',
+	swapSearchPlaceholder: 'Rechercher un média dans le coffre…',
+	swapDropZoneHint: 'Déposez un fichier média ici, ou',
+	swapBrowseBtn: 'Parcourir…',
+	swapFromClipboard: 'Coller depuis le presse-papiers',
+	swapBtn: 'Remplacer',
+	swapSuccess: 'Image remplacée !',
 };
 
 const de: TranslationSchema = {
@@ -365,6 +426,16 @@ const de: TranslationSchema = {
 	copySelectedMedia: 'Medien kopieren nach...',
 	convertToEmbed: 'In Canvas-Datei einbetten...',
 	resetSize: 'Auf Originalgröße zurücksetzen',
+	swapImage: 'Bild austauschen…',
+	swapModalTitle: 'Bild austauschen',
+	swapFromVault: 'Aus dem Vault',
+	swapFromFile: 'Aus Datei',
+	swapSearchPlaceholder: 'Medien im Vault suchen…',
+	swapDropZoneHint: 'Mediendatei hier ablegen, oder',
+	swapBrowseBtn: 'Durchsuchen…',
+	swapFromClipboard: 'Aus Zwischenablage einfügen',
+	swapBtn: 'Austauschen',
+	swapSuccess: 'Bild ausgetauscht!',
 };
 
 const ja: TranslationSchema = {
@@ -416,6 +487,16 @@ const ja: TranslationSchema = {
 	copySelectedMedia: 'メディア를 コピー...',
 	convertToEmbed: 'キャンバスファイルに埋め込む...',
 	resetSize: '元のサイズに戻す',
+	swapImage: '画像を差し替え…',
+	swapModalTitle: '画像を差し替え',
+	swapFromVault: 'Vaultから選択',
+	swapFromFile: 'ファイルから選択',
+	swapSearchPlaceholder: 'Vault内のメディアを検索…',
+	swapDropZoneHint: 'メディアファイルをここにドロップ、または',
+	swapBrowseBtn: '参照…',
+	swapFromClipboard: 'クリップボードから貼り付け',
+	swapBtn: '差し替え',
+	swapSuccess: '画像を差し替えました！',
 };
 
 const ko: TranslationSchema = {
@@ -467,6 +548,16 @@ const ko: TranslationSchema = {
 	copySelectedMedia: '미디어 복사...',
 	convertToEmbed: '캔버스 파일에 임베드...',
 	resetSize: '원래 크기로 복원',
+	swapImage: '이미지 교체…',
+	swapModalTitle: '이미지 교체',
+	swapFromVault: '볼트에서 선택',
+	swapFromFile: '파일에서 선택',
+	swapSearchPlaceholder: '볼트에서 미디어 검색…',
+	swapDropZoneHint: '여기에 미디어 파일을 놓거나',
+	swapBrowseBtn: '찾아보기…',
+	swapFromClipboard: '클립보드에서 붙여넣기',
+	swapBtn: '교체',
+	swapSuccess: '이미지가 교체되었습니다!',
 };
 
 const ru: TranslationSchema = {
@@ -518,6 +609,16 @@ const ru: TranslationSchema = {
 	copySelectedMedia: 'Скопировать медиа в...',
 	convertToEmbed: 'Встроить в файл холста...',
 	resetSize: 'Сбросить до исходного размера',
+	swapImage: 'Заменить изображение…',
+	swapModalTitle: 'Заменить изображение',
+	swapFromVault: 'Из хранилища',
+	swapFromFile: 'Из файла',
+	swapSearchPlaceholder: 'Поиск медиафайлов в хранилище…',
+	swapDropZoneHint: 'Перетащите медиафайл сюда или',
+	swapBrowseBtn: 'Обзор…',
+	swapFromClipboard: 'Вставить из буфера обмена',
+	swapBtn: 'Заменить',
+	swapSuccess: 'Изображение заменено!',
 };
 
 const pt: TranslationSchema = {
@@ -569,6 +670,16 @@ const pt: TranslationSchema = {
 	copySelectedMedia: 'Copiar mídia para...',
 	convertToEmbed: 'Incorporar no arquivo de tela...',
 	resetSize: 'Redefinir para o tamanho original',
+	swapImage: 'Trocar imagem…',
+	swapModalTitle: 'Trocar imagem',
+	swapFromVault: 'Do vault',
+	swapFromFile: 'Do arquivo',
+	swapSearchPlaceholder: 'Pesquisar mídia no vault…',
+	swapDropZoneHint: 'Solte um arquivo de mídia aqui, ou',
+	swapBrowseBtn: 'Procurar…',
+	swapFromClipboard: 'Colar da área de transferência',
+	swapBtn: 'Trocar',
+	swapSuccess: 'Imagem trocada!',
 };
 
 const it: TranslationSchema = {
@@ -620,6 +731,16 @@ const it: TranslationSchema = {
 	copySelectedMedia: 'Copia media in...',
 	convertToEmbed: 'Incorpora nel file della tela...',
 	resetSize: 'Ripristina dimensione originale',
+	swapImage: 'Sostituisci immagine…',
+	swapModalTitle: 'Sostituisci immagine',
+	swapFromVault: 'Dal vault',
+	swapFromFile: 'Da file',
+	swapSearchPlaceholder: 'Cerca media nel vault…',
+	swapDropZoneHint: 'Trascina un file multimediale qui, o',
+	swapBrowseBtn: 'Sfoglia…',
+	swapFromClipboard: 'Incolla dagli appunti',
+	swapBtn: 'Sostituisci',
+	swapSuccess: 'Immagine sostituita!',
 };
 
 const ar: TranslationSchema = {
@@ -671,6 +792,16 @@ const ar: TranslationSchema = {
 	copySelectedMedia: 'نسخ الوسائط إلى...',
 	convertToEmbed: 'تضمين في ملف اللوحة...',
 	resetSize: 'إعادة الضبط إلى الحجم الأصلي',
+	swapImage: 'استبدال الصورة…',
+	swapModalTitle: 'استبدال الصورة',
+	swapFromVault: 'من الخزنة',
+	swapFromFile: 'من ملف',
+	swapSearchPlaceholder: 'ابحث عن وسائط في الخزنة…',
+	swapDropZoneHint: 'أسقط ملف وسائط هنا، أو',
+	swapBrowseBtn: 'استعراض…',
+	swapFromClipboard: 'لصق من الحافظة',
+	swapBtn: 'استبدال',
+	swapSuccess: 'تم استبدال الصورة!',
 };
 
 const he: TranslationSchema = {
@@ -722,6 +853,16 @@ const he: TranslationSchema = {
 	copySelectedMedia: 'העתק מדיה אל...',
 	convertToEmbed: 'הטמע בקובץ הקנבس...',
 	resetSize: 'אפס לגודל המקורי',
+	swapImage: 'החלף תמונה…',
+	swapModalTitle: 'החלף תמונה',
+	swapFromVault: 'מהכספת',
+	swapFromFile: 'מקובץ',
+	swapSearchPlaceholder: 'חפש מדיה בכספת…',
+	swapDropZoneHint: 'שחרר קובץ מדיה כאן, או',
+	swapBrowseBtn: 'עיון…',
+	swapFromClipboard: 'הדבק מלוח הגזירים',
+	swapBtn: 'החלף',
+	swapSuccess: 'התמונה הוחלפה!',
 };
 
 const localeMap: Record<string, TranslationSchema> = {
