@@ -77,12 +77,17 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	transform: scale(-1, -1);
 }
 
-.kambas-img-grayscale {
-	filter: grayscale(100%);
+.kambas-img-grayscale,
+.kambas-node-grayscale,
+.kambas-node-grayscale .canvas-node-container,
+.kambas-node-grayscale .canvas-node-content,
+.kambas-node-grayscale iframe,
+.kambas-node-grayscale img {
+	filter: grayscale(100%) !important;
 }
 
 .kambas-palette-grayscale .kambas-palette-swatch {
-	filter: grayscale(100%);
+	filter: grayscale(100%) !important;
 }
 
 /* Color palette overlay bar */

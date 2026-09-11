@@ -45,6 +45,9 @@ export class CanvasImageHandler {
 		window.removeEventListener('paste', this.handlePaste, true);
 		window.removeEventListener('drop', this.handleDrop, true);
 		window.removeEventListener('dblclick', this.handleDblClick, true);
+		window.removeEventListener('scroll', this.handleScrollOrPan, true);
+		window.removeEventListener('wheel', this.handleScrollOrPan, true);
+		window.removeEventListener('pointerup', this.handleScrollOrPan, true);
 		window.removeEventListener('keyup', this.handleKeyUpCheck, true);
 		window.removeEventListener('mouseup', this.handleMouseUpCheck, true);
 		if (this.editGuardObserver) {
@@ -81,7 +84,7 @@ export class CanvasImageHandler {
 						const added = mutation.addedNodes[i];
 						if (added.nodeType !== Node.ELEMENT_NODE) continue;
 						const el = added as HTMLElement;
-						if (el.classList?.contains('canvas-node') || el.classList?.contains('canvas-node-content') || el.closest?.('.canvas-node')) {
+						if (el.tagName === 'IMG' || el.classList?.contains('canvas-node') || el.classList?.contains('canvas-node-content') || el.closest?.('.canvas-node')) {
 							const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
 							if (activeView?.getViewType() === 'canvas') {
 								this.scheduleRescan(activeView);
@@ -98,10 +101,22 @@ export class CanvasImageHandler {
 			childList: true,
 		});
 
+		// Listen to viewport scrolling/panning so virtualized nodes coming into view retain transforms
+		window.addEventListener('scroll', this.handleScrollOrPan, true);
+		window.addEventListener('wheel', this.handleScrollOrPan, true);
+		window.addEventListener('pointerup', this.handleScrollOrPan, true);
+
 		// Listen to keyup (Ctrl+V) and mouseup (Alt+Drag duplication) to refresh canvas link nodes
 		window.addEventListener('keyup', this.handleKeyUpCheck, true);
 		window.addEventListener('mouseup', this.handleMouseUpCheck, true);
 	}
+
+	private handleScrollOrPan = (): void => {
+		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		if (activeView?.getViewType() === 'canvas') {
+			this.scheduleRescan(activeView);
+		}
+	};
 
 	private handleKeyUpCheck = (evt: KeyboardEvent): void => {
 		if (evt.key === 'v' || evt.key === 'V' || evt.key === 'z' || evt.key === 'Z' || evt.key === 'y' || evt.key === 'Y') {
@@ -290,6 +305,10 @@ export class CanvasImageHandler {
 			}
 
 			// Apply stored transforms & opacity
+			if (unknownData) {
+				nodeEl.classList.toggle('kambas-node-grayscale', Boolean(unknownData.kambasGrayscale));
+			}
+
 			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
 			if (img && unknownData) {
 				img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
@@ -681,7 +700,26 @@ export class CanvasImageHandler {
 			});
 		}
 
-		// 1. Apply DOM class changes & update in-memory unknownData immediately for native undo/redo tracking
+		if (selectedNodeIds.length === 0) return;
+
+		// Determine target state: if ANY selected node is NOT active for key, set all to true; otherwise turn all off
+		let targetValue = false;
+		for (const id of selectedNodeIds) {
+			const canvasNode = canvas.nodes.get(id);
+			if (!canvasNode) continue;
+			const uData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } }).unknownData;
+			let isCurrentActive = false;
+			if (key === 'h') isCurrentActive = Boolean(uData?.kambasFlipH);
+			if (key === 'v') isCurrentActive = Boolean(uData?.kambasFlipV);
+			if (key === 'g') isCurrentActive = Boolean(uData?.kambasGrayscale);
+
+			if (!isCurrentActive) {
+				targetValue = true;
+				break;
+			}
+		}
+
+		// 1. Apply DOM class changes & update in-memory unknownData immediately
 		canvas.nodes.forEach((canvasNode, id) => {
 			if (!selectedNodeIds.includes(id)) return;
 
@@ -691,17 +729,23 @@ export class CanvasImageHandler {
 			}
 			const unknownData = rawNode.unknownData;
 
-			if (key === 'h') unknownData.kambasFlipH = !unknownData.kambasFlipH;
-			if (key === 'v') unknownData.kambasFlipV = !unknownData.kambasFlipV;
-			if (key === 'g') unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
+			if (key === 'h') unknownData.kambasFlipH = targetValue;
+			if (key === 'v') unknownData.kambasFlipV = targetValue;
+			if (key === 'g') unknownData.kambasGrayscale = targetValue;
 
 			const nodeEl = canvasNode.nodeEl;
 			if (nodeEl) {
+				nodeEl.classList.toggle('kambas-node-grayscale', Boolean(unknownData.kambasGrayscale));
+
 				const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
 				if (img) {
 					img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
 					img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 					img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
+				}
+				const paletteEl = nodeEl.querySelector<HTMLElement>('.kambas-palette-bar');
+				if (paletteEl) {
+					paletteEl.classList.toggle('kambas-palette-grayscale', Boolean(unknownData.kambasGrayscale));
 				}
 			}
 		});
@@ -711,10 +755,10 @@ export class CanvasImageHandler {
 			try {
 				canvas.requestSave();
 			} catch {
-				void this.persistImageTransform(file, selectedNodeIds, key);
+				void this.persistImageTransform(file, selectedNodeIds, key, targetValue);
 			}
 		} else {
-			void this.persistImageTransform(file, selectedNodeIds, key);
+			void this.persistImageTransform(file, selectedNodeIds, key, targetValue);
 		}
 	}
 
@@ -753,11 +797,23 @@ export class CanvasImageHandler {
 
 		if (selectedNodeIds.length === 0) return;
 
+		// Determine target state for palette
+		let targetValue = false;
+		for (const id of selectedNodeIds) {
+			const canvasNode = canvas.nodes.get(id);
+			if (!canvasNode) continue;
+			const uData = (canvasNode as unknown as { unknownData?: { kambasPalette?: boolean } }).unknownData;
+			if (!uData?.kambasPalette) {
+				targetValue = true;
+				break;
+			}
+		}
+
 		canvas.nodes.forEach((canvasNode, id) => {
 			if (!selectedNodeIds.includes(id)) return;
 			const rawNode = canvasNode as unknown as { unknownData?: { kambasPalette?: boolean } };
 			if (!rawNode.unknownData) rawNode.unknownData = {};
-			rawNode.unknownData.kambasPalette = !rawNode.unknownData.kambasPalette;
+			rawNode.unknownData.kambasPalette = targetValue;
 		});
 
 		this.scanAndRestoreTransforms(activeView);
@@ -767,10 +823,10 @@ export class CanvasImageHandler {
 			try {
 				canvas.requestSave();
 			} catch {
-				if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette' as any);
+				if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette', targetValue);
 			}
 		} else {
-			if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette' as any);
+			if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette', targetValue);
 		}
 	}
 
@@ -1315,7 +1371,7 @@ export class CanvasImageHandler {
 		}
 	}
 
-	private async persistImageTransform(file: TFile, selectedNodeIds: string[], key: string): Promise<void> {
+	private async persistImageTransform(file: TFile, selectedNodeIds: string[], key: string, targetValue?: boolean): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
 		try {
@@ -1331,16 +1387,16 @@ export class CanvasImageHandler {
 		data.nodes.forEach((node) => {
 			if (node.id && selectedNodeIds.includes(node.id)) {
 				if (key === 'h') {
-					node.kambasFlipH = !node.kambasFlipH;
+					node.kambasFlipH = targetValue !== undefined ? targetValue : !node.kambasFlipH;
 					modified = true;
 				} else if (key === 'v') {
-					node.kambasFlipV = !node.kambasFlipV;
+					node.kambasFlipV = targetValue !== undefined ? targetValue : !node.kambasFlipV;
 					modified = true;
 				} else if (key === 'g') {
-					node.kambasGrayscale = !node.kambasGrayscale;
+					node.kambasGrayscale = targetValue !== undefined ? targetValue : !node.kambasGrayscale;
 					modified = true;
 				} else if (key === 'p' || key === 'palette') {
-					node.kambasPalette = !node.kambasPalette;
+					node.kambasPalette = targetValue !== undefined ? targetValue : !node.kambasPalette;
 					modified = true;
 				}
 			}
