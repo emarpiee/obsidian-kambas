@@ -1320,6 +1320,9 @@ export class CanvasImageHandler {
 		images: PendingImage[],
 		evt: MouseEvent | ClipboardEvent | DragEvent
 	): Promise<void> {
+		// Capture exact position at the moment of paste/drop BEFORE opening modal or async loading
+		const initialMousePos = this.lastMousePos ? { ...this.lastMousePos } : null;
+
 		let currentChoice: StorageChoice | null = null;
 		let applyToAllRemaining = false;
 
@@ -1353,7 +1356,7 @@ export class CanvasImageHandler {
 				dims = await getImageDimensions(tempUrl);
 			}
 
-			const pos = this.getCanvasPosition(canvasView, evt, i, dims.width, dims.height);
+			const pos = this.getCanvasPosition(canvasView, evt, i, dims.width, dims.height, initialMousePos);
 
 			if (currentChoice === 'embed') {
 				let dataUrl = '';
@@ -1391,7 +1394,8 @@ export class CanvasImageHandler {
 		evt: MouseEvent | ClipboardEvent | DragEvent,
 		indexOffset: number,
 		nodeWidth = 400,
-		nodeHeight = 300
+		nodeHeight = 300,
+		initialMousePos?: { x: number; y: number } | null
 	): { x: number; y: number } {
 		const canvas = canvasView.canvas;
 		let clientX: number | null = null;
@@ -1404,18 +1408,34 @@ export class CanvasImageHandler {
 			clientY = mouseEvt.clientY;
 		}
 
-		// 2. Fall back to last recorded mouse position (e.g. for ClipboardEvent paste via keybinding)
+		// 2. Fall back to initial mouse position captured when paste was triggered
+		if ((clientX === null || clientY === null) && initialMousePos) {
+			clientX = initialMousePos.x;
+			clientY = initialMousePos.y;
+		}
+
+		// 3. Fall back to current last mouse position
 		if ((clientX === null || clientY === null) && this.lastMousePos) {
 			clientX = this.lastMousePos.x;
 			clientY = this.lastMousePos.y;
 		}
 
-		// 3. Convert client (screen) coordinates to Canvas world space
+		// Convert screen coordinates (clientX, clientY) to Canvas internal coordinates
 		if (canvas && clientX !== null && clientY !== null) {
-			if (typeof canvas.posFromEvent === 'function') {
+			const rawCanvas = canvas as unknown as {
+				posFromEvent?: (evt: { clientX: number; clientY: number }) => { x: number; y: number };
+				posFromClient?: (pos: { x: number; y: number }) => { x: number; y: number };
+				tx?: number;
+				ty?: number;
+				zoom?: number;
+				wrapperEl?: HTMLElement;
+				containerEl?: HTMLElement;
+			};
+
+			// Method A: posFromEvent
+			if (typeof rawCanvas.posFromEvent === 'function') {
 				try {
-					const fakeEvent = { clientX, clientY } as MouseEvent;
-					const cPos = canvas.posFromEvent(fakeEvent);
+					const cPos = rawCanvas.posFromEvent({ clientX, clientY });
 					if (typeof cPos?.x === 'number' && typeof cPos?.y === 'number' && !Number.isNaN(cPos.x) && !Number.isNaN(cPos.y)) {
 						return {
 							x: Math.round(cPos.x - nodeWidth / 2 + indexOffset * 40),
@@ -1423,12 +1443,45 @@ export class CanvasImageHandler {
 						};
 					}
 				} catch {
-					// Fallback
+					// Fallthrough
+				}
+			}
+
+			// Method B: posFromClient
+			if (typeof rawCanvas.posFromClient === 'function') {
+				try {
+					const cPos = rawCanvas.posFromClient({ x: clientX, y: clientY });
+					if (typeof cPos?.x === 'number' && typeof cPos?.y === 'number' && !Number.isNaN(cPos.x) && !Number.isNaN(cPos.y)) {
+						return {
+							x: Math.round(cPos.x - nodeWidth / 2 + indexOffset * 40),
+							y: Math.round(cPos.y - nodeHeight / 2 + indexOffset * 40),
+						};
+					}
+				} catch {
+					// Fallthrough
+				}
+			}
+
+			// Method C: Canvas viewport math: (mouseClient - containerRect - tx) / zoom
+			const containerEl = rawCanvas.wrapperEl ?? rawCanvas.containerEl ?? document.querySelector('.canvas-wrapper') ?? document.querySelector('.canvas');
+			if (containerEl && typeof rawCanvas.tx === 'number' && typeof rawCanvas.ty === 'number' && typeof rawCanvas.zoom === 'number' && rawCanvas.zoom > 0) {
+				try {
+					const rect = containerEl.getBoundingClientRect();
+					const worldX = (clientX - rect.left - rawCanvas.tx) / rawCanvas.zoom;
+					const worldY = (clientY - rect.top - rawCanvas.ty) / rawCanvas.zoom;
+					if (!Number.isNaN(worldX) && !Number.isNaN(worldY)) {
+						return {
+							x: Math.round(worldX - nodeWidth / 2 + indexOffset * 40),
+							y: Math.round(worldY - nodeHeight / 2 + indexOffset * 40),
+						};
+					}
+				} catch {
+					// Fallthrough
 				}
 			}
 		}
 
-		// 4. Fall back to canvas viewport center if available
+		// 4. Fall back to canvas viewport center if cursor coordinates cannot be determined
 		if (canvas) {
 			const rawCanvas = canvas as unknown as { getViewportBBox?: () => { minX: number; maxX: number; minY: number; maxY: number } };
 			if (typeof rawCanvas.getViewportBBox === 'function') {
