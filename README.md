@@ -36,9 +36,11 @@ Like **PureRef** — the industry standard reference viewer for digital artists 
 ### 🖼️ Image & Node Manipulations
 - **Horizontal & Vertical Flipping**: Mirror images along X or Y axes for flipping reference poses or checking canvas composition.
 - **Grayscale Toggle**: Instantly strip color to evaluate value structure, contrast, and visual hierarchy.
+- **Color Palette Extraction**: Extract dominant colors from any image node and display them as a configurable swatch overlay (3–10 swatches) for quick color reference.
 - **Node Opacity Control**: Adjust transparency (0% to 100%) for image nodes, text cards, embedded files, and canvas groups.
 - **Reset Natural Dimensions**: Restore scaled images to their native pixel dimensions in one click.
 - **Clipboard Integration**: Copy clean image data directly from canvas nodes to system clipboard.
+- **Swap Media**: Replace any image or video node with another file from your vault, a local file, or directly from your clipboard—preserving position and natural aspect ratio.
 
 ### 📥 Storage & Attachment Management
 - **Smart Ingestion Modal**: Prompt on paste or drag-and-drop to choose vault attachment storage vs. inline Base64 embedding.
@@ -70,6 +72,7 @@ Obsidian Canvas files reserve an `unknownData` JSON object per node for plugin s
     "kambasFlipH": true,
     "kambasFlipV": false,
     "kambasGrayscale": true,
+    "kambasPalette": false,
     "kambasOpacity": 0.85,
     "originalWidth": 1200,
     "originalHeight": 800
@@ -105,9 +108,11 @@ Right-click any node or selection inside an active Canvas view:
 | **Flip horizontal** | Image nodes | Flips target image horizontally across X axis. |
 | **Flip vertical** | Image nodes | Flips target image vertically across Y axis. |
 | **Toggle grayscale** | Image nodes | Toggles CSS grayscale value-check filter. |
+| **Color palette** | Image nodes | Extracts and displays dominant color swatches on the image. |
 | **Change opacity** | All node types | Opens opacity dialog (0% – 100%). |
 | **Reset to original size** | Image nodes | Resets node bounds to image natural dimensions. |
-| **Embed in canvas file...** | Vault image nodes | Converts vault file link into embedded inline Base64 URI. |
+| **Swap media…** | Single image/video node | Replaces the current media with another from vault, file, or clipboard. |
+| **Embed in canvas file...** | Vault media nodes | Converts vault file link into embedded inline Base64 URI. |
 | **Copy media to clipboard** | Image nodes | Copies raw image payload or file to clipboard. |
 | **Move / Copy media to...** | Vault media nodes | Launches folder picker to relocate or duplicate vault file. |
 
@@ -125,6 +130,7 @@ Right-click any node or selection inside an active Canvas view:
 Manage settings in **Obsidian Settings** > **Kambas**:
 
 - **Hide media label**: Hides raw Base64 Data URI header strings above embedded media cards.
+- **Color palette swatches**: Number of dominant colors to display when the color palette is enabled on an image (3–10).
 - **Pan controls**: Configure key bindings and set maximum pan speed (units per frame).
 - **Zoom controls**: Configure zoom shortcuts and adjust zoom step sensitivity.
 
