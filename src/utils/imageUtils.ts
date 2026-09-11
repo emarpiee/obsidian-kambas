@@ -114,9 +114,9 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 	return new Promise((resolve) => {
 		const img = new Image();
 		img.crossOrigin = 'Anonymous';
-		img.onload = () => {
+		img.onload = (): void => {
 			try {
-				const canvas = document.createElement('canvas');
+				const canvas = createEl('canvas');
 				const ctx = canvas.getContext('2d');
 				if (!ctx) {
 					resolve([]);
@@ -282,7 +282,7 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 				resolve([]);
 			}
 		};
-		img.onerror = () => resolve([]);
+		img.onerror = (): void => resolve([]);
 
 		if (typeof src === 'string') {
 			img.src = src;

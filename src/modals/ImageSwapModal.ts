@@ -128,8 +128,8 @@ export class ImageSwapModal extends Modal {
 	private buildVaultPanel(panel: HTMLElement, t: ReturnType<typeof getText>): void {
 		// Search input
 		const searchWrap = panel.createDiv({ cls: 'kambas-swap-search-wrap' });
-		const searchIcon = searchWrap.createEl('span', { cls: 'kambas-swap-search-icon' });
-		searchIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`;
+		const searchIcon = searchWrap.createSpan({ cls: 'kambas-swap-search-icon' });
+		searchIcon.setText('🔍');
 
 		this.vaultSearchInput = searchWrap.createEl('input', {
 			type: 'text',
@@ -166,7 +166,7 @@ export class ImageSwapModal extends Modal {
 		const sorted = filtered.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 80);
 
 		if (sorted.length === 0) {
-			this.vaultResultsEl.createEl('div', { cls: 'kambas-swap-no-results', text: 'No media files found' });
+			this.vaultResultsEl.createDiv({ cls: 'kambas-swap-no-results', text: 'No media files found' });
 			return;
 		}
 
@@ -175,13 +175,11 @@ export class ImageSwapModal extends Modal {
 
 			// Small icon based on extension type
 			const isVideo = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v', 'ogv'].includes(tfile.extension.toLowerCase());
-			const iconEl = item.createEl('span', { cls: 'kambas-swap-result-icon' });
-			iconEl.innerHTML = isVideo
-				? `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`
-				: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+			const iconEl = item.createSpan({ cls: 'kambas-swap-result-icon' });
+			iconEl.setText(isVideo ? '🎬' : '🖼️');
 
-			const nameEl = item.createEl('span', { cls: 'kambas-swap-result-name', text: tfile.name });
-			const pathEl = item.createEl('span', { cls: 'kambas-swap-result-path', text: tfile.parent?.path || '' });
+			const nameEl = item.createSpan({ cls: 'kambas-swap-result-name', text: tfile.name });
+			const pathEl = item.createSpan({ cls: 'kambas-swap-result-path', text: tfile.parent?.path || '' });
 
 			if (this.selectedVaultFile === tfile) {
 				item.classList.add('kambas-swap-result-item--selected');
@@ -223,7 +221,7 @@ export class ImageSwapModal extends Modal {
 			});
 		}
 
-		this.vaultPreviewEl.createEl('span', { cls: 'kambas-swap-preview-name', text: tfile.name });
+		this.vaultPreviewEl.createSpan({ cls: 'kambas-swap-preview-name', text: tfile.name });
 	}
 
 	private buildFilePanel(panel: HTMLElement, t: ReturnType<typeof getText>): void {
@@ -240,8 +238,8 @@ export class ImageSwapModal extends Modal {
 		// Drop zone
 		this.fileDropZoneEl = panel.createDiv({ cls: 'kambas-swap-dropzone' });
 
-		const dropIcon = this.fileDropZoneEl.createEl('span', { cls: 'kambas-swap-dropzone-icon' });
-		dropIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>`;
+		const dropIcon = this.fileDropZoneEl.createSpan({ cls: 'kambas-swap-dropzone-icon' });
+		dropIcon.setText('📁');
 
 		this.fileDropZoneEl.createEl('p', { cls: 'kambas-swap-dropzone-hint', text: t.swapDropZoneHint });
 
@@ -265,25 +263,27 @@ export class ImageSwapModal extends Modal {
 			fileInput.click();
 		});
 
-		clipboardBtn.addEventListener('click', async (e) => {
+		clipboardBtn.addEventListener('click', (e) => {
 			e.stopPropagation();
-			try {
-				const items = await navigator.clipboard.read();
-				for (const item of items) {
-					const imageType = item.types.find((t) => t.startsWith('image/'));
-					if (imageType) {
-						const blob = await item.getType(imageType);
-						const ext = imageType.split('/')[1] || 'png';
-						const file = new File([blob], `pasted_image_${Date.now()}.${ext}`, { type: imageType });
-						this.handleOsFile(file);
-						return;
+			void (async (): Promise<void> => {
+				try {
+					const items = await navigator.clipboard.read();
+					for (const item of items) {
+						const imageType = item.types.find((t) => t.startsWith('image/'));
+						if (imageType) {
+							const blob = await item.getType(imageType);
+							const ext = imageType.split('/')[1] || 'png';
+							const file = new File([blob], `pasted_image_${Date.now()}.${ext}`, { type: imageType });
+							this.handleOsFile(file);
+							return;
+						}
 					}
+					new Notice('No image found in clipboard');
+				} catch (err) {
+					console.error('Failed to read clipboard:', err);
+					new Notice('Unable to access clipboard');
 				}
-				new Notice('No image found in clipboard');
-			} catch (err) {
-				console.error('Failed to read clipboard:', err);
-				new Notice('Unable to access clipboard');
-			}
+			})();
 		});
 
 		fileInput.addEventListener('change', () => {
@@ -341,7 +341,7 @@ export class ImageSwapModal extends Modal {
 			img.addEventListener('load', () => URL.revokeObjectURL(objectUrl), { once: true });
 		}
 
-		this.filePreviewEl.createEl('span', { cls: 'kambas-swap-preview-name', text: file.name });
+		this.filePreviewEl.createSpan({ cls: 'kambas-swap-preview-name', text: file.name });
 	}
 
 	private updateSwapBtn(): void {
