@@ -20,12 +20,15 @@ export class CanvasImageHandler {
 	private app: App;
 	private editGuardObserver: MutationObserver | null = null;
 	private modifyTimer: number | null = null;
+	private lastMousePos: { x: number; y: number } | null = null;
 
 	constructor(app: App) {
 		this.app = app;
 	}
 
 	public registerEvents(): void {
+		window.addEventListener('mousemove', this.handleMouseMove, true);
+		window.addEventListener('pointermove', this.handleMouseMove, true);
 		window.addEventListener('paste', this.handlePaste, true);
 		window.addEventListener('drop', this.handleDrop, true);
 		window.addEventListener('dblclick', this.handleDblClick, true);
@@ -34,6 +37,8 @@ export class CanvasImageHandler {
 	}
 
 	public unregisterEvents(): void {
+		window.removeEventListener('mousemove', this.handleMouseMove, true);
+		window.removeEventListener('pointermove', this.handleMouseMove, true);
 		window.removeEventListener('paste', this.handlePaste, true);
 		window.removeEventListener('drop', this.handleDrop, true);
 		window.removeEventListener('dblclick', this.handleDblClick, true);
@@ -44,6 +49,12 @@ export class CanvasImageHandler {
 			this.editGuardObserver = null;
 		}
 	}
+
+	private handleMouseMove = (evt: MouseEvent): void => {
+		if (evt.clientX !== undefined && evt.clientY !== undefined) {
+			this.lastMousePos = { x: evt.clientX, y: evt.clientY };
+		}
+	};
 
 	// ──────────────────────────────────────────────────────────────────────────
 	// MutationObserver: automatic mounting for link-type image nodes
@@ -1334,18 +1345,23 @@ export class CanvasImageHandler {
 				break;
 			}
 
-			const pos = this.getCanvasPosition(canvasView, evt, i);
+			let dims = { width: 400, height: 300 };
+			if (item.file) {
+				dims = await getImageDimensions(item.file);
+			} else if (item.arrayBuffer) {
+				const tempUrl = arrayBufferToBase64DataUrl(item.arrayBuffer, item.mimeType);
+				dims = await getImageDimensions(tempUrl);
+			}
+
+			const pos = this.getCanvasPosition(canvasView, evt, i, dims.width, dims.height);
 
 			if (currentChoice === 'embed') {
 				let dataUrl = '';
-				let dims = { width: 400, height: 300 };
 
 				if (item.file) {
 					dataUrl = await blobToBase64(item.file);
-					dims = await getImageDimensions(item.file);
 				} else if (item.arrayBuffer) {
 					dataUrl = arrayBufferToBase64DataUrl(item.arrayBuffer, item.mimeType);
-					dims = await getImageDimensions(dataUrl);
 				}
 
 				if (dataUrl) {
@@ -1353,11 +1369,9 @@ export class CanvasImageHandler {
 				}
 			} else {
 				let buffer: ArrayBuffer | null = null;
-				let dims = { width: 400, height: 300 };
 
 				if (item.file) {
 					buffer = await item.file.arrayBuffer();
-					dims = await getImageDimensions(item.file);
 				} else if (item.arrayBuffer) {
 					buffer = item.arrayBuffer;
 				}
@@ -1375,26 +1389,64 @@ export class CanvasImageHandler {
 	private getCanvasPosition(
 		canvasView: CanvasItemView,
 		evt: MouseEvent | ClipboardEvent | DragEvent,
-		indexOffset: number
+		indexOffset: number,
+		nodeWidth = 400,
+		nodeHeight = 300
 	): { x: number; y: number } {
-		const basePos = { x: indexOffset * 40, y: indexOffset * 40 };
-
 		const canvas = canvasView.canvas;
-		if (canvas && typeof canvas.posFromEvent === 'function') {
-			try {
-				const mouseEvt = evt as MouseEvent;
-				if (mouseEvt.clientX !== undefined && mouseEvt.clientY !== undefined) {
-					const cPos = canvas.posFromEvent(mouseEvt);
-					if (typeof cPos.x === 'number' && typeof cPos.y === 'number' && !Number.isNaN(cPos.x) && !Number.isNaN(cPos.y)) {
-						return { x: cPos.x + indexOffset * 40, y: cPos.y + indexOffset * 40 };
+		let clientX: number | null = null;
+		let clientY: number | null = null;
+
+		// 1. Try event coordinates if MouseEvent / DragEvent
+		const mouseEvt = evt as MouseEvent;
+		if (typeof mouseEvt?.clientX === 'number' && typeof mouseEvt?.clientY === 'number' && (mouseEvt.clientX !== 0 || mouseEvt.clientY !== 0)) {
+			clientX = mouseEvt.clientX;
+			clientY = mouseEvt.clientY;
+		}
+
+		// 2. Fall back to last recorded mouse position (e.g. for ClipboardEvent paste via keybinding)
+		if ((clientX === null || clientY === null) && this.lastMousePos) {
+			clientX = this.lastMousePos.x;
+			clientY = this.lastMousePos.y;
+		}
+
+		// 3. Convert client (screen) coordinates to Canvas world space
+		if (canvas && clientX !== null && clientY !== null) {
+			if (typeof canvas.posFromEvent === 'function') {
+				try {
+					const fakeEvent = { clientX, clientY } as MouseEvent;
+					const cPos = canvas.posFromEvent(fakeEvent);
+					if (typeof cPos?.x === 'number' && typeof cPos?.y === 'number' && !Number.isNaN(cPos.x) && !Number.isNaN(cPos.y)) {
+						return {
+							x: Math.round(cPos.x - nodeWidth / 2 + indexOffset * 40),
+							y: Math.round(cPos.y - nodeHeight / 2 + indexOffset * 40),
+						};
 					}
+				} catch {
+					// Fallback
 				}
-			} catch {
-				// Fallback to default position
 			}
 		}
 
-		return basePos;
+		// 4. Fall back to canvas viewport center if available
+		if (canvas) {
+			const rawCanvas = canvas as unknown as { getViewportBBox?: () => { minX: number; maxX: number; minY: number; maxY: number } };
+			if (typeof rawCanvas.getViewportBBox === 'function') {
+				try {
+					const bbox = rawCanvas.getViewportBBox();
+					const centerX = (bbox.minX + bbox.maxX) / 2;
+					const centerY = (bbox.minY + bbox.maxY) / 2;
+					return {
+						x: Math.round(centerX - nodeWidth / 2 + indexOffset * 40),
+						y: Math.round(centerY - nodeHeight / 2 + indexOffset * 40),
+					};
+				} catch {
+					// Fallback
+				}
+			}
+		}
+
+		return { x: indexOffset * 40, y: indexOffset * 40 };
 	}
 
 	private async addEmbeddedImageToCanvas(
