@@ -430,6 +430,11 @@ export class CanvasImageHandler {
 			}
 		}
 
+		// Refresh tag filter panel if open (e.g. after undo/redo or node tag modifications)
+		if (this.tagFilterPanelEl?.isConnected) {
+			this.refreshTagFilterPanel(activeView);
+		}
+
 		// Inject tag filter button into canvas toolbar (idempotent)
 		window.setTimeout(() => this.injectTagFilterButton(activeView), 200);
 	}
