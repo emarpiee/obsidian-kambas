@@ -150,6 +150,27 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	box-sizing: border-box;
 }
 
+.kambas-settings-radio-group {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.kambas-radio-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	font-size: 13px;
+	color: var(--text-normal);
+	user-select: none;
+}
+
+.kambas-radio-label input[type="radio"] {
+	cursor: pointer;
+	accent-color: var(--interactive-accent);
+}
+
 .kambas-opacity-buttons {
 	display: flex;
 	justify-content: flex-end;

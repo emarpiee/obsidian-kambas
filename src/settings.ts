@@ -6,6 +6,7 @@ import type KambasPlugin from './main';
 export interface KambasSettings {
 	hideImageLabel: boolean;
 	tagBadgePosition: 'outside' | 'inside';
+	tagZoomOnSelect: boolean;
 	paletteSwatchCount: number; // 3 to 10 swatches
 	keyboardPan: CanvasKeyboardPanSettings;
 }
@@ -13,6 +14,7 @@ export interface KambasSettings {
 export const DEFAULT_SETTINGS: KambasSettings = {
 	hideImageLabel: true,
 	tagBadgePosition: 'outside',
+	tagZoomOnSelect: true,
 	paletteSwatchCount: 5,
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
@@ -85,6 +87,18 @@ export class KambasSettingTab extends PluginSettingTab {
 						this.plugin.settings.tagBadgePosition = value as 'outside' | 'inside';
 						await this.plugin.saveSettings();
 						this.plugin.applySettingsCss();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Auto-zoom on tag selection')
+			.setDesc('Automatically zoom and fit visible elements when selecting or clearing tag filters in the panel.')
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.tagZoomOnSelect ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.tagZoomOnSelect = value;
+						await this.plugin.saveSettings();
 					})
 			);
 

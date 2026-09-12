@@ -2105,11 +2105,12 @@ export class CanvasImageHandler {
 	private applyTagFilters(activeView: CanvasItemView, performZoom = false): void {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
+		const allowZoom = performZoom && (this.plugin.settings.tagZoomOnSelect ?? true);
 		if (this.activeTagFilters.size === 0) {
 			canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
 			this.removeSelectionGuard();
 			// Zoom to fit all nodes once when explicitly clearing/unselecting filters
-			if (performZoom) {
+			if (allowZoom) {
 				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 			}
 		} else {
@@ -2123,7 +2124,7 @@ export class CanvasImageHandler {
 			// Guard prevents rubber-band selection from picking up hidden nodes
 			this.installSelectionGuard(activeView);
 			// Zoom canvas to fit visible nodes ONCE when user explicitly toggles a filter tag
-			if (performZoom) {
+			if (allowZoom) {
 				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 			}
 		}

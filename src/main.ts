@@ -330,6 +330,24 @@ export default class KambasPlugin extends Plugin {
 				return false;
 			},
 		});
+
+		// Register command: Toggle auto-zoom on tag selection
+		this.addCommand({
+			id: 'canvas-toggle-auto-zoom',
+			name: 'Toggle auto-zoom on tag selection',
+			icon: 'zoom-in',
+			checkCallback: (checking: boolean) => {
+				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				if (activeView && activeView.getViewType() === 'canvas') {
+					if (!checking) {
+						this.settings.tagZoomOnSelect = !this.settings.tagZoomOnSelect;
+						void this.saveSettings();
+					}
+					return true;
+				}
+				return false;
+			},
+		});
 	}
 
 	onunload(): void {
