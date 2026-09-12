@@ -1505,22 +1505,29 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
-		// Collect initial tags from the first selected node for pre-filling
-		let initialTags: string[] = [];
+		// Collect initial tags:
+		// If right-clicked on a specific target node, use that target node's tags.
+		// Otherwise (bulk multi-select context menu / toolbar), collect the union of tags across ALL selected nodes.
+		const initialTagSet = new Set<string>();
 		canvas.nodes.forEach((node) => {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
-			const isSel = nodeEl.classList.contains('is-selected') || (targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
-			if (isSel && initialTags.length === 0) {
+			const isTarget = Boolean(targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
+			const isSel = nodeEl.classList.contains('is-selected');
+			
+			if (targetNodeEl ? isTarget : isSel) {
 				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
-				initialTags = uData?.kambasTags ?? [];
+				for (const tag of uData?.kambasTags ?? []) {
+					if (tag.trim()) initialTagSet.add(tag);
+				}
 			}
 		});
+		const initialTags = Array.from(initialTagSet);
 
 		const suggestions = this.collectLiveCanvasTags(activeView);
 
 		new TagModal(this.app, initialTags, suggestions, (tags) => {
-			void this.setNodeTags(activeView, tags, targetNodeEl);
+			void this.setNodeTags(activeView, tags, initialTags, targetNodeEl);
 		}).open();
 	}
 
@@ -1530,12 +1537,17 @@ export class CanvasImageHandler {
 	public async setNodeTags(
 		activeView: CanvasItemView,
 		tags: string[],
+		initialTags: string[] = [],
 		targetNodeEl?: Element | null
 	): Promise<void> {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
 		const selectedNodeIds: string[] = [];
+
+		// Collect initial tags that were passed into the modal (to calculate added vs removed tags)
+		const addedTags = tags.filter((t) => !initialTags.includes(t));
+		const removedTags = initialTags.filter((t) => !tags.includes(t));
 
 		canvas.nodes.forEach((node, id) => {
 			const nodeEl = node.nodeEl;
@@ -1545,10 +1557,16 @@ export class CanvasImageHandler {
 				selectedNodeIds.push(id);
 				const rawNode = node as unknown as { unknownData?: { kambasTags?: string[] } };
 				if (!rawNode.unknownData) rawNode.unknownData = {};
-				rawNode.unknownData.kambasTags = tags.length > 0 ? tags : undefined;
+				const existingTags = rawNode.unknownData.kambasTags ?? [];
+				// Keep existing tags not explicitly removed, plus any newly added tags
+				let updated = existingTags.filter((t) => !removedTags.includes(t));
+				for (const tag of addedTags) {
+					if (!updated.includes(tag)) updated.push(tag);
+				}
+				rawNode.unknownData.kambasTags = updated.length > 0 ? updated : undefined;
 
 				// Immediately render badges
-				if (nodeEl.instanceOf(HTMLElement)) this.renderTagBadges(nodeEl, tags);
+				if (nodeEl.instanceOf(HTMLElement)) this.renderTagBadges(nodeEl, updated);
 			}
 		});
 
@@ -1557,7 +1575,7 @@ export class CanvasImageHandler {
 		// Always write directly to the JSON file — requestSave() alone strips custom unknownData fields.
 		const file = activeView.file;
 		if (file) {
-			await this.persistTags(file, selectedNodeIds, tags);
+			await this.persistTagsDiff(file, selectedNodeIds, addedTags, removedTags);
 			// Re-stamp badges from saved state to confirm persistence
 			window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 100);
 		}
@@ -1573,7 +1591,12 @@ export class CanvasImageHandler {
 		}
 	}
 
-	private async persistTags(file: TFile, selectedNodeIds: string[], tags: string[]): Promise<void> {
+	private async persistTagsDiff(
+		file: TFile,
+		selectedNodeIds: string[],
+		addedTags: string[],
+		removedTags: string[]
+	): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
 		try {
@@ -1583,10 +1606,16 @@ export class CanvasImageHandler {
 		let modified = false;
 		data.nodes.forEach((node) => {
 			if (node.id && selectedNodeIds.includes(node.id)) {
-				if (tags.length > 0) {
-					node.kambasTags = tags;
+				const nd = node as unknown as { kambasTags?: string[] };
+				const existing = nd.kambasTags ?? [];
+				let updated = existing.filter((t) => !removedTags.includes(t));
+				for (const tag of addedTags) {
+					if (!updated.includes(tag)) updated.push(tag);
+				}
+				if (updated.length > 0) {
+					nd.kambasTags = updated;
 				} else {
-					delete node.kambasTags;
+					delete nd.kambasTags;
 				}
 				modified = true;
 			}

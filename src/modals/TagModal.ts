@@ -35,13 +35,14 @@ export class TagModal extends Modal {
 
 		// ── Chip input row ────────────────────────────────────────────────────
 		const chipWrap = contentEl.createDiv({ cls: 'kambas-tag-chip-wrap' });
-		this.chipRow = chipWrap.createDiv({ cls: 'kambas-tag-chip-row' });
-		// Input always lives in its own row below chips
+		// Input field on top
 		const inputRow = chipWrap.createDiv({ cls: 'kambas-tag-input-row' });
 		this.input = inputRow.createEl('input', {
 			cls: 'kambas-tag-input',
 			attr: { type: 'text', placeholder: t.tagPlaceholder },
 		});
+		// Tag chips below input
+		this.chipRow = chipWrap.createDiv({ cls: 'kambas-tag-chip-row' });
 
 		// Suggestion dropdown
 		this.dropdownEl = contentEl.createDiv({ cls: 'kambas-tag-dropdown is-hidden' });
