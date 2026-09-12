@@ -1130,13 +1130,14 @@ export class CanvasImageHandler {
 
 				const savedFile = this.app.vault.getAbstractFileByPath(savedPath);
 				if (savedFile instanceof TFile && typeof canvas.createFileNode === 'function') {
-					// 1. Preserve position, size & transform data
+					// 1. Preserve position, size, transform & tag data
 					const pos = { x: canvasNodeData.x, y: canvasNodeData.y };
 					const size = { width: canvasNodeData.width, height: canvasNodeData.height };
 					const flipH = canvasNodeData.kambasFlipH;
 					const flipV = canvasNodeData.kambasFlipV;
 					const grayscale = canvasNodeData.kambasGrayscale;
 					const opacity = canvasNodeData.kambasOpacity;
+					const tags = canvasNodeData.kambasTags;
 
 					// 2. Remove old link node from canvas
 					const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
@@ -1156,19 +1157,20 @@ export class CanvasImageHandler {
 						save: true,
 					});
 
-					// 4. Find newly created file node and apply preserved transform properties
+					// 4. Find newly created file node and apply preserved transform & tag properties
 					const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
 						const rawN = n as unknown as { file?: TFile | string; unknownData?: { file?: string } };
 						return rawN.file === savedFile || rawN.file === savedPath || rawN.unknownData?.file === savedPath;
 					});
 
 					if (newCanvasNode) {
-						const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number } };
+						const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; kambasTags?: string[] } };
 						if (!rawN.unknownData) rawN.unknownData = {};
 						if (flipH) rawN.unknownData.kambasFlipH = flipH;
 						if (flipV) rawN.unknownData.kambasFlipV = flipV;
 						if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 						if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
+						if (Array.isArray(tags) && tags.length > 0) rawN.unknownData.kambasTags = [...tags];
 					}
 
 					modified = true;
@@ -1361,13 +1363,14 @@ export class CanvasImageHandler {
 			const mimeType = `image/${tfile.extension.toLowerCase() === 'jpg' ? 'jpeg' : tfile.extension.toLowerCase()}`;
 			const dataUrl = arrayBufferToBase64DataUrl(arrayBuffer, mimeType);
 
-			// 1. Preserve position, size & transform data
+			// 1. Preserve position, size, transform & tag data
 			const pos = { x: canvasNodeData.x, y: canvasNodeData.y };
 			const size = { width: canvasNodeData.width, height: canvasNodeData.height };
 			const flipH = canvasNodeData.kambasFlipH;
 			const flipV = canvasNodeData.kambasFlipV;
 			const grayscale = canvasNodeData.kambasGrayscale;
 			const opacity = canvasNodeData.kambasOpacity;
+			const tags = canvasNodeData.kambasTags;
 
 			// 2. Remove old native file node from canvas
 			const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
@@ -1388,19 +1391,20 @@ export class CanvasImageHandler {
 					save: true,
 				});
 
-				// 4. Find newly created link node and apply preserved transform properties
+				// 4. Find newly created link node and apply preserved transform & tag properties
 				const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
 					const rawN = n as unknown as { url?: string; unknownData?: { url?: string } };
 					return rawN.url === dataUrl || rawN.unknownData?.url === dataUrl;
 				});
 
 				if (newCanvasNode) {
-					const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number } };
+					const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; kambasTags?: string[] } };
 					if (!rawN.unknownData) rawN.unknownData = {};
 					if (flipH) rawN.unknownData.kambasFlipH = flipH;
 					if (flipV) rawN.unknownData.kambasFlipV = flipV;
 					if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 					if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
+					if (Array.isArray(tags) && tags.length > 0) rawN.unknownData.kambasTags = [...tags];
 				}
 
 				modified = true;
@@ -3235,12 +3239,13 @@ export class CanvasImageHandler {
 			});
 		}
 
-		// Transfer kambas transform properties (flip, grayscale, opacity, palette) to newly spawned live node
+		// Transfer kambas transform properties & tags to newly spawned live node
 		const flipH = nodeData.kambasFlipH;
 		const flipV = nodeData.kambasFlipV;
 		const grayscale = nodeData.kambasGrayscale;
 		const palette = nodeData.kambasPalette;
 		const opacity = nodeData.kambasOpacity;
+		const tags = nodeData.kambasTags;
 
 		const targetPathOrUrl = newFileOrUrl.file || newFileOrUrl.url;
 		const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
@@ -3249,13 +3254,14 @@ export class CanvasImageHandler {
 		});
 
 		if (newCanvasNode) {
-			const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number } };
+			const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number; kambasTags?: string[] } };
 			if (!rawN.unknownData) rawN.unknownData = {};
 			if (flipH) rawN.unknownData.kambasFlipH = flipH;
 			if (flipV) rawN.unknownData.kambasFlipV = flipV;
 			if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 			if (palette) rawN.unknownData.kambasPalette = palette;
 			if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
+			if (Array.isArray(tags) && tags.length > 0) rawN.unknownData.kambasTags = [...tags];
 		}
 
 		if (typeof canvas.requestSave === 'function') {
