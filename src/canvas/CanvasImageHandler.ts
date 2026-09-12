@@ -42,6 +42,7 @@ export class CanvasImageHandler {
 	private tagToolbarBtn: HTMLElement | null = null;
 	private tagFilterSelectionGuard: (() => void) | null = null;
 	private colorHighlightCleanup: (() => void) | null = null;
+	private lazyExtractDebounceTimer: number | null = null;
 
 	constructor(app: App, plugin: import('../main').default) {
 		this.app = app;
@@ -103,6 +104,7 @@ export class CanvasImageHandler {
 						const added = mutation.addedNodes[i];
 						if (added.nodeType !== Node.ELEMENT_NODE) continue;
 						const el = added as HTMLElement;
+						if (el.closest?.('.kambas-tag-panel') || el.classList?.contains('kambas-tag-panel')) continue;
 						if (el.tagName === 'IMG' || el.classList?.contains('canvas-node') || el.classList?.contains('canvas-node-content') || el.closest?.('.canvas-node')) {
 							const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
 							if (activeView?.getViewType() === 'canvas') {
@@ -130,7 +132,9 @@ export class CanvasImageHandler {
 		window.addEventListener('mouseup', this.handleMouseUpCheck, true);
 	}
 
-	private handleScrollOrPan = (): void => {
+	private handleScrollOrPan = (evt: Event): void => {
+		const target = evt.target as HTMLElement | null;
+		if (target?.closest?.('.kambas-tag-panel')) return;
 		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
 		if (activeView?.getViewType() === 'canvas') {
 			this.scheduleRescan(activeView);
@@ -1664,10 +1668,12 @@ export class CanvasImageHandler {
 		const panel = container.createDiv({ cls: 'kambas-tag-panel' });
 		this.tagFilterPanelEl = panel;
 
-		// Stop mouse events from reaching Obsidian Canvas (which steals focus / deselects inputs)
+		// Stop mouse & scroll events from reaching Obsidian Canvas (which zooms/pans canvas or triggers rescans)
 		panel.addEventListener('mousedown', (e) => e.stopPropagation());
 		panel.addEventListener('pointerdown', (e) => e.stopPropagation());
 		panel.addEventListener('click', (e) => e.stopPropagation());
+		panel.addEventListener('wheel', (e) => e.stopPropagation());
+		panel.addEventListener('scroll', (e) => e.stopPropagation());
 
 		// Set dim-opacity CSS var on the container
 		container.style.setProperty('--kambas-dim-opacity', String(this.dimOpacity));
@@ -1908,7 +1914,13 @@ export class CanvasImageHandler {
 		}
 
 		const body = (this.tagFilterPanelEl as unknown as { _body?: HTMLElement })._body;
+		const listElBefore = body?.querySelector<HTMLElement>('.kambas-tag-panel-list');
+		const savedScrollTop = listElBefore ? listElBefore.scrollTop : 0;
+
 		if (body) this.renderFilterPanelBody(body, activeView);
+
+		const listElAfter = body?.querySelector<HTMLElement>('.kambas-tag-panel-list');
+		if (listElAfter) listElAfter.scrollTop = savedScrollTop;
 
 		if (focusedQuery !== null && this.tagFilterPanelEl?.isConnected) {
 			const newInput = this.tagFilterPanelEl.querySelector<HTMLInputElement>('input.kambas-tag-search');
@@ -1920,6 +1932,7 @@ export class CanvasImageHandler {
 				}
 				// Trigger input event so list reflects the search query
 				newInput.dispatchEvent(new Event('input', { bubbles: true }));
+				if (listElAfter) listElAfter.scrollTop = savedScrollTop;
 			}
 		}
 	}
@@ -2022,7 +2035,11 @@ export class CanvasImageHandler {
 				void getNodeDominantColorName(img.src).then((names) => {
 					this.nodeColorCache.set(rawNode.id, names);
 					if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
-						this.refreshTagFilterPanel(activeView);
+						if (this.lazyExtractDebounceTimer !== null) window.clearTimeout(this.lazyExtractDebounceTimer);
+						this.lazyExtractDebounceTimer = window.setTimeout(() => {
+							this.lazyExtractDebounceTimer = null;
+							this.refreshTagFilterPanel(activeView);
+						}, 300);
 					}
 				});
 				return;

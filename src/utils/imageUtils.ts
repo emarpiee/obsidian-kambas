@@ -201,8 +201,8 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 					bucket.gSum += p.g;
 					bucket.bSum += p.b;
 					bucket.count++;
-					// Boost score of saturated & accent colors so small red/blue/green markers stand out against gray backgrounds
-					const saturationBoost = 1 + (p.s * 4); 
+					// Boost score of saturated & accent colors so small red/blue/green markers stand out against heavy backgrounds
+					const saturationBoost = p.s > 0.15 ? 1 + (p.s * 8) : 1;
 					bucket.totalScore += saturationBoost;
 				}
 
@@ -349,7 +349,7 @@ export function hexToNamedColor(hex: string): string | null {
  */
 export async function getNodeDominantColorName(src: string): Promise<string[] | null> {
 	try {
-		const palette = await extractImagePalette(src, 6);
+		const palette = await extractImagePalette(src, 10);
 		const found = new Set<string>();
 		for (const hex of palette) {
 			const name = hexToNamedColor(hex);
