@@ -7,6 +7,7 @@ import { getText } from '../i18n';
 import {
 	arrayBufferToBase64DataUrl,
 	blobToBase64,
+	canvasNodePresetColorToName,
 	extractImagePalette,
 	getImageDimensions,
 	getNodeDominantColorName,
@@ -1999,7 +2000,7 @@ export class CanvasImageHandler {
 		}
 
 		if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
-			this.applyTagFilters(activeView, false);
+			this.applyTagFilters(activeView, true);
 			this.refreshTagFilterPanel(activeView);
 		}
 	}
@@ -2053,37 +2054,50 @@ export class CanvasImageHandler {
 		const visibleColorCounts = new Map<string, number>();
 		const hasAnyFilter = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0 ||
 		                     this.activeTagFilters.size > 0   || this.activeTagExcludes.size > 0;
-		let totalImageNodes = 0;
 
 		const includeAccents = this.plugin.settings.colorIncludeAccents ?? false;
+		const includeNodeColor = this.plugin.settings.colorIncludeNodeColor ?? false;
 
 		canvas.nodes.forEach((node) => {
-			const rawNode = node as unknown as { id: string };
+			const rawNode = node as unknown as { id: string; color?: string; unknownData?: { color?: string } };
 			const nodeEl = node.nodeEl;
 			if (!nodeEl || !rawNode.id) return;
 			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
-			if (!img?.src) return;
-			totalImageNodes++;
 
-			let colorNames = this.nodeColorCache.get(rawNode.id);
-			if (colorNames === undefined && extractMode === 'auto') {
-				// Trigger lazy extraction if cached color not ready yet
-				void getNodeDominantColorName(img.src, includeAccents).then((names) => {
-					this.nodeColorCache.set(rawNode.id, names);
-					if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
-						if (this.lazyExtractDebounceTimer !== null) window.clearTimeout(this.lazyExtractDebounceTimer);
-						this.lazyExtractDebounceTimer = window.setTimeout(() => {
-							this.lazyExtractDebounceTimer = null;
-							this.refreshTagFilterPanel(activeView);
-						}, 300);
-					}
-				});
-				return;
+			let nodeColorNames: string[] = [];
+
+			// Native canvas custom color set by user via node context menu
+			if (includeNodeColor) {
+				const customColor = rawNode.color ?? rawNode.unknownData?.color;
+				if (typeof customColor === 'string' && customColor) {
+					const namedColor = canvasNodePresetColorToName(customColor);
+					if (namedColor) nodeColorNames.push(namedColor);
+				}
 			}
 
-			if (Array.isArray(colorNames)) {
+			if (img?.src) {
+				let imageColors = this.nodeColorCache.get(rawNode.id);
+				if (imageColors === undefined && extractMode === 'auto') {
+					void getNodeDominantColorName(img.src, includeAccents).then((names) => {
+						this.nodeColorCache.set(rawNode.id, names);
+						if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
+							if (this.lazyExtractDebounceTimer !== null) window.clearTimeout(this.lazyExtractDebounceTimer);
+							this.lazyExtractDebounceTimer = window.setTimeout(() => {
+								this.lazyExtractDebounceTimer = null;
+								this.refreshTagFilterPanel(activeView);
+							}, 300);
+						}
+					});
+				} else if (Array.isArray(imageColors)) {
+					nodeColorNames.push(...imageColors);
+				}
+			}
+
+			// Deduplicate colors for this node
+			if (nodeColorNames.length > 0) {
+				const uniqueColors = Array.from(new Set(nodeColorNames));
 				const isVisible = hasAnyFilter && !nodeEl.classList.contains('kambas-tag-hidden');
-				for (const colorName of colorNames) {
+				for (const colorName of uniqueColors) {
 					colorCounts.set(colorName, (colorCounts.get(colorName) ?? 0) + 1);
 					if (isVisible) {
 						visibleColorCounts.set(colorName, (visibleColorCounts.get(colorName) ?? 0) + 1);
@@ -2115,7 +2129,7 @@ export class CanvasImageHandler {
 			this.refreshTagFilterPanel(activeView);
 		});
 
-		// ── 3. Controls toggles: Minor colors & Display color names ──────────────
+		// ── 3. Controls toggles: Minor colors, Display color names & Include node colors ──────
 		const togglesWrap = controlsWrap.createDiv({ cls: 'kambas-color-toggles-wrap' });
 
 		// Toggle: Include minor colors
@@ -2130,6 +2144,18 @@ export class CanvasImageHandler {
 			void this.extractAllNodeColors(activeView);
 		});
 
+		// Toggle: Include node color (text cards, groups, borders)
+		const nodeColorToggleLabel = togglesWrap.createEl('label', { cls: 'kambas-accent-toggle-label' });
+		const nodeColorCheckbox = nodeColorToggleLabel.createEl('input', { attr: { type: 'checkbox' } });
+		nodeColorCheckbox.checked = includeNodeColor;
+		nodeColorToggleLabel.createSpan({ text: 'Include card colors' });
+		nodeColorCheckbox.addEventListener('change', () => {
+			this.plugin.settings.colorIncludeNodeColor = nodeColorCheckbox.checked;
+			void this.plugin.saveSettings();
+			this.applyTagFilters(activeView, true);
+			this.refreshTagFilterPanel(activeView);
+		});
+
 		// Toggle: Display color name
 		const showName = this.plugin.settings.colorShowName ?? true;
 		const nameToggleLabel = togglesWrap.createEl('label', { cls: 'kambas-accent-toggle-label' });
@@ -2142,8 +2168,8 @@ export class CanvasImageHandler {
 			this.refreshTagFilterPanel(activeView);
 		});
 
-		if (totalImageNodes === 0) {
-			body.createDiv({ cls: 'kambas-tag-panel-empty', text: t.colorNoImages ?? 'No image nodes found on canvas.' });
+		if (canvas.nodes.size === 0) {
+			body.createDiv({ cls: 'kambas-tag-panel-empty', text: t.colorNoImages ?? 'No nodes found on canvas.' });
 			return;
 		}
 
@@ -2169,17 +2195,30 @@ export class CanvasImageHandler {
 		const listEl = body.createDiv({ cls: 'kambas-tag-panel-list' });
 
 		// ── Cross-highlight setup ─────────────────────────────────────────────────
-		// Build colorName → nodeEl[] map so row-hover can outline matching images
+		// Build colorName → nodeEl[] map so row-hover can outline matching elements
 		const colorToNodes = new Map<string, HTMLElement[]>();
 		canvas.nodes.forEach((node) => {
-			const rawNode = node as unknown as { id: string };
+			const rawNode = node as unknown as { id: string; color?: string; unknownData?: { color?: string } };
 			const nodeEl = node.nodeEl;
 			if (!nodeEl || !rawNode.id) return;
 			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
-			if (!img?.src) return; // only image nodes
-			const colors = this.nodeColorCache.get(rawNode.id);
-			if (!Array.isArray(colors)) return;
-			for (const c of colors) {
+			
+			const combinedColors: string[] = [];
+			if (includeNodeColor) {
+				const customColor = rawNode.color ?? rawNode.unknownData?.color;
+				if (typeof customColor === 'string' && customColor) {
+					const namedColor = canvasNodePresetColorToName(customColor);
+					if (namedColor) combinedColors.push(namedColor);
+				}
+			}
+			if (img?.src) {
+				const cached = this.nodeColorCache.get(rawNode.id);
+				if (Array.isArray(cached)) combinedColors.push(...cached);
+			}
+
+			if (combinedColors.length === 0) return;
+
+			for (const c of new Set(combinedColors)) {
 				let bucket = colorToNodes.get(c);
 				if (!bucket) { bucket = []; colorToNodes.set(c, bucket); }
 				bucket.push(nodeEl);
@@ -2292,7 +2331,9 @@ export class CanvasImageHandler {
 						text: `${visibleCount} in view`,
 					});
 				}
-				row.createSpan({ cls: 'kambas-tag-panel-count', text: t.colorNodesCount ? t.colorNodesCount(count) : `${count} images` });
+				// Single general term: "12 items" / "1 item"
+				const unitText = count === 1 ? 'item' : 'items';
+				row.createSpan({ cls: 'kambas-tag-panel-count', text: `${count} ${unitText}` });
 
 				// Row hover → outline matching canvas image nodes
 				row.addEventListener('mouseenter', () => {
@@ -2738,8 +2779,21 @@ export class CanvasImageHandler {
 				// ── Include checks: node must satisfy ALL active include criteria ──
 				const tagIncludeOk = !hasTagIncludes || nodeTags.some((tag) => this.activeTagFilters.has(tag));
 
-				const cachedColors = this.nodeColorCache.get(rawNode.id);
-				const nodeColors = Array.isArray(cachedColors) ? cachedColors : [];
+				const includeNodeColor = this.plugin.settings.colorIncludeNodeColor ?? false;
+				const rawNodeWithColor = node as unknown as { id: string; color?: string; unknownData?: { color?: string; kambasTags?: string[] } };
+				const cachedColors = this.nodeColorCache.get(rawNodeWithColor.id);
+				const nodeColors: string[] = Array.isArray(cachedColors) ? [...cachedColors] : [];
+
+				if (includeNodeColor) {
+					const customColor = rawNodeWithColor.color ?? rawNodeWithColor.unknownData?.color;
+					if (typeof customColor === 'string' && customColor) {
+						const namedColor = canvasNodePresetColorToName(customColor);
+						if (namedColor && !nodeColors.includes(namedColor)) {
+							nodeColors.push(namedColor);
+						}
+					}
+				}
+
 				const colorIncludeOk = !hasColorIncludes || nodeColors.some((c) => this.activeColorFilters.has(c));
 
 				// ── Exclude checks: hide if node has ANY excluded tag or color ──

@@ -11,6 +11,7 @@ export interface KambasSettings {
 	colorExtractMode: 'auto' | 'manual' | 'disabled'; // Color filter extraction mode
 	colorIncludeAccents: boolean; // Include minor accent colors in filter extraction
 	colorShowName: boolean; // Display color name text in color filter panel list
+	colorIncludeNodeColor: boolean; // Include native canvas node custom border/background color
 	keyboardPan: CanvasKeyboardPanSettings;
 }
 
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	colorExtractMode: 'auto',
 	colorIncludeAccents: false,
 	colorShowName: true,
+	colorIncludeNodeColor: false,
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
 

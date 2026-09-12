@@ -367,6 +367,31 @@ export function hexToNamedColor(hex: string): string | null {
 }
 
 /**
+ * Maps Obsidian native canvas preset color strings ('1'..'6') or custom hex codes to named colors.
+ * Obsidian preset colors:
+ *  '1' => Red (#e05050 / #e03e3e)
+ *  '2' => Orange (#d9753b)
+ *  '3' => Yellow (#d4a72c)
+ *  '4' => Green (#4da664)
+ *  '5' => Cyan (#389eb3)
+ *  '6' => Purple (#8e54e9)
+ */
+export function canvasNodePresetColorToName(colorStr: string): string | null {
+	if (!colorStr) return null;
+	const presetMap: Record<string, string> = {
+		'1': 'Red',
+		'2': 'Orange',
+		'3': 'Yellow',
+		'4': 'Green',
+		'5': 'Cyan',
+		'6': 'Purple',
+	};
+	if (presetMap[colorStr]) return presetMap[colorStr];
+	if (colorStr.startsWith('#')) return hexToNamedColor(colorStr);
+	return null;
+}
+
+/**
  * Directly analyzes image pixels to extract all significant named colors present in the image.
  * If includeAccents is false (default): extracts ONLY main/dominant colors (>= 4.0% coverage).
  * If includeAccents is true: also includes minor vivid accent colors (>= 0.5% coverage for vivid pixels, e.g. stems/icons).
