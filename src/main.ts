@@ -313,10 +313,29 @@ export default class KambasPlugin extends Plugin {
 				return false;
 			},
 		});
+
+		// Register command: Toggle tag visibility on canvas
+		this.addCommand({
+			id: 'canvas-toggle-tag-visibility',
+			name: 'Toggle tag visibility',
+			icon: 'tag',
+			checkCallback: (checking: boolean) => {
+				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				if (activeView && activeView.getViewType() === 'canvas') {
+					if (!checking) {
+						document.body.classList.toggle('kambas-hide-all-tags');
+					}
+					return true;
+				}
+				return false;
+			},
+		});
 	}
 
 	onunload(): void {
 		document.body.classList.remove('kambas-hide-labels');
+		document.body.classList.remove('kambas-hide-all-tags');
+		document.body.classList.remove('kambas-tag-position-inside');
 		if (this.canvasImageHandler) {
 			this.canvasImageHandler.unregisterEvents();
 		}
@@ -351,6 +370,12 @@ export default class KambasPlugin extends Plugin {
 			document.body.classList.add('kambas-hide-labels');
 		} else {
 			document.body.classList.remove('kambas-hide-labels');
+		}
+
+		if (this.settings.tagBadgePosition === 'inside') {
+			document.body.classList.add('kambas-tag-position-inside');
+		} else {
+			document.body.classList.remove('kambas-tag-position-inside');
 		}
 	}
 }

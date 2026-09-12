@@ -5,12 +5,14 @@ import type KambasPlugin from './main';
 
 export interface KambasSettings {
 	hideImageLabel: boolean;
+	tagBadgePosition: 'outside' | 'inside';
 	paletteSwatchCount: number; // 3 to 10 swatches
 	keyboardPan: CanvasKeyboardPanSettings;
 }
 
 export const DEFAULT_SETTINGS: KambasSettings = {
 	hideImageLabel: true,
+	tagBadgePosition: 'outside',
 	paletteSwatchCount: 5,
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
@@ -66,6 +68,21 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hideImageLabel)
 					.onChange(async (value) => {
 						this.plugin.settings.hideImageLabel = value;
+						await this.plugin.saveSettings();
+						this.plugin.applySettingsCss();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Tag badge position')
+			.setDesc('Choose whether node tag badges are rendered outside below the element or inside at the bottom-left.')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('outside', 'Outside (below element)')
+					.addOption('inside', 'Inside (bottom-left)')
+					.setValue(this.plugin.settings.tagBadgePosition ?? 'outside')
+					.onChange(async (value: string) => {
+						this.plugin.settings.tagBadgePosition = value as 'outside' | 'inside';
 						await this.plugin.saveSettings();
 						this.plugin.applySettingsCss();
 					})

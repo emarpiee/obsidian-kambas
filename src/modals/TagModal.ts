@@ -85,20 +85,12 @@ export class TagModal extends Modal {
 		// ── Buttons ───────────────────────────────────────────────────────────
 		const btnRow = contentEl.createDiv({ cls: 'kambas-tag-btn-row' });
 
-		const cancelBtn = btnRow.createEl('button', {
-			cls: 'kambas-tag-cancel-btn',
-			text: t.cancelBtn,
+		const doneBtn = btnRow.createEl('button', {
+			cls: 'mod-cta kambas-tag-done-btn',
+			text: 'Done',
 		});
-		cancelBtn.addEventListener('click', () => this.close());
-
-		const applyBtn = btnRow.createEl('button', {
-			cls: 'mod-cta kambas-tag-apply-btn',
-			text: t.applyBtn,
-		});
-		applyBtn.addEventListener('click', () => {
-			// Commit any pending input before applying
+		doneBtn.addEventListener('click', () => {
 			if (this.input.value.trim()) this.commitInputValue();
-			this.onSubmit(this.tags);
 			this.close();
 		});
 
@@ -119,21 +111,25 @@ export class TagModal extends Modal {
 
 	private commitInputValue(): void {
 		const parts = this.input.value.split(',');
+		let changed = false;
 		for (const part of parts) {
 			const tag = this.normalizeTag(part);
 			if (tag && !this.tags.includes(tag)) {
 				this.tags.push(tag);
+				changed = true;
 			}
 		}
 		this.input.value = '';
 		this.hideDropdown();
 		this.renderChips();
+		if (changed) this.onSubmit(this.tags);
 	}
 
 	private addTagFromSuggestion(tag: string): void {
 		const normalized = this.normalizeTag(tag);
 		if (normalized && !this.tags.includes(normalized)) {
 			this.tags.push(normalized);
+			this.onSubmit(this.tags);
 		}
 		this.input.value = '';
 		this.hideDropdown();
@@ -144,6 +140,7 @@ export class TagModal extends Modal {
 	private removeTag(tag: string): void {
 		this.tags = this.tags.filter((t) => t !== tag);
 		this.renderChips();
+		this.onSubmit(this.tags);
 	}
 
 	private renderChips(): void {

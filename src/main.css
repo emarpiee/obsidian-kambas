@@ -388,17 +388,30 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
    Kambas — Node Tag Badges
    ═══════════════════════════════════════════════════════════════ */
 
-/* Tag bar: bottom-left corner of every canvas node that has tags */
+/* Tag bar: outside below the element by default */
 .kambas-tag-bar {
 	position: absolute;
-	bottom: 8px;
-	left: 8px;
+	top: calc(100% + 6px);
+	left: 0;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
 	z-index: 10;
 	pointer-events: none; /* pass-through by default */
+	max-width: 100%;
+}
+
+/* When position setting is set to 'inside', position at bottom-left corner inside the node */
+body.kambas-tag-position-inside .kambas-tag-bar {
+	top: auto;
+	bottom: 8px;
+	left: 8px;
 	max-width: calc(100% - 16px);
+}
+
+/* Command palette action: hide all tag badges across canvas */
+body.kambas-hide-all-tags .kambas-tag-bar {
+	display: none !important;
 }
 
 /* When node is selected, tags become clickable to open modal */
