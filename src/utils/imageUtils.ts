@@ -201,23 +201,19 @@ export function extractImagePalette(src: string | Blob, maxColorCount = 6): Prom
 					bucket.gSum += p.g;
 					bucket.bSum += p.b;
 					bucket.count++;
-					// Boost score of saturated colors, but keep boost moderate (max 3x) so tiny noise doesn't dominate
-					const saturationBoost = p.s > 0.20 ? 1 + (p.s * 2) : 1;
+					// Boost score of vivid saturated pixels (like red dots/markers on grayscale diagrams)
+					const saturationBoost = p.s > 0.35 ? 1 + (p.s * 8) : p.s > 0.15 ? 1 + (p.s * 3) : 1;
 					bucket.totalScore += saturationBoost;
 				}
-
-				// Minimum required pixel coverage for a cluster to be valid (2.0% of total image pixels)
-				const minPixelCount = Math.max(15, Math.floor(totalPixels * 0.02));
 
 				// Finalize bucket color representations
 				const candidateClusters: { r: number; g: number; b: number; score: number; count: number; h: number; s: number; v: number }[] = [];
 				for (const bucket of buckets.values()) {
-					if (bucket.count < minPixelCount) continue; // Filter out rare background noise
+					// Average saturation of bucket
 					const r = Math.round(bucket.rSum / bucket.count);
 					const g = Math.round(bucket.gSum / bucket.count);
 					const b = Math.round(bucket.bSum / bucket.count);
 
-					// Recalculate HSV for candidate
 					const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
 					const max = Math.max(rNorm, gNorm, bNorm);
 					const min = Math.min(rNorm, gNorm, bNorm);
@@ -230,6 +226,10 @@ export function extractImagePalette(src: string | Blob, maxColorCount = 6): Prom
 					}
 					const s = max === 0 ? 0 : d / max;
 					const v = max;
+
+					// Allow tiny clusters if vivid (e.g., at least 2 vivid red pixels like red dots/markers)
+					const minRequired = s > 0.35 ? 2 : Math.max(8, Math.floor(totalPixels * 0.01));
+					if (bucket.count < minRequired) continue;
 
 					candidateClusters.push({ r, g, b, score: bucket.totalScore, count: bucket.count, h, s, v });
 				}
@@ -257,7 +257,7 @@ export function extractImagePalette(src: string | Blob, maxColorCount = 6): Prom
 				};
 
 				const selected: { r: number; g: number; b: number; h: number; s: number }[] = [];
-				const minDistance = 40; // Distinctness threshold
+				const minDistance = 35; // Distinctness threshold
 
 				for (const cand of candidateClusters) {
 					const isDistinct = selected.every((s) => colorDistance(s, cand) >= minDistance);
@@ -265,6 +265,16 @@ export function extractImagePalette(src: string | Blob, maxColorCount = 6): Prom
 						selected.push(cand);
 					}
 					if (selected.length >= maxColorCount) break;
+				}
+
+				// Fill up swatches if distinctness filter was slightly too strict
+				if (selected.length < maxColorCount) {
+					for (const cand of candidateClusters) {
+						if (!selected.includes(cand)) {
+							selected.push(cand);
+						}
+						if (selected.length >= maxColorCount) break;
+					}
 				}
 
 				const hexColors = selected.map(({ r, g, b }) => `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`);

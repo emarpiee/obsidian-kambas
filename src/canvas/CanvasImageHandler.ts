@@ -353,13 +353,14 @@ export class CanvasImageHandler {
 						if (paletteEl) paletteEl.remove();
 						paletteEl = nodeEl.createDiv({ cls: 'kambas-palette-bar' });
 						paletteEl.dataset.count = String(count);
-						const imgSrc = img.src;
-						if (imgSrc) {
-							void extractImagePalette(imgSrc, count).then((swatches) => {
-								if (!paletteEl || !paletteEl.isConnected) return;
-								paletteEl.empty();
+						
+						const targetPaletteEl = paletteEl;
+						const loadAndRenderPalette = (src: string): void => {
+							void extractImagePalette(src, count).then((swatches) => {
+								if (!targetPaletteEl || !targetPaletteEl.isConnected) return;
+								targetPaletteEl.empty();
 								for (const hex of swatches) {
-									const swatch = paletteEl.createDiv({ cls: 'kambas-palette-swatch' });
+									const swatch = targetPaletteEl.createDiv({ cls: 'kambas-palette-swatch' });
 									swatch.style.backgroundColor = hex;
 									swatch.setAttribute('title', `${hex} (Click to copy)`);
 									swatch.addEventListener('click', (e) => {
@@ -370,6 +371,15 @@ export class CanvasImageHandler {
 									});
 								}
 							});
+						};
+
+						if (img.complete && img.naturalWidth > 0 && img.src) {
+							loadAndRenderPalette(img.src);
+						} else {
+							// Image is still loading in browser — extract once image finishes loading
+							img.addEventListener('load', () => {
+								if (img.src) loadAndRenderPalette(img.src);
+							}, { once: true });
 						}
 					}
 					paletteEl.classList.toggle('kambas-palette-grayscale', Boolean(unknownData.kambasGrayscale));
@@ -1714,14 +1724,24 @@ export class CanvasImageHandler {
 		const header = panel.createDiv({ cls: 'kambas-tag-panel-header' });
 		const tabsWrap = header.createDiv({ cls: 'kambas-tag-panel-tabs' });
 
+		const hasTagActive = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+		const hasColorActive = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+
 		const tagTab = tabsWrap.createDiv({
-			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'tag' ? ' is-active' : ''),
-			text: t.tagModalTitle,
+			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'tag' ? ' is-active' : '') + (hasTagActive ? ' has-filter' : ''),
 		});
+		tagTab.createSpan({ text: t.tagModalTitle });
+		if (hasTagActive) {
+			tagTab.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active tag filter' } });
+		}
+
 		const colorTab = tabsWrap.createDiv({
-			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'color' ? ' is-active' : ''),
-			text: t.colorFilterTab ?? 'Color',
+			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'color' ? ' is-active' : '') + (hasColorActive ? ' has-filter' : ''),
 		});
+		colorTab.createSpan({ text: t.colorFilterTab ?? 'Color' });
+		if (hasColorActive) {
+			colorTab.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active color filter' } });
+		}
 
 		tagTab.addEventListener('click', () => {
 			if (this.activeFilterTab === 'tag') return;
@@ -1943,6 +1963,31 @@ export class CanvasImageHandler {
 			focusedQuery = activeEl.value;
 			cursorStart = activeEl.selectionStart;
 			cursorEnd = activeEl.selectionEnd;
+		}
+
+		const hasTagActive = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+		const hasColorActive = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+
+		const tagTabEl = this.tagFilterPanelEl.querySelector('.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)');
+		if (tagTabEl) {
+			tagTabEl.classList.toggle('has-filter', hasTagActive);
+			let dot = tagTabEl.querySelector('.kambas-tab-filter-dot');
+			if (hasTagActive && !dot) {
+				tagTabEl.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active tag filter' } });
+			} else if (!hasTagActive && dot) {
+				dot.remove();
+			}
+		}
+
+		const colorTabEl = this.tagFilterPanelEl.querySelector('.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(2)');
+		if (colorTabEl) {
+			colorTabEl.classList.toggle('has-filter', hasColorActive);
+			let dot = colorTabEl.querySelector('.kambas-tab-filter-dot');
+			if (hasColorActive && !dot) {
+				colorTabEl.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active color filter' } });
+			} else if (!hasColorActive && dot) {
+				dot.remove();
+			}
 		}
 
 		const body = (this.tagFilterPanelEl as unknown as { _body?: HTMLElement })._body;
