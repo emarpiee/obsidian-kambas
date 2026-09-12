@@ -1807,7 +1807,19 @@ export class CanvasImageHandler {
 		});
 
 		if (tagMap.size === 0) {
-			body.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No tags on this canvas yet.' });
+			const emptyDiv = body.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No tags on this canvas yet.' });
+			if (this.activeTagFilters.size > 0) {
+				const resetBtn = emptyDiv.createEl('button', {
+					cls: 'mod-warning',
+					text: 'Reset active filter',
+				});
+				resetBtn.setCssProps({ marginTop: '10px' });
+				resetBtn.addEventListener('click', () => {
+					this.activeTagFilters.clear();
+					this.applyTagFilters(activeView, true);
+					this.refreshTagFilterPanel(activeView);
+				});
+			}
 			return;
 		}
 
@@ -1970,6 +1982,25 @@ export class CanvasImageHandler {
 				return;
 			}
 			this.activeTagFilters = new Set(tags);
+
+			// Validate active filters against actual live nodes on canvas.
+			// Prune any filter tags that no longer exist on ANY node!
+			const canvas = activeView.canvas;
+			if (canvas?.nodes) {
+				const liveTags = new Set<string>();
+				canvas.nodes.forEach((node) => {
+					const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+					for (const tag of uData?.kambasTags ?? []) {
+						if (tag.trim()) liveTags.add(tag);
+					}
+				});
+				for (const activeTag of this.activeTagFilters) {
+					if (!liveTags.has(activeTag)) {
+						this.activeTagFilters.delete(activeTag);
+					}
+				}
+			}
+
 			this.applyTagFilters(activeView);
 			this.updateToolbarButtonState();
 		} catch { /* ignore */ }
