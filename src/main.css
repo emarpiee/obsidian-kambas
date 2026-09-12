@@ -919,9 +919,9 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 /* Tag filter — dim non-matching nodes; opacity controlled by CSS variable */
-.canvas-node.canvas-node.kambas-tag-hidden {
-	opacity: var(--kambas-dim-opacity, 0.12);
-	pointer-events: none;
+.canvas-node.kambas-tag-hidden {
+	opacity: var(--kambas-dim-opacity, 0.12) !important;
+	pointer-events: none !important;
 	transition: opacity 0.2s ease;
 }
 
