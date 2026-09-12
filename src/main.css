@@ -618,15 +618,17 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	justify-content: center;
 	width: 24px;
 	height: 24px;
-	border-radius: 5px;
+	border-radius: var(--radius-s, 4px);
 	color: var(--text-muted);
 	cursor: pointer;
-	transition: background 0.12s ease, color 0.12s ease;
+	border: 1px solid transparent;
+	transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
 .kambas-tag-panel-close:hover {
 	background: var(--background-modifier-hover);
-	color: var(--text-normal);
+	color: var(--text-error, var(--text-normal));
+	border-color: var(--background-modifier-border);
 }
 
 .kambas-tag-panel-close svg.svg-icon {
@@ -679,32 +681,35 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	outline: none;
 }
 
-/* × clear button — always in DOM inside search bar, fades in when filters active */
+/* × clear button — distinct pill button with clear border & high contrast */
 .kambas-tag-search-clear {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
-	width: 18px;
-	height: 18px;
-	border: none;
-	background: transparent;
+	width: 22px;
+	height: 22px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
 	color: var(--text-muted);
 	cursor: pointer;
-	border-radius: 4px;
+	border-radius: var(--radius-s, 4px);
 	opacity: 1;
-	transition: opacity 0.15s ease, color 0.1s ease, background 0.1s ease;
+	transition: opacity 0.15s ease, color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
 	padding: 0;
+	box-shadow: var(--shadow-s);
 }
 
 .kambas-tag-search-clear svg.svg-icon {
-	width: 11px;
-	height: 11px;
+	width: 13px;
+	height: 13px;
+	stroke-width: 2.5px;
 }
 
 .kambas-tag-search-clear:hover {
-	color: var(--text-normal);
-	background: var(--background-modifier-hover);
+	color: var(--text-on-accent, #ffffff);
+	background: var(--interactive-accent);
+	border-color: var(--interactive-accent);
 }
 
 /* Hidden state: invisible but still occupies space — no layout shift */
