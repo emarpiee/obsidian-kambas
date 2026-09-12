@@ -1845,10 +1845,12 @@ export class CanvasImageHandler {
 			// positioning to explicit left/top so the panel never jumps on a bare click.
 			if (!positionAnchored && mouseDownPRect) {
 				positionAnchored = true;
-				panel.style.right  = 'auto';
-				panel.style.bottom = 'auto';
-				panel.style.left   = `${mouseDownPRect.left - cRect.left}px`;
-				panel.style.top    = `${mouseDownPRect.top  - cRect.top}px`;
+				panel.setCssProps({
+					right:  'auto',
+					bottom: 'auto',
+					left:   `${mouseDownPRect.left - cRect.left}px`,
+					top:    `${mouseDownPRect.top  - cRect.top}px`,
+				});
 			}
 			const panW = panel.offsetWidth;
 			const panH = panel.offsetHeight;
@@ -1899,7 +1901,7 @@ export class CanvasImageHandler {
 		let cursorStart: number | null = null;
 		let cursorEnd: number | null = null;
 
-		if (activeEl instanceof HTMLInputElement && activeEl.classList.contains('kambas-tag-search')) {
+		if (activeEl?.instanceOf?.(HTMLInputElement) && activeEl.classList.contains('kambas-tag-search')) {
 			focusedQuery = activeEl.value;
 			cursorStart = activeEl.selectionStart;
 			cursorEnd = activeEl.selectionEnd;
@@ -1990,11 +1992,11 @@ export class CanvasImageHandler {
 				text: t.colorExtractBtn ?? 'Extract Image Colors',
 			});
 			extractBtn.setCssProps({ width: '100%', fontSize: '11px', height: '26px' });
-			extractBtn.addEventListener('click', async () => {
+			extractBtn.addEventListener('click', () => {
 				extractBtn.setText(t.colorExtracting ?? 'Extracting colors...');
 				extractBtn.setAttribute('disabled', 'true');
 				this.nodeColorCache.clear();
-				await this.extractAllNodeColors(activeView);
+				void this.extractAllNodeColors(activeView);
 			});
 		}
 
@@ -2091,15 +2093,16 @@ export class CanvasImageHandler {
 		const colorToNodes = new Map<string, HTMLElement[]>();
 		canvas.nodes.forEach((node) => {
 			const rawNode = node as unknown as { id: string };
-			const nodeEl = node.nodeEl as HTMLElement | undefined;
+			const nodeEl = node.nodeEl;
 			if (!nodeEl || !rawNode.id) return;
 			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
 			if (!img?.src) return; // only image nodes
 			const colors = this.nodeColorCache.get(rawNode.id);
 			if (!Array.isArray(colors)) return;
 			for (const c of colors) {
-				if (!colorToNodes.has(c)) colorToNodes.set(c, []);
-				colorToNodes.get(c)!.push(nodeEl);
+				let bucket = colorToNodes.get(c);
+				if (!bucket) { bucket = []; colorToNodes.set(c, bucket); }
+				bucket.push(nodeEl);
 				// Tag the element so the canvas-node → row direction can read it
 				const existing = nodeEl.getAttribute('data-kambas-colors') ?? '';
 				if (!existing.split(',').includes(c)) {
@@ -2117,7 +2120,7 @@ export class CanvasImageHandler {
 		};
 		const onCanvasMouseOver = (e: Event): void => {
 			const target = e.target as HTMLElement;
-			const nodeEl = target.closest('[data-kambas-colors]') as HTMLElement | null;
+			const nodeEl = target.closest('[data-kambas-colors]');
 			if (!nodeEl) { clearRowHighlights(); return; }
 			const nodeColors = new Set((nodeEl.getAttribute('data-kambas-colors') ?? '').split(',').filter(Boolean));
 			if (nodeColors.size === 0) { clearRowHighlights(); return; }
@@ -2134,7 +2137,7 @@ export class CanvasImageHandler {
 		if (canvasContainer) {
 			canvasContainer.addEventListener('mouseover',   onCanvasMouseOver);
 			canvasContainer.addEventListener('mouseleave',  onCanvasMouseLeave);
-			this.colorHighlightCleanup = () => {
+			this.colorHighlightCleanup = (): void => {
 				canvasContainer.removeEventListener('mouseover',  onCanvasMouseOver);
 				canvasContainer.removeEventListener('mouseleave', onCanvasMouseLeave);
 				// Remove all data-kambas-colors attributes on cleanup
@@ -2319,7 +2322,7 @@ export class CanvasImageHandler {
 			const sorted = Array.from(tagMap.entries())
 				.filter(([tag]) => !lower || tag.toLowerCase().includes(lower))
 				// Related tags (in current view) bubble to top; ties broken alphabetically
-				.sort(([a, countA], [b, countB]) => {
+				.sort(([a, _countA], [b, _countB]) => {
 					if (hasAnyFilter) {
 						const visA = visibleTagCounts.get(a) ?? 0;
 						const visB = visibleTagCounts.get(b) ?? 0;

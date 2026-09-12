@@ -78,16 +78,16 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 }
 
 .kambas-img-grayscale,
-.kambas-node-grayscale,
-.kambas-node-grayscale .canvas-node-container,
-.kambas-node-grayscale .canvas-node-content,
-.kambas-node-grayscale iframe,
-.kambas-node-grayscale img {
-	filter: grayscale(100%) !important;
+.canvas-node.kambas-node-grayscale,
+.canvas-node.kambas-node-grayscale .canvas-node-container,
+.canvas-node.kambas-node-grayscale .canvas-node-content,
+.canvas-node.kambas-node-grayscale iframe,
+.canvas-node.kambas-node-grayscale img {
+	filter: grayscale(100%);
 }
 
-.kambas-palette-grayscale .kambas-palette-swatch {
-	filter: grayscale(100%) !important;
+.kambas-palette-bar .kambas-palette-grayscale .kambas-palette-swatch {
+	filter: grayscale(100%);
 }
 
 /* Color palette overlay bar */
@@ -919,9 +919,9 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 /* Tag filter — dim non-matching nodes; opacity controlled by CSS variable */
-.canvas-node.kambas-tag-hidden {
-	opacity: var(--kambas-dim-opacity, 0.12) !important;
-	pointer-events: none !important;
+.canvas-node.canvas-node.kambas-tag-hidden {
+	opacity: var(--kambas-dim-opacity, 0.12);
+	pointer-events: none;
 	transition: opacity 0.2s ease;
 }
 
