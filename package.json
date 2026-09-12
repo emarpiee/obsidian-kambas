@@ -1,6 +1,6 @@
 {
 	"name": "kambas",
-	"version": "0.0.6",
+	"version": "0.1.0",
 	"description": "Extend core plugin Canvas with PureRef-like image controls, inline Base64 embedding, and adjustable navigations.",
 	"main": "main.js",
 	"scripts": {
