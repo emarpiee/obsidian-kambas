@@ -107,10 +107,10 @@ export async function saveFileToVault(
 
 /**
  * Extracts a balanced color palette (in hex format) from an image source.
- * Uses HSV color space with chroma/saturation weighting to ensure small accent colors (reds, blues, greens)
- * are captured alongside dominant background shades.
+ * Uses HSV color space with minimum pixel coverage thresholds to prevent noise/false positives,
+ * while maintaining accent color capture for genuine distinct colors.
  */
-export function extractImagePalette(src: string | Blob, colorCount = 5): Promise<string[]> {
+export function extractImagePalette(src: string | Blob, maxColorCount = 6): Promise<string[]> {
 	return new Promise((resolve) => {
 		const img = new Image();
 		img.crossOrigin = 'Anonymous';
@@ -163,7 +163,8 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 					pixels.push({ r, g, b, h, s, v });
 				}
 
-				if (pixels.length === 0) {
+				const totalPixels = pixels.length;
+				if (totalPixels === 0) {
 					resolve([]);
 					return;
 				}
@@ -173,14 +174,13 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 					rSum: number; gSum: number; bSum: number;
 					count: number;
 					totalScore: number;
-					avgH: number; avgS: number; avgV: number;
 				}
 
 				const buckets: Map<string, Bucket> = new Map();
 
 				for (const p of pixels) {
 					let key: string;
-					if (p.s < 0.12) {
+					if (p.s < 0.15) {
 						// Low saturation (Grays/Blacks/Whites): bin by Value (lightness)
 						const vBin = Math.floor(p.v * 8); // 8 lightness bins
 						key = `gray_${vBin}`;
@@ -193,7 +193,7 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 
 					let bucket = buckets.get(key);
 					if (!bucket) {
-						bucket = { rSum: 0, gSum: 0, bSum: 0, count: 0, totalScore: 0, avgH: 0, avgS: 0, avgV: 0 };
+						bucket = { rSum: 0, gSum: 0, bSum: 0, count: 0, totalScore: 0 };
 						buckets.set(key, bucket);
 					}
 
@@ -201,15 +201,18 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 					bucket.gSum += p.g;
 					bucket.bSum += p.b;
 					bucket.count++;
-					// Boost score of saturated & accent colors so small red/blue/green markers stand out against heavy backgrounds
-					const saturationBoost = p.s > 0.15 ? 1 + (p.s * 8) : 1;
+					// Boost score of saturated colors, but keep boost moderate (max 3x) so tiny noise doesn't dominate
+					const saturationBoost = p.s > 0.20 ? 1 + (p.s * 2) : 1;
 					bucket.totalScore += saturationBoost;
 				}
+
+				// Minimum required pixel coverage for a cluster to be valid (2.0% of total image pixels)
+				const minPixelCount = Math.max(15, Math.floor(totalPixels * 0.02));
 
 				// Finalize bucket color representations
 				const candidateClusters: { r: number; g: number; b: number; score: number; count: number; h: number; s: number; v: number }[] = [];
 				for (const bucket of buckets.values()) {
-					if (bucket.count === 0) continue;
+					if (bucket.count < minPixelCount) continue; // Filter out rare background noise
 					const r = Math.round(bucket.rSum / bucket.count);
 					const g = Math.round(bucket.gSum / bucket.count);
 					const b = Math.round(bucket.bSum / bucket.count);
@@ -234,46 +237,34 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 				// Sort by weighted total score (population + saturation boost)
 				candidateClusters.sort((a, b) => b.score - a.score);
 
-				// Perceptual color distance in LAB / Weighted RGB space
+				// Perceptual color distance
 				const colorDistance = (
 					c1: { r: number; g: number; b: number; h: number; s: number },
 					c2: { r: number; g: number; b: number; h: number; s: number }
 				): number => {
-					// Weighted RGB distance (human eyes are more sensitive to green, less to blue)
 					const rmean = (c1.r + c2.r) / 2;
 					const r = c1.r - c2.r;
 					const g = c1.g - c2.g;
 					const b = c1.b - c2.b;
 					const rgbDist = Math.sqrt((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
 
-					// Also enforce hue separation for distinct colors (red vs green vs blue)
 					if (c1.s > 0.15 && c2.s > 0.15) {
 						let hDiff = Math.abs(c1.h - c2.h);
 						if (hDiff > 180) hDiff = 360 - hDiff;
-						if (hDiff < 25) return Math.min(rgbDist, 20); // Treat close hues as similar
+						if (hDiff < 30) return Math.min(rgbDist, 20); // Treat close hues as similar
 					}
 					return rgbDist;
 				};
 
 				const selected: { r: number; g: number; b: number; h: number; s: number }[] = [];
-				const minDistance = 35; // Distinctness threshold
+				const minDistance = 40; // Distinctness threshold
 
 				for (const cand of candidateClusters) {
 					const isDistinct = selected.every((s) => colorDistance(s, cand) >= minDistance);
 					if (isDistinct) {
 						selected.push(cand);
 					}
-					if (selected.length >= colorCount) break;
-				}
-
-				// Fill up if threshold was slightly too aggressive
-				if (selected.length < colorCount) {
-					for (const cand of candidateClusters) {
-						if (!selected.includes(cand)) {
-							selected.push(cand);
-						}
-						if (selected.length >= colorCount) break;
-					}
+					if (selected.length >= maxColorCount) break;
 				}
 
 				const hexColors = selected.map(({ r, g, b }) => `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`);
@@ -294,11 +285,64 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 
 
 /**
+ * Maps HSV values directly to human-readable named colors.
+ * Refined hue boundaries & saturation requirements prevent false positives (like warm lighting/browns being Red).
+ */
+export function hsvToNamedColor(h: number, s: number, v: number): string | null {
+	// Handle neutral colors (Black, Gray, White)
+	if (s < 0.15) {
+		if (v < 0.20) return 'Black';
+		if (v > 0.85) return 'White';
+		return 'Gray';
+	}
+	if (v < 0.12) return 'Black';
+
+	// Red: Hues 348°-360° and 0°-12°. Requires decent saturation/brightness so warm browns aren't Red.
+	if (h >= 348 || h < 12) {
+		if (s < 0.22 || v < 0.20) return 'Gray';
+		return 'Red';
+	}
+
+	// Orange: Hues 12°-38°
+	if (h >= 12 && h < 38) {
+		if (s < 0.20) return 'Gray';
+		return 'Orange';
+	}
+
+	// Yellow: Hues 38°-68°
+	if (h >= 38 && h < 68) {
+		if (s < 0.18) return 'Gray';
+		return 'Yellow';
+	}
+
+	// Green: Hues 68°-155°
+	if (h >= 68 && h < 155) return 'Green';
+
+	// Teal: Hues 155°-175°
+	if (h >= 155 && h < 175) return 'Teal';
+
+	// Cyan: Hues 175°-200°
+	if (h >= 175 && h < 200) return 'Cyan';
+
+	// Blue: Hues 200°-255°
+	if (h >= 200 && h < 255) return 'Blue';
+
+	// Indigo: Hues 255°-270°
+	if (h >= 255 && h < 270) return 'Indigo';
+
+	// Purple: Hues 270°-310°
+	if (h >= 270 && h < 310) return 'Purple';
+
+	// Pink: Hues 310°-348°
+	if (h >= 310 && h < 348) return 'Pink';
+
+	return null;
+}
+
+/**
  * Maps a hex color string to a human-readable named color based on HSV analysis.
- * Excludes near-neutral colors (white, gray, black) so only chromatic colors are returned.
  */
 export function hexToNamedColor(hex: string): string | null {
-	// Parse hex → normalized RGB 0–1
 	const cleaned = hex.replace('#', '');
 	if (cleaned.length !== 6) return null;
 	const r = parseInt(cleaned.substring(0, 2), 16) / 255;
@@ -309,19 +353,9 @@ export function hexToNamedColor(hex: string): string | null {
 	const min = Math.min(r, g, b);
 	const d = max - min;
 
-	// Value (brightness) and saturation
 	const v = max;
 	const s = max === 0 ? 0 : d / max;
 
-	// Handle neutral colors (Black, Gray, White)
-	if (s < 0.15) {
-		if (v < 0.20) return 'Black';
-		if (v > 0.82) return 'White';
-		return 'Gray';
-	}
-	if (v < 0.12) return 'Black';
-
-	// Hue calculation (0–360°)
 	let h = 0;
 	if (d !== 0) {
 		if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
@@ -329,34 +363,108 @@ export function hexToNamedColor(hex: string): string | null {
 		else h = ((r - g) / d + 4) * 60;
 	}
 
-	// Map hue angle to standard human-readable colors
-	if (h >= 345 || h < 15)  return 'Red';
-	if (h >= 15  && h < 45)  return 'Orange';
-	if (h >= 45  && h < 70)  return 'Yellow';
-	if (h >= 70  && h < 150) return 'Green';
-	if (h >= 150 && h < 180) return 'Teal';
-	if (h >= 180 && h < 200) return 'Cyan';
-	if (h >= 200 && h < 255) return 'Blue';
-	if (h >= 255 && h < 270) return 'Indigo';
-	if (h >= 270 && h < 300) return 'Purple';
-	if (h >= 300 && h < 345) return 'Pink';
-	return null;
+	return hsvToNamedColor(h, s, v);
 }
 
 /**
- * Returns all distinct chromatic named colors extracted from an image source.
- * Extracts up to 6 palette swatches and maps each to human-readable color names.
+ * Directly analyzes image pixels to extract all significant named colors present in the image.
+ * If includeAccents is false (default): extracts ONLY main/dominant colors (>= 4.0% coverage).
+ * If includeAccents is true: also includes minor vivid accent colors (>= 0.5% coverage for vivid pixels, e.g. stems/icons).
  */
-export async function getNodeDominantColorName(src: string): Promise<string[] | null> {
-	try {
-		const palette = await extractImagePalette(src, 10);
-		const found = new Set<string>();
-		for (const hex of palette) {
-			const name = hexToNamedColor(hex);
-			if (name) found.add(name);
+export async function getNodeDominantColorName(src: string, includeAccents = false): Promise<string[] | null> {
+	return new Promise((resolve) => {
+		const img = new Image();
+		img.crossOrigin = 'Anonymous';
+		img.onload = (): void => {
+			try {
+				const canvas = createEl('canvas');
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					resolve(null);
+					return;
+				}
+
+				// Sample down image to 160x160 for fast pixel scanning
+				const scale = Math.min(160 / img.naturalWidth, 160 / img.naturalHeight, 1);
+				canvas.width = Math.max(1, Math.floor(img.naturalWidth * scale));
+				canvas.height = Math.max(1, Math.floor(img.naturalHeight * scale));
+
+				ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+				const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+				const colorPixelCounts = new Map<string, number>();
+				const vividPixelCounts = new Map<string, number>();
+				let totalValidPixels = 0;
+
+				for (let i = 0; i < imageData.length; i += 4) {
+					const alpha = imageData[i + 3];
+					if (alpha < 128) continue; // Ignore transparent background pixels
+
+					const r = imageData[i] / 255;
+					const g = imageData[i + 1] / 255;
+					const b = imageData[i + 2] / 255;
+
+					const max = Math.max(r, g, b);
+					const min = Math.min(r, g, b);
+					const d = max - min;
+
+					let h = 0;
+					if (d !== 0) {
+						if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+						else if (max === g) h = ((b - r) / d + 2) * 60;
+						else h = ((r - g) / d + 4) * 60;
+					}
+					const s = max === 0 ? 0 : d / max;
+					const v = max;
+
+					const colorName = hsvToNamedColor(h, s, v);
+					if (colorName) {
+						totalValidPixels++;
+						colorPixelCounts.set(colorName, (colorPixelCounts.get(colorName) ?? 0) + 1);
+
+						// Track vivid pixels separately (S > 0.35)
+						if (s > 0.35) {
+							vividPixelCounts.set(colorName, (vividPixelCounts.get(colorName) ?? 0) + 1);
+						}
+					}
+				}
+
+				if (totalValidPixels === 0) {
+					resolve(null);
+					return;
+				}
+
+				const detectedColors = new Set<string>();
+
+				// Thresholds:
+				// Dominant-only mode: requires >= 4.0% of total image pixels
+				// Accent mode: requires >= 2.0% general OR >= 0.5% for vivid accents
+				const dominantThreshold = totalValidPixels * (includeAccents ? 0.020 : 0.040);
+				const vividThreshold = Math.max(12, totalValidPixels * 0.005);
+
+				for (const [colorName, count] of colorPixelCounts.entries()) {
+					const vividCount = vividPixelCounts.get(colorName) ?? 0;
+					if (count >= dominantThreshold) {
+						detectedColors.add(colorName);
+					} else if (includeAccents && vividCount >= vividThreshold) {
+						// Only include minor accent colors when accent mode toggle is ON
+						detectedColors.add(colorName);
+					}
+				}
+
+				resolve(detectedColors.size > 0 ? Array.from(detectedColors) : null);
+			} catch {
+				resolve(null);
+			}
+		};
+		img.onerror = (): void => resolve(null);
+
+		if (typeof src === 'string') {
+			img.src = src;
+		} else {
+			img.src = URL.createObjectURL(src);
 		}
-		return found.size > 0 ? Array.from(found) : null;
-	} catch {
-		return null;
-	}
+	});
 }
+
+

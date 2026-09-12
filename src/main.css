@@ -1111,3 +1111,35 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	font-size: 13px;
 	font-weight: 600;
 }
+
+/* Color Filter Controls Toggles Wrapper */
+.kambas-color-toggles-wrap {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 4px 12px 6px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.kambas-accent-toggle-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	color: var(--text-muted);
+	cursor: pointer;
+	user-select: none;
+}
+
+.kambas-accent-toggle-label:hover {
+	color: var(--text-normal);
+}
+
+.kambas-accent-toggle-label input[type="checkbox"] {
+	cursor: pointer;
+	margin: 0;
+	accent-color: var(--interactive-accent);
+}
+
+

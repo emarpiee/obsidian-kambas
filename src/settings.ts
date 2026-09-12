@@ -9,6 +9,8 @@ export interface KambasSettings {
 	tagZoomOnSelect: boolean;
 	paletteSwatchCount: number; // 3 to 10 swatches
 	colorExtractMode: 'auto' | 'manual' | 'disabled'; // Color filter extraction mode
+	colorIncludeAccents: boolean; // Include minor accent colors in filter extraction
+	colorShowName: boolean; // Display color name text in color filter panel list
 	keyboardPan: CanvasKeyboardPanSettings;
 }
 
@@ -18,6 +20,8 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	tagZoomOnSelect: true,
 	paletteSwatchCount: 5,
 	colorExtractMode: 'auto',
+	colorIncludeAccents: false,
+	colorShowName: true,
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
 

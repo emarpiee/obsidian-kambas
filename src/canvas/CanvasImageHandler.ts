@@ -1980,6 +1980,8 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
+		const includeAccents = this.plugin.settings.colorIncludeAccents ?? false;
+
 		for (const node of canvas.nodes.values()) {
 			const rawNode = node as unknown as { id: string };
 			const nodeEl = node.nodeEl;
@@ -1989,7 +1991,7 @@ export class CanvasImageHandler {
 			if (this.nodeColorCache.has(rawNode.id)) continue;
 
 			try {
-				const colorName = await getNodeDominantColorName(img.src);
+				const colorName = await getNodeDominantColorName(img.src, includeAccents);
 				this.nodeColorCache.set(rawNode.id, colorName);
 			} catch {
 				this.nodeColorCache.set(rawNode.id, null);
@@ -1997,6 +1999,7 @@ export class CanvasImageHandler {
 		}
 
 		if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
+			this.applyTagFilters(activeView, false);
 			this.refreshTagFilterPanel(activeView);
 		}
 	}
@@ -2052,6 +2055,8 @@ export class CanvasImageHandler {
 		                     this.activeTagFilters.size > 0   || this.activeTagExcludes.size > 0;
 		let totalImageNodes = 0;
 
+		const includeAccents = this.plugin.settings.colorIncludeAccents ?? false;
+
 		canvas.nodes.forEach((node) => {
 			const rawNode = node as unknown as { id: string };
 			const nodeEl = node.nodeEl;
@@ -2063,7 +2068,7 @@ export class CanvasImageHandler {
 			let colorNames = this.nodeColorCache.get(rawNode.id);
 			if (colorNames === undefined && extractMode === 'auto') {
 				// Trigger lazy extraction if cached color not ready yet
-				void getNodeDominantColorName(img.src).then((names) => {
+				void getNodeDominantColorName(img.src, includeAccents).then((names) => {
 					this.nodeColorCache.set(rawNode.id, names);
 					if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
 						if (this.lazyExtractDebounceTimer !== null) window.clearTimeout(this.lazyExtractDebounceTimer);
@@ -2107,6 +2112,33 @@ export class CanvasImageHandler {
 			this.activeColorFilters.clear();
 			this.activeColorExcludes.clear();
 			this.applyTagFilters(activeView, true);
+			this.refreshTagFilterPanel(activeView);
+		});
+
+		// ── 3. Controls toggles: Minor colors & Display color names ──────────────
+		const togglesWrap = controlsWrap.createDiv({ cls: 'kambas-color-toggles-wrap' });
+
+		// Toggle: Include minor colors
+		const minorToggleLabel = togglesWrap.createEl('label', { cls: 'kambas-accent-toggle-label' });
+		const minorCheckbox = minorToggleLabel.createEl('input', { attr: { type: 'checkbox' } });
+		minorCheckbox.checked = includeAccents;
+		minorToggleLabel.createSpan({ text: 'Include minor colors' });
+		minorCheckbox.addEventListener('change', () => {
+			this.plugin.settings.colorIncludeAccents = minorCheckbox.checked;
+			void this.plugin.saveSettings();
+			this.nodeColorCache.clear();
+			void this.extractAllNodeColors(activeView);
+		});
+
+		// Toggle: Display color name
+		const showName = this.plugin.settings.colorShowName ?? true;
+		const nameToggleLabel = togglesWrap.createEl('label', { cls: 'kambas-accent-toggle-label' });
+		const nameCheckbox = nameToggleLabel.createEl('input', { attr: { type: 'checkbox' } });
+		nameCheckbox.checked = showName;
+		nameToggleLabel.createSpan({ text: 'Display color name' });
+		nameCheckbox.addEventListener('change', () => {
+			this.plugin.settings.colorShowName = nameCheckbox.checked;
+			void this.plugin.saveSettings();
 			this.refreshTagFilterPanel(activeView);
 		});
 
@@ -2248,8 +2280,10 @@ export class CanvasImageHandler {
 					dot.style.backgroundColor = colorHexMap[colorName];
 				}
 
-				const localizedColor = (t as unknown as Record<string, string>)[`color${colorName}`] ?? colorName;
-				row.createSpan({ cls: 'kambas-tag-panel-pill', text: localizedColor });
+				if (showName) {
+					const localizedColor = (t as unknown as Record<string, string>)[`color${colorName}`] ?? colorName;
+					row.createSpan({ cls: 'kambas-tag-panel-pill', text: localizedColor });
+				}
 
 				// Show "N in view" badge alongside the total when a filter is active
 				if (isRelated) {
