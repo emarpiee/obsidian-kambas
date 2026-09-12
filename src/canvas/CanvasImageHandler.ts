@@ -1695,19 +1695,59 @@ export class CanvasImageHandler {
 		this.tagToolbarBtn?.classList.add('is-active');
 
 		// ── Restore saved position / size ────────────────────────────────────
-		this.restorePanelState(panel);
+		this.restorePanelState(panel, container);
 
-		// ── Persist position on drag end ─────────────────────────────────────
-		const origOnUp = (): void => this.savePanelState(panel);
+		// ── Persist position on drag end & keep panel clamped inside container on window/container resize ──
+		const origOnUp = (): void => {
+			this.clampPanelPosition(panel, container);
+			this.savePanelState(panel);
+		};
 		document.addEventListener('mouseup', origOnUp, { once: false });
+
+		// Observe container resize to automatically pull panel back inside if viewport shrinks
+		const containerRo = new ResizeObserver(() => {
+			this.clampPanelPosition(panel, container);
+		});
+		containerRo.observe(container);
+
 		// Use ResizeObserver to persist size changes
-		const ro = new ResizeObserver(() => this.savePanelState(panel));
+		const ro = new ResizeObserver(() => {
+			this.clampPanelPosition(panel, container);
+			this.savePanelState(panel);
+		});
 		ro.observe(panel);
+
 		// Clean up when panel is removed
 		const panelObserver = new MutationObserver(() => {
-			if (!panel.isConnected) { ro.disconnect(); panelObserver.disconnect(); }
+			if (!panel.isConnected) {
+				ro.disconnect();
+				containerRo.disconnect();
+				panelObserver.disconnect();
+			}
 		});
 		panelObserver.observe(document.body, { childList: true, subtree: true });
+	}
+
+	private clampPanelPosition(panel: HTMLElement, container: HTMLElement): void {
+		if (!panel.isConnected || !container.isConnected) return;
+		const cRect = container.getBoundingClientRect();
+		const pRect = panel.getBoundingClientRect();
+		if (cRect.width === 0 || cRect.height === 0) return;
+
+		let currentLeft = panel.offsetLeft;
+		let currentTop = panel.offsetTop;
+
+		const maxLeft = Math.max(0, cRect.width - (panel.offsetWidth || pRect.width));
+		const maxTop = Math.max(0, cRect.height - (panel.offsetHeight || pRect.height));
+
+		const clampedLeft = Math.max(0, Math.min(currentLeft, maxLeft));
+		const clampedTop = Math.max(0, Math.min(currentTop, maxTop));
+
+		if (currentLeft !== clampedLeft || currentTop !== clampedTop) {
+			panel.style.left = `${clampedLeft}px`;
+			panel.style.top = `${clampedTop}px`;
+			this.savePanelState(panel);
+		}
 	}
 
 	private savePanelState(panel: HTMLElement): void {
@@ -1724,16 +1764,19 @@ export class CanvasImageHandler {
 		} catch { /* ignore */ }
 	}
 
-	private restorePanelState(panel: HTMLElement): void {
+	private restorePanelState(panel: HTMLElement, container: HTMLElement): void {
 		try {
 			const raw = this.app.loadLocalStorage('kambas-tag-panel-state') as string | null;
-			if (!raw) return;
-			const state = JSON.parse(raw) as { top?: string; left?: string; width?: string; height?: string; dimOpacity?: number };
-			if (state.top)    panel.style.top    = state.top;
-			if (state.left)   panel.style.left   = state.left;
-			if (state.width)  panel.style.width  = state.width;
-			if (state.height) panel.style.height = state.height;
-			if (typeof state.dimOpacity === 'number') this.dimOpacity = state.dimOpacity;
+			if (raw) {
+				const state = JSON.parse(raw) as { top?: string; left?: string; width?: string; height?: string; dimOpacity?: number };
+				if (state.top)    panel.style.top    = state.top;
+				if (state.left)   panel.style.left   = state.left;
+				if (state.width)  panel.style.width  = state.width;
+				if (state.height) panel.style.height = state.height;
+				if (typeof state.dimOpacity === 'number') this.dimOpacity = state.dimOpacity;
+			}
+			// Clamp immediately after restoring position
+			this.clampPanelPosition(panel, container);
 		} catch { /* ignore */ }
 	}
 

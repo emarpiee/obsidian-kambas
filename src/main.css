@@ -598,12 +598,16 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 /* ── Body / list ──────────────────────────────────────────────────────────── */
 .kambas-tag-panel-body {
-	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 	flex: 1;
-	padding: 4px 0;
+	padding: 4px 0 0;
 }
 
 .kambas-tag-panel-list {
+	overflow-y: auto;
+	flex: 1;
 	padding: 0 0 4px;
 }
 
