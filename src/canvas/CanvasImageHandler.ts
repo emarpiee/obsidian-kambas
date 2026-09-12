@@ -2535,36 +2535,96 @@ export class CanvasImageHandler {
 		const cx = canvas as unknown as CvEx;
 
 		let rafPending = false;
+		const enforceSelectionGuard = (): void => {
+			if (!canvas.nodes) return;
+			let deselectedAny = false;
+			canvas.nodes.forEach((node) => {
+				const el = node.nodeEl;
+				if (!el?.classList.contains('kambas-tag-hidden')) return;
+				const isNodeSelected = el.classList.contains('is-selected') || cx.selection?.has(node);
+				if (!isNodeSelected) return;
+
+				deselectedAny = true;
+				el.classList.remove('is-selected');
+
+				const nu = node as unknown as { unselect?: () => void };
+				if (typeof nu.unselect === 'function') {
+					try { nu.unselect(); } catch { /* ignore */ }
+				}
+				try { cx.selection?.delete(node); } catch { /* ignore */ }
+			});
+
+			if (deselectedAny && typeof cx.updateSelection === 'function') {
+				try { cx.updateSelection(); } catch { /* ignore */ }
+			}
+		};
+
 		const mo = new MutationObserver(() => {
-			// Defer to next frame so Obsidian finishes its own selection update first.
-			// Then strip is-selected from any hidden node — DOM only, no updateSelection()
-			// call (advanced-canvas patches it and the wrapper can throw).
 			if (rafPending) return;
 			rafPending = true;
 			window.requestAnimationFrame(() => {
 				rafPending = false;
-				if (!canvas.nodes) return;
-				canvas.nodes.forEach((node) => {
-					const el = node.nodeEl;
-					if (!el?.classList.contains('kambas-tag-hidden')) return;
-					if (!el.classList.contains('is-selected')) return;
-					// Strip from DOM — enough to prevent visual selection
-					el.classList.remove('is-selected');
-					// Also evict from internal Set via node.unselect() if available,
-					// otherwise direct Set.delete — never call updateSelection() since
-					// third-party plugins may have patched it in a way that throws.
-					const nu = node as unknown as { unselect?: () => void };
-					if (typeof nu.unselect === 'function') {
-						try { nu.unselect(); } catch { /* ignore */ }
-					} else {
-						try { cx.selection?.delete(node); } catch { /* ignore */ }
-					}
-				});
+				enforceSelectionGuard();
 			});
 		});
 
+		// Directly intercept canvas.selectAll if present on canvas instance
+		type CanvasProto = { selectAll?: (nodes?: Set<object>) => void; select?: (node: object) => void };
+		const origCanvas = canvas as unknown as CanvasProto;
+		let origSelectAll: ((nodes?: Set<object>) => void) | undefined = undefined;
+
+		if (typeof origCanvas.selectAll === 'function') {
+			origSelectAll = origCanvas.selectAll;
+			origCanvas.selectAll = function(nodes?: Set<object>): void {
+				// If nodes is passed (e.g. from selectAll command), filter out hidden ones
+				const visibleSet = new Set<object>();
+				if (nodes instanceof Set) {
+					nodes.forEach((n) => {
+						const el = (n as { nodeEl?: HTMLElement }).nodeEl;
+						if (!el?.classList.contains('kambas-tag-hidden')) {
+							visibleSet.add(n);
+						}
+					});
+				} else if (canvas.nodes) {
+					canvas.nodes.forEach((node) => {
+						if (!node.nodeEl?.classList.contains('kambas-tag-hidden')) {
+							visibleSet.add(node);
+						}
+					});
+				}
+				origSelectAll?.call(this, visibleSet);
+			};
+		}
+
+		// Intercept Ctrl+A / Cmd+A so selectAll only selects visible (non-hidden) nodes
+		const handleKeyGuard = (evt: KeyboardEvent): void => {
+			if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'a' || evt.key === 'A')) {
+				const target = evt.target as HTMLElement | null;
+				if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+					return; // standard text input select-all
+				}
+				// Force explicit select of visible nodes only
+				if (typeof origCanvas.selectAll === 'function') {
+					evt.preventDefault();
+					evt.stopPropagation();
+					origCanvas.selectAll();
+					return;
+				}
+				window.setTimeout(() => enforceSelectionGuard(), 0);
+				window.requestAnimationFrame(() => enforceSelectionGuard());
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyGuard, true);
+
 		mo.observe(container, { attributes: true, subtree: true, attributeFilter: ['class'] });
-		this.tagFilterSelectionGuard = (): void => { mo.disconnect(); };
+		this.tagFilterSelectionGuard = (): void => {
+			mo.disconnect();
+			window.removeEventListener('keydown', handleKeyGuard, true);
+			if (origSelectAll && typeof origCanvas.selectAll === 'function') {
+				origCanvas.selectAll = origSelectAll;
+			}
+		};
 	}
 
 	private removeSelectionGuard(): void {
