@@ -359,6 +359,25 @@ export class CanvasImageHandler {
 							void extractImagePalette(src, count).then((swatches) => {
 								if (!targetPaletteEl || !targetPaletteEl.isConnected) return;
 								targetPaletteEl.empty();
+
+								// Prepend copy button to copy all palette hex values
+								if (swatches.length > 0) {
+									const copyBtn = targetPaletteEl.createDiv({
+										cls: 'kambas-palette-copy-btn',
+										attr: { 'aria-label': 'Copy all palette colors' },
+									});
+									copyBtn.setAttribute('title', 'Copy all palette colors');
+									setIcon(copyBtn, 'copy');
+									copyBtn.addEventListener('click', (e) => {
+										e.stopPropagation();
+										e.preventDefault();
+										const sep = this.plugin?.settings?.paletteCopySeparator ?? ', ';
+										const textToCopy = swatches.join(sep);
+										void navigator.clipboard.writeText(textToCopy);
+										new Notice(`Copied ${swatches.length} colors to clipboard!`);
+									});
+								}
+
 								for (const hex of swatches) {
 									const swatch = targetPaletteEl.createDiv({ cls: 'kambas-palette-swatch' });
 									swatch.style.backgroundColor = hex;

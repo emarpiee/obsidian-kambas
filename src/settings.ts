@@ -8,6 +8,7 @@ export interface KambasSettings {
 	tagBadgePosition: 'outside' | 'inside';
 	tagZoomOnSelect: boolean;
 	paletteSwatchCount: number; // 3 to 10 swatches
+	paletteCopySeparator: string; // Separator for copied hex values
 	colorExtractMode: 'auto' | 'manual' | 'disabled'; // Color filter extraction mode
 	colorIncludeAccents: boolean; // Include minor accent colors in filter extraction
 	colorShowName: boolean; // Display color name text in color filter panel list
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	tagBadgePosition: 'outside',
 	tagZoomOnSelect: true,
 	paletteSwatchCount: 5,
+	paletteCopySeparator: ', ',
 	colorExtractMode: 'auto',
 	colorIncludeAccents: false,
 	colorShowName: true,
@@ -120,6 +122,19 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.paletteSwatchCount = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Color palette copy separator')
+			.setDesc('Delimiter used when clicking the copy button on a color palette to copy all hex values to clipboard.')
+			.addText((text) =>
+				text
+					.setPlaceholder(', ')
+					.setValue(this.plugin.settings.paletteCopySeparator ?? ', ')
+					.onChange(async (value) => {
+						this.plugin.settings.paletteCopySeparator = value;
 						await this.plugin.saveSettings();
 					})
 			);

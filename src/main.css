@@ -127,6 +127,33 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	box-shadow: var(--shadow-l, 0 0 8px var(--interactive-accent));
 }
 
+.kambas-palette-copy-btn {
+	width: var(--size-4-6, 24px);
+	height: var(--size-4-6, 24px);
+	border-radius: var(--radius-max, 50%);
+	background-color: var(--background-primary);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-muted);
+	box-shadow: var(--shadow-s);
+	transition: transform 0.15s ease, color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.kambas-palette-copy-btn svg {
+	width: 13px;
+	height: 13px;
+}
+
+.kambas-palette-copy-btn:hover {
+	transform: scale(1.15);
+	color: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	background-color: var(--background-secondary-alt);
+}
+
 
 /* Opacity slider modal */
 .modal:has(.kambas-opacity-buttons) .setting-item {
