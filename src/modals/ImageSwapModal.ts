@@ -278,10 +278,12 @@ export class ImageSwapModal extends Modal {
 							return;
 						}
 					}
-					new Notice('No image found in clipboard');
+					const t = getText();
+					new Notice(t.noImageInClipboardNotice ?? 'No image found in clipboard');
 				} catch (err) {
 					console.error('Failed to read clipboard:', err);
-					new Notice('Unable to access clipboard');
+					const t = getText();
+					new Notice(t.unableAccessClipboardNotice ?? 'Unable to access clipboard');
 				}
 			})();
 		});

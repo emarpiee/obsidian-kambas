@@ -104,6 +104,23 @@ export interface TranslationSchema {
 	colorIndigo: string;
 	colorPurple: string;
 	colorPink: string;
+
+	// Palette & Settings translations (optional for fallback to English)
+	copyHexNotice?: (hex: string) => string;
+	copyAllColorsNotice?: (count: number) => string;
+	copyAllColorsTooltip?: string;
+	tagBadgePositionName?: string;
+	tagBadgePositionDesc?: string;
+	tagBadgePositionOutside?: string;
+	tagBadgePositionInside?: string;
+	tagZoomOnSelectName?: string;
+	tagZoomOnSelectDesc?: string;
+	paletteCopySeparatorName?: string;
+	paletteCopySeparatorDesc?: string;
+	colorExtractModeName?: string;
+	colorExtractModeDesc?: string;
+	noImageInClipboardNotice?: string;
+	unableAccessClipboardNotice?: string;
 }
 
 const en: TranslationSchema = {
@@ -202,6 +219,23 @@ const en: TranslationSchema = {
 	colorIndigo: 'Indigo',
 	colorPurple: 'Purple',
 	colorPink: 'Pink',
+
+	// Palette & Settings translations
+	copyHexNotice: (hex: string) => `Copied ${hex} to clipboard!`,
+	copyAllColorsNotice: (count: number) => `Copied ${count} color${count === 1 ? '' : 's'} to clipboard!`,
+	copyAllColorsTooltip: 'Copy all palette colors',
+	tagBadgePositionName: 'Tag badge position',
+	tagBadgePositionDesc: 'Choose whether node tag badges are rendered outside below the element or inside at the bottom-left.',
+	tagBadgePositionOutside: 'Outside (below element)',
+	tagBadgePositionInside: 'Inside (bottom-left)',
+	tagZoomOnSelectName: 'Auto-zoom on tag selection',
+	tagZoomOnSelectDesc: 'Automatically zoom and fit visible elements when selecting or clearing tag filters in the panel.',
+	paletteCopySeparatorName: 'Color palette copy separator',
+	paletteCopySeparatorDesc: 'Delimiter used when clicking the copy button on a color palette to copy all hex values to clipboard.',
+	colorExtractModeName: 'Color extraction mode',
+	colorExtractModeDesc: 'Controls when dominant colors are extracted from canvas images for the color filter panel.',
+	noImageInClipboardNotice: 'No image found in clipboard',
+	unableAccessClipboardNotice: 'Unable to access clipboard',
 };
 
 const zh: TranslationSchema = {

@@ -368,15 +368,17 @@ export class CanvasImageHandler {
 										e.stopPropagation();
 										e.preventDefault();
 										void navigator.clipboard.writeText(hex);
-										new Notice(`Copied ${hex} to clipboard!`);
+										const t = getText();
+										new Notice(t.copyHexNotice ? t.copyHexNotice(hex) : `Copied ${hex} to clipboard!`);
 									});
 								}
 
 								// Append copy button at the bottom to copy all palette hex values
 								if (swatches.length > 0) {
+									const t = getText();
 									const copyBtn = targetPaletteEl.createDiv({
 										cls: 'kambas-palette-copy-btn',
-										attr: { 'aria-label': 'Copy all palette colors' },
+										attr: { 'aria-label': t.copyAllColorsTooltip ?? 'Copy all palette colors' },
 									});
 									setIcon(copyBtn, 'copy');
 									copyBtn.addEventListener('click', (e) => {
@@ -385,7 +387,8 @@ export class CanvasImageHandler {
 										const sep = this.plugin?.settings?.paletteCopySeparator ?? ', ';
 										const textToCopy = swatches.join(sep);
 										void navigator.clipboard.writeText(textToCopy);
-										new Notice(`Copied ${swatches.length} colors to clipboard!`);
+										const currentT = getText();
+										new Notice(currentT.copyAllColorsNotice ? currentT.copyAllColorsNotice(swatches.length) : `Copied ${swatches.length} colors to clipboard!`);
 									});
 								}
 							});

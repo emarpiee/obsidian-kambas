@@ -86,12 +86,12 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Tag badge position')
-			.setDesc('Choose whether node tag badges are rendered outside below the element or inside at the bottom-left.')
+			.setName(t.tagBadgePositionName)
+			.setDesc(t.tagBadgePositionDesc)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption('outside', 'Outside (below element)')
-					.addOption('inside', 'Inside (bottom-left)')
+					.addOption('outside', t.tagBadgePositionOutside)
+					.addOption('inside', t.tagBadgePositionInside)
 					.setValue(this.plugin.settings.tagBadgePosition ?? 'outside')
 					.onChange(async (value: string) => {
 						this.plugin.settings.tagBadgePosition = value as 'outside' | 'inside';
@@ -101,8 +101,8 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Auto-zoom on tag selection')
-			.setDesc('Automatically zoom and fit visible elements when selecting or clearing tag filters in the panel.')
+			.setName(t.tagZoomOnSelectName)
+			.setDesc(t.tagZoomOnSelectDesc)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.tagZoomOnSelect ?? true)
@@ -127,8 +127,8 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Color palette copy separator')
-			.setDesc('Delimiter used when clicking the copy button on a color palette to copy all hex values to clipboard.')
+			.setName(t.paletteCopySeparatorName)
+			.setDesc(t.paletteCopySeparatorDesc)
 			.addText((text) =>
 				text
 					.setPlaceholder(', ')
@@ -141,17 +141,17 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		// Color Filter Section
 		new Setting(containerEl)
-			.setName('Color filter')
+			.setName(t.colorFilterPanel)
 			.setHeading();
 
 		new Setting(containerEl)
-			.setName('Color extraction mode')
-			.setDesc('Controls when dominant colors are extracted from canvas images for the color filter panel.')
+			.setName(t.colorExtractModeName)
+			.setDesc(t.colorExtractModeDesc)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption('auto', 'Auto — extract on canvas open (recommended)')
-					.addOption('manual', 'Manual — extract only on demand')
-					.addOption('disabled', 'Disabled — no color extraction')
+					.addOption('auto', t.colorModeAuto)
+					.addOption('manual', t.colorModeManual)
+					.addOption('disabled', t.colorModeDisabled)
 					.setValue(this.plugin.settings.colorExtractMode ?? 'auto')
 					.onChange(async (value: string) => {
 						this.plugin.settings.colorExtractMode = value as 'auto' | 'manual' | 'disabled';

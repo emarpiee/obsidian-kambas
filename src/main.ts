@@ -108,7 +108,19 @@ export default class KambasPlugin extends Plugin {
 			const t = getText();
 			menu.addSeparator();
 
+			// ── Group 1: General Node Options (available on all canvas nodes) ─────────
+			menu.addItem((item: import('obsidian').MenuItem) => {
+				item.setTitle(t.tagNodes)
+					.setIcon('tag')
+					.onClick(() => {
+						this.canvasImageHandler.openTagModal(activeView, targetNodeEl);
+					});
+			});
+
+			// ── Group 2: Image Filters & Transformations ─────────────────────────────
 			if (hasAnyImage) {
+				menu.addSeparator();
+
 				menu.addItem((item: import('obsidian').MenuItem) => {
 					item.setTitle(t.flipHorizontal)
 						.setIcon('flip-horizontal')
@@ -144,31 +156,44 @@ export default class KambasPlugin extends Plugin {
 							void this.canvasImageHandler.toggleSelectedImagePalette(activeView, targetNodeEl);
 						});
 				});
-			}
 
-			// Opacity is supported on any canvas element (text cards, images, files, groups)
-			menu.addItem((item: import('obsidian').MenuItem) => {
-				const opacityPct = Math.round(currentOpacity * 100);
-				item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
-					.setIcon('droplet')
-					.setChecked(currentOpacity < 1)
-					.onClick(() => {
-						new OpacityModal(this.app, currentOpacity, (opacity) => {
-							this.canvasImageHandler.setSelectedNodeOpacity(activeView, opacity, targetNodeEl);
-						}).open();
-					});
-			});
-
-			if (isResized) {
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.resetSize)
-						.setIcon('rotate-ccw')
+					const opacityPct = Math.round(currentOpacity * 100);
+					item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
+						.setIcon('droplet')
+						.setChecked(currentOpacity < 1)
 						.onClick(() => {
-							this.canvasImageHandler.resetSelectedImageSize(activeView, targetNodeEl);
+							new OpacityModal(this.app, currentOpacity, (opacity) => {
+								this.canvasImageHandler.setSelectedNodeOpacity(activeView, opacity, targetNodeEl);
+							}).open();
+						});
+				});
+
+				if (isResized) {
+					menu.addItem((item: import('obsidian').MenuItem) => {
+						item.setTitle(t.resetSize)
+							.setIcon('rotate-ccw')
+							.onClick(() => {
+								this.canvasImageHandler.resetSelectedImageSize(activeView, targetNodeEl);
+							});
+					});
+				}
+			} else {
+				// If not an image node, show opacity under general options
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					const opacityPct = Math.round(currentOpacity * 100);
+					item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
+						.setIcon('droplet')
+						.setChecked(currentOpacity < 1)
+						.onClick(() => {
+							new OpacityModal(this.app, currentOpacity, (opacity) => {
+								this.canvasImageHandler.setSelectedNodeOpacity(activeView, opacity, targetNodeEl);
+							}).open();
 						});
 				});
 			}
 
+			// ── Group 3: File & Vault Actions ─────────────────────────────────────────
 			if (hasAnyMedia || hasNativeImage) {
 				menu.addSeparator();
 			}
@@ -222,15 +247,6 @@ export default class KambasPlugin extends Plugin {
 						});
 				});
 			}
-
-			// Tags — available on any node (not just media, so mobile works too)
-			menu.addItem((item: import('obsidian').MenuItem) => {
-				item.setTitle(t.tagNodes)
-					.setIcon('tag')
-					.onClick(() => {
-						this.canvasImageHandler.openTagModal(activeView, targetNodeEl);
-					});
-			});
 		};
 
 		// Single node context menu
