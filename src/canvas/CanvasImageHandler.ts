@@ -254,11 +254,14 @@ export class CanvasImageHandler {
 			if (key === 'g') unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
 		}
 
-		// Apply CSS class immediately for instant feedback
+		// Apply CSS class immediately for instant feedback.
+		// Flip is set on nodeEl (CSS targets img inside it) so it works even when <img> isn't mounted.
+		if (unknownData) {
+			nodeEl.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
+			nodeEl.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+		}
 		const img = this.getNativeImageElement(nodeEl);
 		if (img && unknownData) {
-			img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
-			img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 			img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
 		}
 
@@ -332,10 +335,13 @@ export class CanvasImageHandler {
 				nodeEl.classList.toggle('kambas-node-grayscale', Boolean(unknownData.kambasGrayscale));
 			}
 
+			// Flip is set on nodeEl; CSS descendant selector targets img inside it.
+			if (unknownData) {
+				nodeEl.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
+				nodeEl.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+			}
 			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
 			if (img && unknownData) {
-				img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
-				img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 				img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
 
 				// Handle palette overlay
@@ -746,9 +752,26 @@ export class CanvasImageHandler {
 
 			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
-			const hasImg = nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl);
 
-			if ((isExplicitlySelected || isTargetNode) && hasImg) {
+			if (!(isExplicitlySelected || isTargetNode)) return;
+
+			// Detect image/media nodes via the live canvas node object properties so
+			// off-screen (virtualized) nodes are not silently skipped when their <img>
+			// hasn't been rendered into the DOM yet.
+			//   • Vault file nodes:   rawNode.file is a TFile instance
+			//   • Embedded b64 nodes: rawNode.unknownData.url starts with 'data:image/'
+			const rawNodeObj = node as unknown as {
+				file?: import('obsidian').TFile;
+				unknownData?: { url?: string; file?: string };
+			};
+			const isVaultImg = rawNodeObj.file instanceof TFile &&
+				IMAGE_EXTENSIONS.has((rawNodeObj.file.extension ?? '').toLowerCase());
+			const isDataImg = Boolean(rawNodeObj.unknownData?.url?.startsWith('data:image/'));
+			// Also fall back to DOM check for any node already rendered (e.g. kambas-embedded-img)
+			const hasDomImg = !isVaultImg && !isDataImg &&
+				Boolean(nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl));
+
+			if (isVaultImg || isDataImg || hasDomImg) {
 				selectedNodeEls.push(nodeEl);
 				selectedNodeIds.push(id);
 			}
@@ -800,11 +823,12 @@ export class CanvasImageHandler {
 			const nodeEl = canvasNode.nodeEl;
 			if (nodeEl) {
 				nodeEl.classList.toggle('kambas-node-grayscale', Boolean(unknownData.kambasGrayscale));
+				// Flip on nodeEl; CSS descendant selector targets img inside it.
+				nodeEl.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
+				nodeEl.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 
 				const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
 				if (img) {
-					img.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
-					img.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
 					img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
 				}
 				const paletteEl = nodeEl.querySelector<HTMLElement>('.kambas-palette-bar');
@@ -824,6 +848,9 @@ export class CanvasImageHandler {
 		} else {
 			void this.persistImageTransform(file, selectedNodeIds, key, targetValue);
 		}
+
+		// 3. Rescan to sync any other state (palette, opacity) that may be pending.
+		this.scheduleRescan(activeView);
 	}
 
 	public async toggleSelectedImagePalette(

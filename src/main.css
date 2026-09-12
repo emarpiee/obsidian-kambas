@@ -65,15 +65,15 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 
 
 /* Image Transformation utility classes */
-.kambas-img-flip-h {
+.canvas-node.kambas-img-flip-h img {
 	transform: scaleX(-1);
 }
 
-.kambas-img-flip-v {
+.canvas-node.kambas-img-flip-v img {
 	transform: scaleY(-1);
 }
 
-.kambas-img-flip-h.kambas-img-flip-v {
+.canvas-node.kambas-img-flip-h.kambas-img-flip-v img {
 	transform: scale(-1, -1);
 }
 
