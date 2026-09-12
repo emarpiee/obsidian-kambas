@@ -8,6 +8,7 @@ export interface KambasSettings {
 	tagBadgePosition: 'outside' | 'inside';
 	tagZoomOnSelect: boolean;
 	paletteSwatchCount: number; // 3 to 10 swatches
+	colorExtractMode: 'auto' | 'manual' | 'disabled'; // Color filter extraction mode
 	keyboardPan: CanvasKeyboardPanSettings;
 }
 
@@ -16,6 +17,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	tagBadgePosition: 'outside',
 	tagZoomOnSelect: true,
 	paletteSwatchCount: 5,
+	colorExtractMode: 'auto',
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
 
@@ -112,6 +114,26 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.paletteSwatchCount = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		// Color Filter Section
+		new Setting(containerEl)
+			.setName('Color filter')
+			.setHeading();
+
+		new Setting(containerEl)
+			.setName('Color extraction mode')
+			.setDesc('Controls when dominant colors are extracted from canvas images for the color filter panel.')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('auto', 'Auto — extract on canvas open (recommended)')
+					.addOption('manual', 'Manual — extract only on demand')
+					.addOption('disabled', 'Disabled — no color extraction')
+					.setValue(this.plugin.settings.colorExtractMode ?? 'auto')
+					.onChange(async (value: string) => {
+						this.plugin.settings.colorExtractMode = value as 'auto' | 'manual' | 'disabled';
 						await this.plugin.saveSettings();
 					})
 			);

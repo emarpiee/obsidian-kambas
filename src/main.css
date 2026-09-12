@@ -476,7 +476,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	min-height: 160px;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 10px;
+	border-radius: var(--radius-m);
 	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18), 0 1px 4px rgba(0, 0, 0, 0.1);
 	z-index: 100;
 	overflow: hidden;
@@ -491,23 +491,74 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 10px 12px 10px 14px;
-	background: var(--background-secondary);
+	padding: 10px 12px 6px;
 	border-bottom: 1px solid var(--background-modifier-border);
-	flex-shrink: 0;
+	background: var(--background-secondary);
 	cursor: grab;
+	user-select: none;
 }
 
-.kambas-tag-panel-header:active {
-	cursor: grabbing;
+.kambas-tag-panel-tabs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--background-primary);
+	padding: 2px;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
 }
 
-.kambas-tag-panel-title {
-	font-size: 12px;
+.kambas-tag-panel-tab {
+	padding: 3px 8px;
+	font-size: 11px;
 	font-weight: 600;
 	color: var(--text-muted);
+	border-radius: 4px;
+	cursor: pointer;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.04em;
+	transition: background 0.12s ease, color 0.12s ease;
+}
+
+.kambas-tag-panel-tab:hover {
+	color: var(--text-normal);
+}
+
+.kambas-tag-panel-tab.is-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.kambas-color-dot {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	display: inline-block;
+	flex-shrink: 0;
+	border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.kambas-tag-panel-item.is-active .kambas-color-dot {
+	border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Canvas node highlight (row hover → node glow) ───────────────────────── */
+.kambas-color-highlight {
+	outline: 2px solid var(--interactive-accent) !important;
+	outline-offset: 3px;
+	box-shadow: 0 0 0 4px rgba(var(--interactive-accent-rgb, 99, 102, 241), 0.2) !important;
+	z-index: 10 !important;
+}
+
+/* ── Panel row highlights (node hover → row glow / dim) ─────────────────── */
+.kambas-tag-panel-item.is-related {
+	background: rgba(var(--interactive-accent-rgb, 99, 102, 241), 0.1);
+	border-left: 2.5px solid var(--interactive-accent);
+	padding-left: calc(10px - 2.5px); /* compensate for the border */
+}
+
+.kambas-tag-panel-item.is-unrelated {
+	opacity: 0.35;
 }
 
 .kambas-tag-panel-actions {
@@ -662,6 +713,30 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	background: rgba(255, 255, 255, 0.2);
 }
 
+/* ── Excluded state (red) ─────────────────────────────────────────────────── */
+.kambas-tag-panel-item.is-excluded {
+	background: rgba(255, 80, 80, 0.12);
+}
+
+.kambas-tag-panel-item.is-excluded .kambas-tag-panel-pill,
+.kambas-tag-panel-item.is-excluded .kambas-tag-panel-check {
+	color: var(--text-error, #e53935);
+}
+
+.kambas-tag-panel-item.is-excluded .kambas-tag-panel-count {
+	background: rgba(255, 80, 80, 0.18);
+	color: var(--text-error, #e53935);
+}
+
+.kambas-tag-panel-item.is-excluded .kambas-tag-panel-delete {
+	color: rgba(229, 57, 53, 0.5);
+}
+
+.kambas-tag-panel-item.is-excluded .kambas-tag-panel-delete:hover {
+	color: #e53935;
+	background: rgba(255, 80, 80, 0.2);
+}
+
 .kambas-tag-panel-check {
 	display: flex;
 	align-items: center;
@@ -691,6 +766,46 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	padding: 1px 7px;
 	flex-shrink: 0;
 	font-weight: 500;
+}
+
+/* "N in view" amber badge — appears when filter is active */
+.kambas-in-view-count {
+	background: rgba(245, 158, 11, 0.18);
+	color: #b45309;
+}
+.theme-dark .kambas-in-view-count {
+	background: rgba(245, 158, 11, 0.22);
+	color: #fbbf24;
+}
+
+/* Divider between related and unrelated color rows */
+.kambas-color-divider {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px 2px;
+	margin-top: 2px;
+}
+.kambas-color-divider span {
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--text-faint);
+}
+.kambas-color-divider::before {
+	content: '';
+	flex: 1;
+	height: 1px;
+	background: var(--background-modifier-border);
+}
+
+/* Colors not in the current filtered view */
+.kambas-tag-panel-item.is-not-in-view {
+	opacity: 0.45;
+}
+.kambas-tag-panel-item.is-not-in-view:hover {
+	opacity: 1;
 }
 
 .kambas-tag-panel-empty {

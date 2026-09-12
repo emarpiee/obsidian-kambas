@@ -292,3 +292,71 @@ export function extractImagePalette(src: string | Blob, colorCount = 5): Promise
 	});
 }
 
+
+/**
+ * Maps a hex color string to a human-readable named color based on HSV analysis.
+ * Excludes near-neutral colors (white, gray, black) so only chromatic colors are returned.
+ */
+export function hexToNamedColor(hex: string): string | null {
+	// Parse hex → normalized RGB 0–1
+	const cleaned = hex.replace('#', '');
+	if (cleaned.length !== 6) return null;
+	const r = parseInt(cleaned.substring(0, 2), 16) / 255;
+	const g = parseInt(cleaned.substring(2, 4), 16) / 255;
+	const b = parseInt(cleaned.substring(4, 6), 16) / 255;
+
+	const max = Math.max(r, g, b);
+	const min = Math.min(r, g, b);
+	const d = max - min;
+
+	// Value (brightness) and saturation
+	const v = max;
+	const s = max === 0 ? 0 : d / max;
+
+	// Handle neutral colors (Black, Gray, White)
+	if (s < 0.15) {
+		if (v < 0.20) return 'Black';
+		if (v > 0.82) return 'White';
+		return 'Gray';
+	}
+	if (v < 0.12) return 'Black';
+
+	// Hue calculation (0–360°)
+	let h = 0;
+	if (d !== 0) {
+		if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+		else if (max === g) h = ((b - r) / d + 2) * 60;
+		else h = ((r - g) / d + 4) * 60;
+	}
+
+	// Map hue angle to standard human-readable colors
+	if (h >= 345 || h < 15)  return 'Red';
+	if (h >= 15  && h < 45)  return 'Orange';
+	if (h >= 45  && h < 70)  return 'Yellow';
+	if (h >= 70  && h < 150) return 'Green';
+	if (h >= 150 && h < 180) return 'Teal';
+	if (h >= 180 && h < 200) return 'Cyan';
+	if (h >= 200 && h < 255) return 'Blue';
+	if (h >= 255 && h < 270) return 'Indigo';
+	if (h >= 270 && h < 300) return 'Purple';
+	if (h >= 300 && h < 345) return 'Pink';
+	return null;
+}
+
+/**
+ * Returns all distinct chromatic named colors extracted from an image source.
+ * Extracts up to 6 palette swatches and maps each to human-readable color names.
+ */
+export async function getNodeDominantColorName(src: string): Promise<string[] | null> {
+	try {
+		const palette = await extractImagePalette(src, 6);
+		const found = new Set<string>();
+		for (const hex of palette) {
+			const name = hexToNamedColor(hex);
+			if (name) found.add(name);
+		}
+		return found.size > 0 ? Array.from(found) : null;
+	} catch {
+		return null;
+	}
+}

@@ -1,214 +1,240 @@
-> [!NOTE]
-> **Work in Progress** — Kambas is actively under development. Features and interfaces may refine over time.
+ > [!NOTE]
+> **Work in Progress** — Kambas is actively developed. Features and interfaces may evolve between releases.
 
 # Kambas
 
-**PureRef-inspired visual workspace & image manipulation toolkit for Obsidian Canvas.**
+**A PureRef-inspired visual workspace and image toolkit for Obsidian Canvas.**
 
-Kambas transforms Obsidian Canvas into an agile, self-contained reference tool. Inspired by **PureRef**, it allows designers, researchers, and creators to gather, organize, transform, and embed visual media directly within `.canvas` files without cluttering vault directories.
-
----
-
-## 🎯 The Problem Kambas Solves
-
-Obsidian Canvas is fantastic for connecting thoughts, but managing visual reference assets creates pain points for visual creators:
-
-1. **Vault Directory Pollution**: Pasting or dropping images into Canvas auto-generates individual media files in your vault's attachment directory. Over time, hundreds of single-use images clutter file navigation and vault search.
-2. **Broken Link Dependencies**: Renaming folders, reorganizing vault directories, or syncing across devices often breaks relative link paths to canvas attachments.
-3. **Friction in Portable Sharing**: Sharing or backing up a `.canvas` file requires hunting down and bundling referenced image attachment files alongside the `.canvas` JSON file.
-4. **Lack of In-Canvas Image Controls**: Fine-tuning mood boards (flipping references, matching contrast, setting transparency, navigating via keyboard) requires external image editors or cumbersome workarounds.
+Kambas transforms Obsidian Canvas into a self-contained, portable reference environment for designers, researchers, and visual creators. Its core feature is **embedded image storage** — images are encoded as Base64 data URIs and stored directly inside the `.canvas` file itself, eliminating vault clutter and broken link dependencies entirely.
 
 ---
 
-## 💡 PureRef-like Visual Workflow
+## The Problem Kambas Solves
 
-Like **PureRef** — the industry standard reference viewer for digital artists and designers — **Kambas** focuses on speed, portability, and fluidity:
+Obsidian Canvas excels at connecting ideas, but managing visual reference assets creates friction for visual creators:
 
-- **Self-Contained Canvas Files**: Embed images directly into `.canvas` files as inline Base64 data URIs (`url: "data:image/png;base64,..."`). Share, move, or archive your `.canvas` file anywhere as a single portable file without missing dependencies.
-- **Clean Ingestion Options**: Ingest media with full control. Choose on paste/drop whether to store images as standard vault attachments or embed them directly inside the canvas file. Existing vault attachments can be converted in-place with an option to clean up original source files.
-- **Fast Visual Tweaks**: Flip images horizontally/vertically, apply grayscale filters for value checking, adjust transparency across any node type, and reset dimensions to natural aspect ratios.
-- **Keyboard-Driven Canvas Navigation**: Smooth WASD and arrow key panning with precise zoom shortcuts keep your hands on the keyboard during intense visual sessions.
-
----
-
-## 🛠️ Key Features
-
-### 🖼️ Image & Node Manipulations
-- **Horizontal & Vertical Flipping**: Mirror images along X or Y axes for flipping reference poses or checking canvas composition.
-- **Grayscale Toggle**: Instantly strip color to evaluate value structure, contrast, and visual hierarchy.
-- **Color Palette Extraction**: Extract dominant colors from any image node and display them as a configurable swatch overlay (3–10 swatches) for quick color reference.
-- **Node Opacity Control**: Adjust transparency (0% to 100%) for image nodes, text cards, embedded files, and canvas groups.
-- **Reset Natural Dimensions**: Restore scaled images to their native pixel dimensions in one click.
-- **Clipboard Integration**: Copy clean image data directly from canvas nodes to system clipboard.
-- **Swap Media**: Replace any image or video node with another file from your vault, a local file, or directly from your clipboard—preserving position and natural aspect ratio.
-
-### 🏷️ Canvas Media Tagging & Filter Panel
-- **Tag Filter Panel**: A floating, draggable, and resizable panel that lists all unique tags across every node in the active canvas. Open it from the canvas toolbar.
-- **Real-Time Search**: Type to filter the tag list instantly — `Ctrl+A` inside the search field selects (or deselects) all currently visible tags.
-- **Range & Multi Selection**: `Shift+Click` a tag to activate or deactivate the entire range between your last-clicked tag and the current one — identical to file-manager range selection.
-- **Active-Tag Highlighting**: Active filter tags are highlighted using native Obsidian accent colors so it's always clear which tags are filtering.
-- **Dim Opacity for Hidden Nodes**: A slider controls how opaque hidden (non-matching) nodes appear while a filter is active — giving context without distraction. A reset button (↺) restores the default 12 % opacity.
-- **Delete Tag from Canvas**: Each tag row has a trash icon to remove that tag from every node in the canvas simultaneously — changes are persisted to the `.canvas` file immediately.
-- **Auto Zoom-to-Fit**: Toggling a tag filter automatically zooms and pans the viewport to fit only the matching visible nodes. Clearing all filters zooms to fit the entire canvas.
-- **Persistent Filters**: Active tag selections survive panel close, canvas reopen, and Obsidian restarts — stored per canvas file path.
-- **Toolbar State Indicator**: The toolbar button stays lit (accent color) whenever any filter is active, even when the panel is closed.
-- **Selection Guard**: Hidden nodes are automatically deselected (covers rubber-band drag and `Ctrl+A` on the canvas) so batch operations never accidentally affect filtered-out nodes.
-
-### 📥 Storage & Attachment Management
-- **Smart Ingestion Modal**: Prompt on paste or drag-and-drop to choose vault attachment storage vs. inline Base64 embedding.
-- **Batch Processing**: Handle multi-file drag-and-drop operations effortlessly in one step.
-- **In-Place Base64 Conversion**: Convert existing vault attachment nodes into inline data URIs (with optional original file deletion).
-- **Media File Relocation**: Move or duplicate linked media files across vault folders using a fast fuzzy-finder folder selector.
-- **Clean Card View**: Toggle option to hide technical Base64/Data URI header labels for a minimalist card appearance.
-
-### 🎮 Fluid Canvas Navigation
-- **Keyboard Panning**: Pan around large canvases smoothly using `WASD` or directional arrow keys with configurable pan speeds (inspired by [obsidian-canvas-pan](https://github.com/nathonius/obsidian-canvas-pan)).
-- **Keyboard Zooming**: Zoom in and out precisely with customizable shortcut keys (`+` / `-`).
+- **Vault pollution**: Pasting or dropping images auto-creates individual attachment files in your vault. Hundreds of single-use images accumulate and contaminate file navigation and search.
+- **Broken link dependencies**: Reorganizing vault folders, renaming directories, or syncing across devices frequently breaks the relative paths that Canvas relies on to display images.
+- **Portability friction**: Sharing a `.canvas` file requires separately locating and bundling every referenced attachment — defeating the purpose of a self-contained reference board.
+- **Limited in-canvas controls**: Adjusting images for mood board use (flipping, desaturating, setting transparency) requires leaving Obsidian entirely.
 
 ---
 
-## 🏗️ Technical Architecture & Data Persistence
+## Core Concept: Embedded Images
 
-Kambas performs visual modifications non-destructively without altering original disk media.
-
-### Node Metadata Persistence
-
-Obsidian Canvas files reserve an `unknownData` JSON object per node for plugin state. Kambas persists node visual transformations directly inside this property:
+The defining feature of Kambas is **inline Base64 image embedding**. When you paste or drop an image, Kambas can encode it as a data URI stored directly in the `.canvas` JSON:
 
 ```json
 {
-  "id": "node-id-123",
+  "id": "node-abc123",
   "type": "file",
-  "file": "attachments/image.png",
-  "kambasTags": ["mood", "reference", "character"],
+  "url": "data:image/png;base64,iVBORw0KGgo...",
+  "kambasTags": ["concept", "character-design"],
   "unknownData": {
-    "kambasFlipH": true,
+    "kambasFlipH": false,
     "kambasFlipV": false,
-    "kambasGrayscale": true,
+    "kambasGrayscale": false,
     "kambasPalette": false,
-    "kambasOpacity": 0.85,
-    "originalWidth": 1200,
-    "originalHeight": 800
+    "kambasOpacity": 1,
+    "originalWidth": 1920,
+    "originalHeight": 1080
   }
 }
 ```
 
-- **`kambasTags`**: Array of tag strings attached to the node, stored as a top-level canvas JSON property alongside `unknownData`. The tag filter panel reads and writes this property directly.
-
-- **Cross-Session Stability**: Visual settings persist across device syncs, Obsidian restarts, and canvas reloads.
-- **Non-Destructive**: Disabling Kambas leaves original image files completely untouched. Visual metadata remains cleanly tucked inside the `.canvas` JSON file.
+The result is a **single portable `.canvas` file** — no attachments folder, no broken paths, no extra steps when sharing, archiving, or syncing.
 
 ---
 
-## ⚡ Technical Considerations & Trade-Offs
+## Features
 
-Inline embedding brings immense portability and vault cleanliness, but keep the following trade-offs in mind:
+### Image & Node Manipulation
 
-- **Supported Formats**: Base64 conversion and image transformations are tailored for standard web formats (`PNG`, `JPG`/`JPEG`, `WebP`, `GIF`, `SVG`). Non-image files (`PDF`, Markdown, Audio/Video) cannot be converted to image URIs.
-- **File Size Expansion**: Base64 encoding increases binary data size by ~33%. Boards loaded with dozens of high-res images will yield larger `.canvas` JSON files.
-- **Performance Thresholds**: Canvases with excessive high-resolution embedded images can increase initial render times and RAM usage.
-- **Vault Search & Indexing**: Embedded Base64 strings are stored within `.canvas` raw JSON text and are omitted from standard vault asset indexers.
-- **Recommended Usage**: Ideal for mood boards, concept reference boards, visual brainstorming, and portable project notes. For ultra-high-resolution image archives, native vault attachment linking is recommended.
+A right-click context menu appears on any canvas node. For image nodes, this includes:
 
----
-
-## 🎮 Controls Reference
-
-### Context Menu Commands
-
-Right-click any node or selection inside an active Canvas view:
-
-| Command | Target Scope | Description |
-| :--- | :--- | :--- |
-| **Flip horizontal** | Image nodes | Flips target image horizontally across X axis. |
-| **Flip vertical** | Image nodes | Flips target image vertically across Y axis. |
-| **Toggle grayscale** | Image nodes | Toggles CSS grayscale value-check filter. |
-| **Color palette** | Image nodes | Extracts and displays dominant color swatches on the image. |
-| **Change opacity** | All node types | Opens opacity dialog (0% – 100%). |
-| **Reset to original size** | Image nodes | Resets node bounds to image natural dimensions. |
-| **Swap media…** | Single image/video node | Replaces the current media with another from vault, file, or clipboard. |
-| **Embed in canvas file...** | Vault media nodes | Converts vault file link into embedded inline Base64 URI. |
-| **Copy media to clipboard** | Image nodes | Copies raw image payload or file to clipboard. |
-| **Move / Copy media to...** | Vault media nodes | Launches folder picker to relocate or duplicate vault file. |
-
-### Tag Filter Panel
-
-Open via the **Tags** button in the canvas toolbar:
-
-| Gesture / Action | What happens |
+| Command | Description |
 | :--- | :--- |
-| **Click a tag** | Toggle that tag filter on/off; sets it as the selection anchor. Viewport auto-zooms to matching nodes. |
-| **Shift+Click a tag** | Activates (or deactivates) every tag between the anchor and the clicked tag. |
-| **Ctrl+A** (panel focused) | Selects all visible tags in the list — or deselects all if every visible tag is already active. |
-| **Search field** | Filters the tag list in real time; `Ctrl+A` applies only to visible (filtered) results. |
-| **× (clear) button** | Clears all active filters and zooms to fit the entire canvas. |
-| **Trash icon** (per row) | Permanently removes that tag from every node in the canvas. |
-| **Dim opacity slider** | Sets the opacity of hidden (non-matching) nodes while a filter is active. |
-| **↺ (reset) button** | Restores the dim opacity to the default 12 %. |
-| **Drag panel header** | Repositions the panel anywhere on screen; position is saved between sessions. |
-| **Resize panel corner** | Resizes the panel; size is also persisted across sessions. |
-
-### Keyboard Shortcuts
-
-| Action | Default Shortcut | Configuration Path |
-| :--- | :--- | :--- |
-| **Pan Up / Down / Left / Right** | `W` / `S` / `A` / `D` or `Arrow Keys` | Settings > Kambas > Pan controls |
-| **Zoom In / Out** | `+` / `-` | Settings > Kambas > Zoom controls |
+| **Flip horizontal / vertical** | Mirror the image along its X or Y axis. |
+| **Toggle grayscale** | Apply a CSS grayscale filter to evaluate value structure and contrast without color distraction. |
+| **Color palette** | Extract and display dominant color swatches as an overlay on the image (3–10 swatches, configurable). |
+| **Change opacity** | Set transparency (0–100%) on any node type — images, text cards, file embeds, or groups. |
+| **Reset to original size** | Restore a scaled node to its native pixel dimensions. |
+| **Copy media to clipboard** | Copy the raw image data from the canvas node to the system clipboard. |
+| **Swap media…** | Replace the current image or video with another from your vault, a local file, or the clipboard — preserving position and aspect ratio. |
+| **Embed in canvas file…** | Convert a vault-linked file node into an inline Base64 data URI (with optional deletion of the source file). |
+| **Move / Copy media to…** | Relocate or duplicate a vault-linked media file to another folder using a fuzzy-finder picker. |
 
 ---
 
-## ⚙️ Configuration
+### Storage & Ingestion
 
-Manage settings in **Obsidian Settings** > **Kambas**:
+When you paste from clipboard or drag-and-drop files onto the canvas, Kambas intercepts the action and presents a choice:
 
-- **Hide media label**: Hides raw Base64 Data URI header strings above embedded media cards.
-- **Color palette swatches**: Number of dominant colors to display when the color palette is enabled on an image (3–10).
-- **Pan controls**: Configure key bindings and set maximum pan speed (units per frame).
-- **Zoom controls**: Configure zoom shortcuts and adjust zoom step sensitivity.
-- **Tag filter dim opacity**: Default opacity (%) for nodes hidden by an active tag filter. Adjustable live via the slider inside the tag filter panel.
+- **Embed in canvas** — encode the image as a Base64 data URI stored inside the `.canvas` file.
+- **Save to vault** — write the file to a configured attachment folder as a standard Obsidian file link.
+
+Multi-file drops are handled in a single batch operation. The **Hide media label** setting suppresses the technical data URI header that would otherwise appear above embedded image cards, giving a clean card-style appearance.
 
 ---
 
-## 📦 Installation
+### Filter Panel (Tags & Colors)
+
+The Filter Panel is a floating, draggable, resizable panel accessible from the **Tags** button in the canvas toolbar. It has two tabs — **Tags** and **Colors** — that work together to isolate, explore, and focus on specific subsets of canvas image nodes.
+
+#### How Filtering Works
+
+Kambas uses an **include + exclude** model per tab. Each row in the filter list cycles through three states on repeated click:
+
+| State | Icon | Visual | Behavior |
+| :--- | :--- | :--- | :--- |
+| **Neutral** | ☐ | Default | Not involved in filtering |
+| **Include** ✓ | ☑ | Blue accent background | Node must have this tag or color to be visible |
+| **Exclude** ✗ | ✕ | Red background | Node is hidden if it has this tag or color, even if it also matches an include filter |
+
+**Exclude wins over include.** If a node matches an included tag but also has an excluded color, it is hidden. This allows fine-grained refinement: include a broad category, then exclude specific attributes within it.
+
+When any filter is active, nodes that do not match are dimmed rather than removed. The dim opacity is adjustable via a slider in the panel footer (default: 12%).
+
+#### Contextual Awareness — "In View" Intelligence
+
+When a filter is active, the panel automatically surfaces which tags and colors are **co-present in the currently visible nodes** — without any hovering or manual inspection needed.
+
+- **"N in view" badge**: Each row shows a secondary amber badge indicating how many of the currently-visible nodes also carry that tag or color.
+- **Related-first sorting**: Rows are sorted by their visible count, so the most co-occurring tags and colors always appear at the top.
+- **Divider**: A "Not in current view" section separator groups rows that have zero presence in the visible set, keeping the relevant options immediately accessible.
+- **Dimmed unrelated rows**: Tags or colors absent from the current view are displayed at reduced opacity (45%), hoverable to full opacity on demand.
+
+**Example**: You include Gray in the Color tab. The panel immediately shows:
+```
+☑  Gray        [20 in view]   20 images    ← active include
+☐  Red         [3 in view]    3 images     ← 3 visible gray images also contain red
+☐  Orange      [2 in view]    17 images    ← 2 visible gray images also contain orange
+───────── NOT IN CURRENT VIEW ─────────
+☐  White                      14 images    ← dimmed; absent from all visible images
+☐  Black                      5 images     ← dimmed
+```
+
+You can then click Red once (include) or twice (exclude) to refine without leaving the panel.
+
+#### Cross-Highlighting
+
+Hovering over a color row **outlines the matching canvas images** with an accent-colored glow, letting you preview which nodes would be affected before committing. Hovering over a canvas image node **highlights its corresponding color rows** in the panel and dims unrelated rows, making the relationship bidirectional and instantaneous.
+
+#### Tags Tab
+
+- **Tag assignment**: Right-click any node to open the tag modal. Type multiple comma-separated phrases to auto-format them into kebab-case tags (e.g. `character design, concept art` → `#character-design`, `#concept-art`). Press `Enter` to apply immediately.
+- **Tag badges**: Tags render as small badges on canvas nodes. Badge position (outside-below or inside-bottom-left) is configurable in settings.
+- **Toggle badge visibility**: The **Toggle tag visibility** command palette action shows or hides all badges on the current canvas.
+- **Delete tag**: Each tag row has a trash icon that permanently removes the tag from every node in the canvas.
+- **Search**: A search field at the top of the tab filters the list in real time.
+- **Clear**: The **×** button inside the search bar clears all active includes and excludes for the Tags tab simultaneously.
+
+#### Colors Tab
+
+- **Dominant color extraction**: Kambas analyses each image's pixel data using HSV color buckling and classifies it into up to 13 named chromatic and neutral color categories: Black, Gray, White, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink.
+- **Multi-color per image**: An image can belong to multiple color buckets (e.g. a landscape with a red tree on a gray sky belongs to both Red and Gray).
+- **Extraction modes** (configurable in settings):
+  - **Auto** — colors are extracted lazily in the background when the Colors tab is opened.
+  - **Manual** — extraction runs only when the "Extract Image Colors" button is clicked.
+  - **Disabled** — color extraction is turned off entirely.
+- **Search**: Filter the color list by name in real time.
+- **Clear**: The **×** button inside the search bar clears all active color includes and excludes.
+
+#### Shared Filter Behaviours
+
+- **Auto zoom-to-fit**: Toggling any filter automatically pans and zooms the viewport to frame all matching visible nodes. Toggle **Zoom on select** in settings to enable or disable this.
+- **Persistent filters**: Active includes and excludes survive panel close, canvas reopen, and Obsidian restart — stored per canvas file path in local storage.
+- **Toolbar indicator**: The toolbar button remains lit (accent color) whenever any filter is active, even with the panel closed.
+- **Selection guard**: Hidden nodes are automatically deselected during rubber-band selection and `Ctrl+A`, preventing accidental batch operations on filtered-out content.
+- **Drag & resize**: The panel header can be dragged to any position. A plain click on the header never moves the panel — dragging requires actual mouse movement. The panel size is also resizable and persisted.
+
+---
+
+### Keyboard Navigation
+
+| Action | Default Shortcut |
+| :--- | :--- |
+| Pan Up / Down / Left / Right | `W` / `S` / `A` / `D` or Arrow Keys |
+| Zoom In / Out | `+` / `-` |
+| Toggle tag visibility | Command Palette |
+
+Pan speed and zoom sensitivity are configurable in **Settings > Kambas**.
+
+---
+
+## Configuration
+
+Open **Obsidian Settings > Kambas** to configure:
+
+| Setting | Description |
+| :--- | :--- |
+| **Hide media label** | Hides the raw data URI header above embedded image cards for a cleaner appearance. |
+| **Color palette swatches** | Number of dominant colors to extract and display per image (3–10). |
+| **Pan speed** | Maximum canvas pan speed per frame (WASD / arrow keys). |
+| **Zoom sensitivity** | Step size for each zoom increment. |
+| **Tag filter dim opacity** | Opacity of hidden nodes while a filter is active (default: 12%). |
+| **Tag badge position** | Outside-below the node, or inside at the bottom-left. |
+| **Zoom on select** | Auto-zoom to fit visible nodes when a filter is toggled. |
+| **Color extraction mode** | Auto, Manual, or Disabled. |
+
+---
+
+## Technical Notes
+
+### Data Persistence
+
+Kambas stores all node state inside the `.canvas` JSON without touching original image files:
+
+- **`kambasTags`** — array of tag strings, stored as a top-level node property.
+- **`unknownData.kambasFlipH/V`** — horizontal and vertical flip state.
+- **`unknownData.kambasGrayscale`** — grayscale filter toggle.
+- **`unknownData.kambasPalette`** — palette swatch overlay toggle.
+- **`unknownData.kambasOpacity`** — node transparency value.
+- **`unknownData.originalWidth/Height`** — cached native dimensions for reset-to-size.
+
+Filter state (active includes and excludes per canvas file) is stored in Obsidian's local storage, separate from the `.canvas` file itself.
+
+### Trade-offs of Inline Embedding
+
+| Consideration | Detail |
+| :--- | :--- |
+| **Supported formats** | PNG, JPG/JPEG, WebP, GIF, SVG. Non-image files (PDF, audio, video) cannot be Base64-embedded. |
+| **File size** | Base64 encoding adds ~33% to binary size. Large boards with many high-resolution images will produce larger `.canvas` files. |
+| **Performance** | Canvases with dozens of high-resolution embedded images may increase initial render times and memory usage. For ultra-high-resolution archives, native vault attachment linking is recommended. |
+| **Vault indexing** | Embedded Base64 strings inside `.canvas` JSON are not indexed by Obsidian's standard asset search. |
+
+---
+
+## Installation
 
 ### Community Plugins
-1. Open **Obsidian Settings** > **Community Plugins**.
-2. Turn off **Restricted Mode**.
-3. Click **Browse**, search for **Kambas**, and click **Install**.
-4. Enable **Kambas** once installed.
+
+1. Open **Settings > Community Plugins** and disable Restricted Mode.
+2. Click **Browse**, search for **Kambas**, and install.
+3. Enable **Kambas** in the installed plugins list.
 
 ### Manual Installation
-1. Download `main.js`, `manifest.json`, and `styles.css` from the [Latest Release](https://github.com/emarpiee/obsidian-kambas/releases).
-2. Create a folder named `kambas` in your plugin folder: `<vault>/.obsidian/plugins/kambas/`.
-3. Copy the downloaded release files into the folder.
-4. Reload Obsidian and toggle **Kambas** ON in **Community Plugins**.
+
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/emarpiee/obsidian-kambas/releases).
+2. Create `<vault>/.obsidian/plugins/obsidian-kambas/` and copy the files inside.
+3. Reload Obsidian and enable **Kambas** under **Community Plugins**.
 
 ---
 
-## 💻 Development
+## Development
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development build watcher
-npm run dev
-
-# Run type check and linter
-npm run health
-
-# Build production bundle
-npm run build
+npm install        # Install dependencies
+npm run dev        # Start dev build watcher
+npm run health     # Type-check and lint
+npm run build      # Production bundle
 ```
 
 ---
 
-## 💖 Support & Funding
+## Support
 
-If Kambas enhances your creative workflow, support its ongoing development:
+If Kambas improves your workflow, consider supporting its development:
 
-- **[Ko-fi](https://ko-fi.com/emarpiee)**
-- **[PayPal](https://paypal.me/emarpiee)**
-
-
-
+- [Ko-fi](https://ko-fi.com/emarpiee)
+- [PayPal](https://paypal.me/emarpiee)

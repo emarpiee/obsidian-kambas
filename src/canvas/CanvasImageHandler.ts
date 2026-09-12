@@ -9,6 +9,7 @@ import {
 	blobToBase64,
 	extractImagePalette,
 	getImageDimensions,
+	getNodeDominantColorName,
 	saveFileToVault,
 } from '../utils/imageUtils';
 import { CanvasFileData, CanvasItemView, CanvasNodeData, IMAGE_EXTENSIONS } from './CanvasTypes';
@@ -28,13 +29,19 @@ export class CanvasImageHandler {
 	private modifyTimer: number | null = null;
 	private lastMousePos: { x: number; y: number } | null = null;
 
-	// Tag filter panel state
+	// Filter panel state (Tag & Color tabs)
+	private activeFilterTab: 'tag' | 'color' = 'tag';
 	private tagFilterPanelEl: HTMLElement | null = null;
 	private activeTagFilters: Set<string> = new Set();
+	private activeTagExcludes: Set<string> = new Set();
+	private activeColorFilters: Set<string> = new Set();
+	private activeColorExcludes: Set<string> = new Set();
 	private activeTagFiltersFile: string | null = null;
+	private nodeColorCache: Map<string, string[] | null> = new Map();
 	private dimOpacity = 0.12;
 	private tagToolbarBtn: HTMLElement | null = null;
 	private tagFilterSelectionGuard: (() => void) | null = null;
+	private colorHighlightCleanup: (() => void) | null = null;
 
 	constructor(app: App, plugin: import('../main').default) {
 		this.app = app;
@@ -408,7 +415,7 @@ export class CanvasImageHandler {
 			}
 		}
 
-		// Re-apply / restore tag filters after scan
+		// Re-apply / restore tag & color filters after scan
 		const filterFile = activeView.file;
 		if (filterFile) {
 			if (this.activeTagFiltersFile !== filterFile.path) {
@@ -418,9 +425,16 @@ export class CanvasImageHandler {
 				}
 				this.removeSelectionGuard();
 				this.activeTagFilters.clear();
+				this.activeColorFilters.clear();
+				this.nodeColorCache.clear();
 				this.activeTagFiltersFile = filterFile.path;
 				this.restoreFilterState(filterFile, activeView);
-			} else if (this.activeTagFilters.size > 0) {
+
+				// Auto-extract colors if enabled
+				if ((this.plugin.settings.colorExtractMode ?? 'auto') === 'auto') {
+					void this.extractAllNodeColors(activeView);
+				}
+			} else if (this.activeTagFilters.size > 0 || this.activeColorFilters.size > 0) {
 				// Same file, active filters — re-apply (e.g. after badge re-render)
 				this.applyTagFilters(activeView);
 			} else {
@@ -1650,12 +1664,43 @@ export class CanvasImageHandler {
 		const panel = container.createDiv({ cls: 'kambas-tag-panel' });
 		this.tagFilterPanelEl = panel;
 
+		// Stop mouse events from reaching Obsidian Canvas (which steals focus / deselects inputs)
+		panel.addEventListener('mousedown', (e) => e.stopPropagation());
+		panel.addEventListener('pointerdown', (e) => e.stopPropagation());
+		panel.addEventListener('click', (e) => e.stopPropagation());
+
 		// Set dim-opacity CSS var on the container
 		container.style.setProperty('--kambas-dim-opacity', String(this.dimOpacity));
 
-		// ── Header (drag handle) ─────────────────────────────────────────────
+		// ── Header (drag handle & tabs) ─────────────────────────────────────────────
 		const header = panel.createDiv({ cls: 'kambas-tag-panel-header' });
-		header.createSpan({ cls: 'kambas-tag-panel-title', text: t.tagFilterPanel });
+		const tabsWrap = header.createDiv({ cls: 'kambas-tag-panel-tabs' });
+
+		const tagTab = tabsWrap.createDiv({
+			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'tag' ? ' is-active' : ''),
+			text: t.tagModalTitle,
+		});
+		const colorTab = tabsWrap.createDiv({
+			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'color' ? ' is-active' : ''),
+			text: t.colorFilterTab ?? 'Color',
+		});
+
+		tagTab.addEventListener('click', () => {
+			if (this.activeFilterTab === 'tag') return;
+			this.activeFilterTab = 'tag';
+			tagTab.addClass('is-active');
+			colorTab.removeClass('is-active');
+			this.refreshTagFilterPanel(activeView);
+		});
+
+		colorTab.addEventListener('click', () => {
+			if (this.activeFilterTab === 'color') return;
+			this.activeFilterTab = 'color';
+			colorTab.addClass('is-active');
+			tagTab.removeClass('is-active');
+			this.refreshTagFilterPanel(activeView);
+		});
+
 		const headerActions = header.createDiv({ cls: 'kambas-tag-panel-actions' });
 		const closeBtn = headerActions.createDiv({ cls: 'kambas-tag-panel-close' });
 		setIcon(closeBtn, 'x');
@@ -1663,10 +1708,10 @@ export class CanvasImageHandler {
 
 		this.makePanelDraggable(panel, header, container);
 
-		// ── Search + tag list body ───────────────────────────────────────────
+		// ── Filter panel body ───────────────────────────────────────────
 		const body = panel.createDiv({ cls: 'kambas-tag-panel-body' });
 		(panel as unknown as { _body: HTMLElement })._body = body;
-		this.renderTagFilterList(body, activeView);
+		this.renderFilterPanelBody(body, activeView);
 
 		// ── Opacity slider footer ────────────────────────────────────────────
 		const footer = panel.createDiv({ cls: 'kambas-tag-panel-footer' });
@@ -1787,12 +1832,24 @@ export class CanvasImageHandler {
 
 	private makePanelDraggable(panel: HTMLElement, header: HTMLElement, container: HTMLElement): void {
 		let isDragging = false;
+		// positionAnchored: true once we've converted right/bottom → left/top on first move
+		let positionAnchored = false;
 		let dragOffsetX = 0;
 		let dragOffsetY = 0;
+		let mouseDownPRect: DOMRect | null = null;
 
 		const onMove = (e: MouseEvent): void => {
 			if (!isDragging) return;
 			const cRect = container.getBoundingClientRect();
+			// On the very first mousemove after mousedown, convert any right/bottom
+			// positioning to explicit left/top so the panel never jumps on a bare click.
+			if (!positionAnchored && mouseDownPRect) {
+				positionAnchored = true;
+				panel.style.right  = 'auto';
+				panel.style.bottom = 'auto';
+				panel.style.left   = `${mouseDownPRect.left - cRect.left}px`;
+				panel.style.top    = `${mouseDownPRect.top  - cRect.top}px`;
+			}
 			const panW = panel.offsetWidth;
 			const panH = panel.offsetHeight;
 			let newLeft = e.clientX - dragOffsetX - cRect.left;
@@ -1800,24 +1857,24 @@ export class CanvasImageHandler {
 			// Clamp so panel stays fully inside the container
 			newLeft = Math.max(0, Math.min(newLeft, cRect.width  - panW));
 			newTop  = Math.max(0, Math.min(newTop,  cRect.height - panH));
-			panel.setCssProps({ left: `${newLeft}px`, top: `${newTop}px` });
+			panel.style.left = `${newLeft}px`;
+			panel.style.top  = `${newTop}px`;
 		};
 		const onUp = (): void => {
 			isDragging = false;
+			mouseDownPRect = null;
 			document.removeEventListener('mousemove', onMove);
 			document.removeEventListener('mouseup', onUp);
 		};
 
 		header.addEventListener('mousedown', (e: MouseEvent) => {
-			if ((e.target as HTMLElement).closest('.kambas-tag-panel-close')) return;
+			if ((e.target as HTMLElement).closest('.kambas-tag-panel-close') || (e.target as HTMLElement).closest('.kambas-tag-panel-tabs')) return;
 			isDragging = true;
-			const cRect = container.getBoundingClientRect();
-			const pRect = panel.getBoundingClientRect();
-			// Convert from viewport-coords to container-coords before storing
-			panel.setCssProps({ right: 'auto', bottom: 'auto' });
-			panel.setCssProps({ left: `${pRect.left - cRect.left}px`, top: `${pRect.top  - cRect.top}px` });
-			dragOffsetX = e.clientX - pRect.left;
-			dragOffsetY = e.clientY - pRect.top;
+			positionAnchored = false; // reset — we haven't moved yet
+			// Capture panel rect NOW (no DOM writes!) for use on first mousemove
+			mouseDownPRect = panel.getBoundingClientRect();
+			dragOffsetX = e.clientX - mouseDownPRect.left;
+			dragOffsetY = e.clientY - mouseDownPRect.top;
 			document.addEventListener('mousemove', onMove);
 			document.addEventListener('mouseup', onUp);
 			e.preventDefault();
@@ -1827,6 +1884,8 @@ export class CanvasImageHandler {
 	private closeTagFilterPanel(_activeView: CanvasItemView): void {
 		// Do NOT clear filters — they should persist while the panel is closed.
 		// The user can clear them explicitly via the × button inside the search bar.
+		this.colorHighlightCleanup?.();
+		this.colorHighlightCleanup = null;
 		this.tagFilterPanelEl?.remove();
 		this.tagFilterPanelEl = null;
 		// Keep toolbar button lit when filters are still active
@@ -1835,8 +1894,356 @@ export class CanvasImageHandler {
 
 	private refreshTagFilterPanel(activeView: CanvasItemView): void {
 		if (!this.tagFilterPanelEl?.isConnected) return;
+		const activeEl = document.activeElement;
+		let focusedQuery: string | null = null;
+		let cursorStart: number | null = null;
+		let cursorEnd: number | null = null;
+
+		if (activeEl instanceof HTMLInputElement && activeEl.classList.contains('kambas-tag-search')) {
+			focusedQuery = activeEl.value;
+			cursorStart = activeEl.selectionStart;
+			cursorEnd = activeEl.selectionEnd;
+		}
+
 		const body = (this.tagFilterPanelEl as unknown as { _body?: HTMLElement })._body;
-		if (body) this.renderTagFilterList(body, activeView);
+		if (body) this.renderFilterPanelBody(body, activeView);
+
+		if (focusedQuery !== null && this.tagFilterPanelEl?.isConnected) {
+			const newInput = this.tagFilterPanelEl.querySelector<HTMLInputElement>('input.kambas-tag-search');
+			if (newInput) {
+				newInput.value = focusedQuery;
+				newInput.focus();
+				if (cursorStart !== null && cursorEnd !== null) {
+					try { newInput.setSelectionRange(cursorStart, cursorEnd); } catch { /* ignore */ }
+				}
+				// Trigger input event so list reflects the search query
+				newInput.dispatchEvent(new Event('input', { bubbles: true }));
+			}
+		}
+	}
+
+	private renderFilterPanelBody(body: HTMLElement, activeView: CanvasItemView): void {
+		if (this.activeFilterTab === 'color') {
+			this.renderColorFilterList(body, activeView);
+		} else {
+			this.renderTagFilterList(body, activeView);
+		}
+	}
+
+	private async extractAllNodeColors(activeView: CanvasItemView): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		for (const node of canvas.nodes.values()) {
+			const rawNode = node as unknown as { id: string };
+			const nodeEl = node.nodeEl;
+			if (!nodeEl || !rawNode.id) continue;
+			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+			if (!img?.src) continue;
+			if (this.nodeColorCache.has(rawNode.id)) continue;
+
+			try {
+				const colorName = await getNodeDominantColorName(img.src);
+				this.nodeColorCache.set(rawNode.id, colorName);
+			} catch {
+				this.nodeColorCache.set(rawNode.id, null);
+			}
+		}
+
+		if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
+			this.refreshTagFilterPanel(activeView);
+		}
+	}
+
+	private renderColorFilterList(body: HTMLElement, activeView: CanvasItemView): void {
+		body.empty();
+		const t = getText();
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		// Hex map for color swatch dots
+		const colorHexMap: Record<string, string> = {
+			Black: '#212121',
+			Gray: '#808080',
+			White: '#f5f5f5',
+			Red: '#e53935',
+			Orange: '#fb8c00',
+			Yellow: '#fdd835',
+			Green: '#43a047',
+			Teal: '#00897b',
+			Cyan: '#00acc1',
+			Blue: '#1e88e5',
+			Indigo: '#3949ab',
+			Purple: '#8e24aa',
+			Pink: '#d81b60',
+		};
+
+		// ── 1. Sticky controls wrap (Extract button + Search bar) ────────────────
+		const controlsWrap = body.createDiv({ cls: 'kambas-color-controls' });
+
+		const extractMode = this.plugin.settings.colorExtractMode ?? 'auto';
+		if (extractMode !== 'disabled') {
+			const btnWrap = controlsWrap.createDiv({ cls: 'kambas-tag-search-wrap' });
+			btnWrap.setCssProps({ justifyContent: 'center', padding: '4px 8px', margin: '4px 8px 2px' });
+			const extractBtn = btnWrap.createEl('button', {
+				cls: 'mod-cta',
+				text: t.colorExtractBtn ?? 'Extract Image Colors',
+			});
+			extractBtn.setCssProps({ width: '100%', fontSize: '11px', height: '26px' });
+			extractBtn.addEventListener('click', async () => {
+				extractBtn.setText(t.colorExtracting ?? 'Extracting colors...');
+				extractBtn.setAttribute('disabled', 'true');
+				this.nodeColorCache.clear();
+				await this.extractAllNodeColors(activeView);
+			});
+		}
+
+		// Count chromatic & neutral colors across canvas image nodes
+		const colorCounts = new Map<string, number>();
+		// Also count colors only among currently-visible (non-hidden) nodes
+		const visibleColorCounts = new Map<string, number>();
+		const hasAnyFilter = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0 ||
+		                     this.activeTagFilters.size > 0   || this.activeTagExcludes.size > 0;
+		let totalImageNodes = 0;
+
+		canvas.nodes.forEach((node) => {
+			const rawNode = node as unknown as { id: string };
+			const nodeEl = node.nodeEl;
+			if (!nodeEl || !rawNode.id) return;
+			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+			if (!img?.src) return;
+			totalImageNodes++;
+
+			let colorNames = this.nodeColorCache.get(rawNode.id);
+			if (colorNames === undefined && extractMode === 'auto') {
+				// Trigger lazy extraction if cached color not ready yet
+				void getNodeDominantColorName(img.src).then((names) => {
+					this.nodeColorCache.set(rawNode.id, names);
+					if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
+						this.refreshTagFilterPanel(activeView);
+					}
+				});
+				return;
+			}
+
+			if (Array.isArray(colorNames)) {
+				const isVisible = hasAnyFilter && !nodeEl.classList.contains('kambas-tag-hidden');
+				for (const colorName of colorNames) {
+					colorCounts.set(colorName, (colorCounts.get(colorName) ?? 0) + 1);
+					if (isVisible) {
+						visibleColorCounts.set(colorName, (visibleColorCounts.get(colorName) ?? 0) + 1);
+					}
+				}
+			}
+		});
+
+		// ── 2. Search box (with embedded 'x' clear filter button) ────────────────
+		const searchWrap = controlsWrap.createDiv({ cls: 'kambas-tag-search-wrap' });
+		const searchIcon = searchWrap.createSpan({ cls: 'kambas-tag-search-icon' });
+		setIcon(searchIcon, 'search');
+		const searchInput = searchWrap.createEl('input', {
+			cls: 'kambas-tag-search',
+			attr: { type: 'text', placeholder: 'Search colors…' },
+		});
+
+		// Clear 'x' button inside search bar (transferred from standalone button)
+		const hasColorActivity = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+		const clearInSearch = searchWrap.createEl('button', {
+			cls: 'kambas-tag-search-clear' + (hasColorActivity ? '' : ' is-hidden'),
+			attr: { 'aria-label': t.colorClearFilter ?? 'Clear color filter' },
+		});
+		setIcon(clearInSearch, 'x');
+		clearInSearch.addEventListener('click', () => {
+			this.activeColorFilters.clear();
+			this.activeColorExcludes.clear();
+			this.applyTagFilters(activeView, true);
+			this.refreshTagFilterPanel(activeView);
+		});
+
+		if (totalImageNodes === 0) {
+			body.createDiv({ cls: 'kambas-tag-panel-empty', text: t.colorNoImages ?? 'No image nodes found on canvas.' });
+			return;
+		}
+
+		if (colorCounts.size === 0) {
+			const emptyDiv = body.createDiv({
+				cls: 'kambas-tag-panel-empty',
+				text: extractMode === 'auto' ? 'Extracting or no colors found...' : 'Click button above to extract image colors.',
+			});
+			if (this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0) {
+				const resetBtn = emptyDiv.createEl('button', { cls: 'mod-warning', text: 'Clear color filter' });
+				resetBtn.setCssProps({ marginTop: '10px' });
+				resetBtn.addEventListener('click', () => {
+					this.activeColorFilters.clear();
+					this.activeColorExcludes.clear();
+					this.applyTagFilters(activeView, true);
+					this.refreshTagFilterPanel(activeView);
+				});
+			}
+			return;
+		}
+
+		// ── 3. Scrollable color list ─────────────────────────────────────────────
+		const listEl = body.createDiv({ cls: 'kambas-tag-panel-list' });
+
+		// ── Cross-highlight setup ─────────────────────────────────────────────────
+		// Build colorName → nodeEl[] map so row-hover can outline matching images
+		const colorToNodes = new Map<string, HTMLElement[]>();
+		canvas.nodes.forEach((node) => {
+			const rawNode = node as unknown as { id: string };
+			const nodeEl = node.nodeEl as HTMLElement | undefined;
+			if (!nodeEl || !rawNode.id) return;
+			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+			if (!img?.src) return; // only image nodes
+			const colors = this.nodeColorCache.get(rawNode.id);
+			if (!Array.isArray(colors)) return;
+			for (const c of colors) {
+				if (!colorToNodes.has(c)) colorToNodes.set(c, []);
+				colorToNodes.get(c)!.push(nodeEl);
+				// Tag the element so the canvas-node → row direction can read it
+				const existing = nodeEl.getAttribute('data-kambas-colors') ?? '';
+				if (!existing.split(',').includes(c)) {
+					nodeEl.setAttribute('data-kambas-colors', existing ? `${existing},${c}` : c);
+				}
+			}
+		});
+
+		// Canvas-node hover → highlight matching panel rows (event delegation)
+		const canvasContainer = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		const clearRowHighlights = (): void => {
+			listEl.querySelectorAll('.is-related, .is-unrelated').forEach((el) => {
+				el.classList.remove('is-related', 'is-unrelated');
+			});
+		};
+		const onCanvasMouseOver = (e: Event): void => {
+			const target = e.target as HTMLElement;
+			const nodeEl = target.closest('[data-kambas-colors]') as HTMLElement | null;
+			if (!nodeEl) { clearRowHighlights(); return; }
+			const nodeColors = new Set((nodeEl.getAttribute('data-kambas-colors') ?? '').split(',').filter(Boolean));
+			if (nodeColors.size === 0) { clearRowHighlights(); return; }
+			listEl.querySelectorAll<HTMLElement>('[data-color-name]').forEach((row) => {
+				const cn = row.getAttribute('data-color-name') ?? '';
+				row.classList.toggle('is-related',   nodeColors.has(cn));
+				row.classList.toggle('is-unrelated', !nodeColors.has(cn));
+			});
+		};
+		const onCanvasMouseLeave = (): void => clearRowHighlights();
+
+		// Tear down previous listeners then install new ones
+		this.colorHighlightCleanup?.();
+		if (canvasContainer) {
+			canvasContainer.addEventListener('mouseover',   onCanvasMouseOver);
+			canvasContainer.addEventListener('mouseleave',  onCanvasMouseLeave);
+			this.colorHighlightCleanup = () => {
+				canvasContainer.removeEventListener('mouseover',  onCanvasMouseOver);
+				canvasContainer.removeEventListener('mouseleave', onCanvasMouseLeave);
+				// Remove all data-kambas-colors attributes on cleanup
+				canvasContainer.querySelectorAll('[data-kambas-colors]').forEach((el) => {
+					el.removeAttribute('data-kambas-colors');
+				});
+			};
+		}
+
+		const renderColorList = (query: string): void => {
+			listEl.empty();
+			const lower = query.toLowerCase();
+			const sortedColors = Array.from(colorCounts.entries())
+				.filter(([colorName]) => {
+					if (!lower) return true;
+					const localizedColor = (t as unknown as Record<string, string>)[`color${colorName}`] ?? colorName;
+					return colorName.toLowerCase().includes(lower) || localizedColor.toLowerCase().includes(lower);
+				})
+				// When a filter is active, sort related (visible) colors to the top,
+				// then by total count. When no filter, sort by total count only.
+				.sort((a, b) => {
+					if (hasAnyFilter) {
+						const visA = visibleColorCounts.get(a[0]) ?? 0;
+						const visB = visibleColorCounts.get(b[0]) ?? 0;
+						if (visB !== visA) return visB - visA;
+					}
+					return b[1] - a[1];
+				});
+
+			// When filter is active and there are related colors, show a divider
+			// before the first row with 0 visible count.
+			let dividerInserted = false;
+
+			for (const [colorName, count] of sortedColors) {
+				const visibleCount = visibleColorCounts.get(colorName) ?? 0;
+				const isRelated = hasAnyFilter && visibleCount > 0;
+				const isIncluded = this.activeColorFilters.has(colorName);
+				const isExcluded = this.activeColorExcludes.has(colorName);
+
+				// Insert divider between related and unrelated groups
+				if (hasAnyFilter && !dividerInserted && !isRelated && visibleColorCounts.size > 0) {
+					dividerInserted = true;
+					const divider = listEl.createDiv({ cls: 'kambas-color-divider' });
+					divider.createSpan({ text: 'Not in current view' });
+				}
+
+				const rowCls = 'kambas-tag-panel-item'
+					+ (isIncluded ? ' is-active'   : '')
+					+ (isExcluded ? ' is-excluded' : '')
+					+ (!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
+				const row = listEl.createDiv({ cls: rowCls });
+				// Tag row for canvas-node → row highlight direction
+				row.setAttribute('data-color-name', colorName);
+
+				const checkEl = row.createSpan({ cls: 'kambas-tag-panel-check' });
+				setIcon(checkEl, isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square');
+
+				const dot = row.createSpan({ cls: 'kambas-color-dot' });
+				if (colorHexMap[colorName]) {
+					dot.style.backgroundColor = colorHexMap[colorName];
+				}
+
+				const localizedColor = (t as unknown as Record<string, string>)[`color${colorName}`] ?? colorName;
+				row.createSpan({ cls: 'kambas-tag-panel-pill', text: localizedColor });
+
+				// Show "N in view" badge alongside the total when a filter is active
+				if (isRelated) {
+					row.createSpan({
+						cls: 'kambas-tag-panel-count kambas-in-view-count',
+						text: `${visibleCount} in view`,
+					});
+				}
+				row.createSpan({ cls: 'kambas-tag-panel-count', text: t.colorNodesCount ? t.colorNodesCount(count) : `${count} images` });
+
+				// Row hover → outline matching canvas image nodes
+				row.addEventListener('mouseenter', () => {
+					const nodes = colorToNodes.get(colorName) ?? [];
+					nodes.forEach((el) => el.classList.add('kambas-color-highlight'));
+				});
+				row.addEventListener('mouseleave', () => {
+					const nodes = colorToNodes.get(colorName) ?? [];
+					nodes.forEach((el) => el.classList.remove('kambas-color-highlight'));
+				});
+
+				// 3-state cycle: neutral → include → exclude → neutral
+				row.addEventListener('click', () => {
+					if (this.activeColorFilters.has(colorName)) {
+						// include → exclude
+						this.activeColorFilters.delete(colorName);
+						this.activeColorExcludes.add(colorName);
+					} else if (this.activeColorExcludes.has(colorName)) {
+						// exclude → neutral
+						this.activeColorExcludes.delete(colorName);
+					} else {
+						// neutral → include
+						this.activeColorFilters.add(colorName);
+					}
+					this.applyTagFilters(activeView, true);
+					this.refreshTagFilterPanel(activeView);
+				});
+			}
+
+			if (sortedColors.length === 0) {
+				listEl.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No colors match.' });
+			}
+		};
+
+		renderColorList('');
+		searchInput.addEventListener('input', () => renderColorList(searchInput.value));
 	}
 
 	private renderTagFilterList(body: HTMLElement, activeView: CanvasItemView): void {
@@ -1845,12 +2252,21 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
-		// Build tag → node count map
+		const hasAnyFilter = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0 ||
+		                     this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+
+		// Build tag → total count, and tag → visible count maps
 		const tagMap = new Map<string, number>();
+		const visibleTagCounts = new Map<string, number>();
 		canvas.nodes.forEach((node) => {
 			const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+			const isVisible = hasAnyFilter && !node.nodeEl?.classList.contains('kambas-tag-hidden');
 			for (const tag of uData?.kambasTags ?? []) {
-				if (tag.trim()) tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
+				if (!tag.trim()) continue;
+				tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
+				if (isVisible) {
+					visibleTagCounts.set(tag, (visibleTagCounts.get(tag) ?? 0) + 1);
+				}
 			}
 		});
 
@@ -1880,13 +2296,15 @@ export class CanvasImageHandler {
 			attr: { type: 'text', placeholder: 'Search tags…' },
 		});
 		// Clear × lives inside the search bar — always in the DOM, no layout shift
+		const hasTagActivity = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
 		const clearInSearch = searchWrap.createEl('button', {
-			cls: 'kambas-tag-search-clear' + (this.activeTagFilters.size === 0 ? ' is-hidden' : ''),
+			cls: 'kambas-tag-search-clear' + (hasTagActivity ? '' : ' is-hidden'),
 			attr: { 'aria-label': t.tagClearFilter },
 		});
 		setIcon(clearInSearch, 'x');
 		clearInSearch.addEventListener('click', () => {
 			this.activeTagFilters.clear();
+			this.activeTagExcludes.clear();
 			// Route through applyTagFilters with performZoom=true on explicit clear click
 			this.applyTagFilters(activeView, true);
 			this.refreshTagFilterPanel(activeView);
@@ -1900,17 +2318,48 @@ export class CanvasImageHandler {
 			const lower = query.toLowerCase();
 			const sorted = Array.from(tagMap.entries())
 				.filter(([tag]) => !lower || tag.toLowerCase().includes(lower))
-				.sort(([a], [b]) => a.localeCompare(b));
-
-			for (const [tag, count] of sorted) {
-				const isActive = this.activeTagFilters.has(tag);
-				const row = listEl.createDiv({
-					cls: 'kambas-tag-panel-item' + (isActive ? ' is-active' : ''),
+				// Related tags (in current view) bubble to top; ties broken alphabetically
+				.sort(([a, countA], [b, countB]) => {
+					if (hasAnyFilter) {
+						const visA = visibleTagCounts.get(a) ?? 0;
+						const visB = visibleTagCounts.get(b) ?? 0;
+						if (visB !== visA) return visB - visA;
+					}
+					return a.localeCompare(b);
 				});
 
+			let dividerInserted = false;
+
+			for (const [tag, count] of sorted) {
+				const visibleCount = visibleTagCounts.get(tag) ?? 0;
+				const isRelated = hasAnyFilter && visibleCount > 0;
+				const isIncluded = this.activeTagFilters.has(tag);
+				const isExcluded = this.activeTagExcludes.has(tag);
+
+				// Divider before first tag with 0 visible count
+				if (hasAnyFilter && !dividerInserted && !isRelated && visibleTagCounts.size > 0) {
+					dividerInserted = true;
+					const divider = listEl.createDiv({ cls: 'kambas-color-divider' });
+					divider.createSpan({ text: 'Not in current view' });
+				}
+
+				const rowCls = 'kambas-tag-panel-item'
+					+ (isIncluded ? ' is-active'   : '')
+					+ (isExcluded ? ' is-excluded' : '')
+					+ (!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
+				const row = listEl.createDiv({ cls: rowCls });
+
 				const checkEl = row.createSpan({ cls: 'kambas-tag-panel-check' });
-				setIcon(checkEl, isActive ? 'check-square' : 'square');
+				setIcon(checkEl, isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square');
 				row.createSpan({ cls: 'kambas-tag-panel-pill', text: `#${tag}` });
+
+				// "N in view" badge when a filter is active
+				if (isRelated) {
+					row.createSpan({
+						cls: 'kambas-tag-panel-count kambas-in-view-count',
+						text: `${visibleCount} in view`,
+					});
+				}
 				row.createSpan({ cls: 'kambas-tag-panel-count', text: t.tagNodesCount(count) });
 
 				// Delete tag from all nodes
@@ -1922,13 +2371,19 @@ export class CanvasImageHandler {
 					void this.deleteTagFromCanvas(activeView, tag);
 				});
 
+				// 3-state cycle: neutral → include → exclude → neutral
 				row.addEventListener('click', () => {
 					if (this.activeTagFilters.has(tag)) {
+						// include → exclude
 						this.activeTagFilters.delete(tag);
+						this.activeTagExcludes.add(tag);
+					} else if (this.activeTagExcludes.has(tag)) {
+						// exclude → neutral
+						this.activeTagExcludes.delete(tag);
 					} else {
+						// neutral → include
 						this.activeTagFilters.add(tag);
 					}
-					// Pass performZoom=true only when user explicitly toggles a filter row
 					this.applyTagFilters(activeView, true);
 					this.refreshTagFilterPanel(activeView);
 				});
@@ -1942,6 +2397,7 @@ export class CanvasImageHandler {
 		renderList('');
 		searchInput.addEventListener('input', () => renderList(searchInput.value));
 	}
+
 
 	public async deleteTagFromCanvas(activeView: CanvasItemView, tagToDelete: string): Promise<void> {
 		const canvas = activeView.canvas;
@@ -1959,6 +2415,7 @@ export class CanvasImageHandler {
 		});
 
 		this.activeTagFilters.delete(tagToDelete);
+		this.activeTagExcludes.delete(tagToDelete);
 
 		// ⚠️ Save filter state to localStorage NOW — before persistDeleteTag triggers
 		// a vault modify event → scanAndRestoreTransforms → restoreFilterState, which
@@ -1996,7 +2453,9 @@ export class CanvasImageHandler {
 
 	private updateToolbarButtonState(): void {
 		if (!this.tagToolbarBtn) return;
-		const filtersActive = this.activeTagFilters.size > 0;
+		const filtersActive =
+			this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0 ||
+			this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
 		const panelOpen = this.tagFilterPanelEl?.isConnected ?? false;
 		this.tagToolbarBtn.classList.toggle('is-active', filtersActive || panelOpen);
 	}
@@ -2005,8 +2464,12 @@ export class CanvasImageHandler {
 		try {
 			this.activeTagFiltersFile = file.path;
 			const key = `kambas-filters:${file.path}`;
-			if (this.activeTagFilters.size > 0) {
-				this.app.saveLocalStorage(key, JSON.stringify([...this.activeTagFilters]));
+			const hasAny = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+			if (hasAny) {
+				this.app.saveLocalStorage(key, JSON.stringify({
+					include: [...this.activeTagFilters],
+					exclude: [...this.activeTagExcludes],
+				}));
 			} else {
 				this.app.saveLocalStorage(key, null);
 			}
@@ -2020,19 +2483,22 @@ export class CanvasImageHandler {
 			const raw = this.app.loadLocalStorage(key) as string | null;
 			if (!raw) {
 				this.activeTagFilters.clear();
+				this.activeTagExcludes.clear();
 				this.applyTagFilters(activeView);
 				return;
 			}
-			const tags = JSON.parse(raw) as string[];
-			if (!Array.isArray(tags) || tags.length === 0) {
-				this.activeTagFilters.clear();
-				this.applyTagFilters(activeView);
-				return;
+			// Support both old plain-array format and new { include, exclude } format
+			const parsed = JSON.parse(raw) as string[] | { include?: string[]; exclude?: string[] };
+			if (Array.isArray(parsed)) {
+				// Legacy format: treat as plain include list
+				this.activeTagFilters = new Set(parsed);
+				this.activeTagExcludes.clear();
+			} else {
+				this.activeTagFilters = new Set(parsed.include ?? []);
+				this.activeTagExcludes = new Set(parsed.exclude ?? []);
 			}
-			this.activeTagFilters = new Set(tags);
 
-			// Validate active filters against actual live nodes on canvas.
-			// Prune any filter tags that no longer exist on ANY node!
+			// Prune filter entries that no longer exist on ANY node
 			const canvas = activeView.canvas;
 			if (canvas?.nodes) {
 				const liveTags = new Set<string>();
@@ -2043,9 +2509,10 @@ export class CanvasImageHandler {
 					}
 				});
 				for (const activeTag of this.activeTagFilters) {
-					if (!liveTags.has(activeTag)) {
-						this.activeTagFilters.delete(activeTag);
-					}
+					if (!liveTags.has(activeTag)) this.activeTagFilters.delete(activeTag);
+				}
+				for (const excludeTag of this.activeTagExcludes) {
+					if (!liveTags.has(excludeTag)) this.activeTagExcludes.delete(excludeTag);
 				}
 			}
 
@@ -2106,7 +2573,12 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 		const allowZoom = performZoom && (this.plugin.settings.tagZoomOnSelect ?? true);
-		if (this.activeTagFilters.size === 0) {
+		const hasTagIncludes  = this.activeTagFilters.size > 0;
+		const hasTagExcludes  = this.activeTagExcludes.size > 0;
+		const hasColorIncludes = this.activeColorFilters.size > 0;
+		const hasColorExcludes = this.activeColorExcludes.size > 0;
+
+		if (!hasTagIncludes && !hasTagExcludes && !hasColorIncludes && !hasColorExcludes) {
 			canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
 			this.removeSelectionGuard();
 			// Zoom to fit all nodes once when explicitly clearing/unselecting filters
@@ -2115,15 +2587,27 @@ export class CanvasImageHandler {
 			}
 		} else {
 			canvas.nodes.forEach((node) => {
-				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
-				const nodeTags = uData?.kambasTags ?? [];
-				// Show if ANY selected filter tag matches
-				const matches = nodeTags.some((tag) => this.activeTagFilters.has(tag));
+				const rawNode = node as unknown as { id: string; unknownData?: { kambasTags?: string[] } };
+				const nodeTags = rawNode.unknownData?.kambasTags ?? [];
+
+				// ── Include checks: node must satisfy ALL active include criteria ──
+				const tagIncludeOk = !hasTagIncludes || nodeTags.some((tag) => this.activeTagFilters.has(tag));
+
+				const cachedColors = this.nodeColorCache.get(rawNode.id);
+				const nodeColors = Array.isArray(cachedColors) ? cachedColors : [];
+				const colorIncludeOk = !hasColorIncludes || nodeColors.some((c) => this.activeColorFilters.has(c));
+
+				// ── Exclude checks: hide if node has ANY excluded tag or color ──
+				const tagExcluded   = hasTagExcludes   && nodeTags.some((tag) => this.activeTagExcludes.has(tag));
+				const colorExcluded = hasColorExcludes && nodeColors.some((c)  => this.activeColorExcludes.has(c));
+
+				// Visible = passes all includes AND passes all excludes
+				const matches = tagIncludeOk && colorIncludeOk && !tagExcluded && !colorExcluded;
 				node.nodeEl?.classList.toggle('kambas-tag-hidden', !matches);
 			});
 			// Guard prevents rubber-band selection from picking up hidden nodes
 			this.installSelectionGuard(activeView);
-			// Zoom canvas to fit visible nodes ONCE when user explicitly toggles a filter tag
+			// Zoom canvas to fit visible nodes ONCE when user explicitly toggles a filter
 			if (allowZoom) {
 				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 			}
