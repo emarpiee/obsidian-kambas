@@ -68,6 +68,15 @@ export interface TranslationSchema {
 	swapBrowseBtn: string;
 	swapBtn: string;
 	swapSuccess: string;
+	// Tags
+	tagNodes: string;
+	tagModalTitle: string;
+	tagPlaceholder: string;
+	tagFilterPanel: string;
+	tagClearFilter: string;
+	tagNodesCount: (count: number) => string;
+	tagPublishToVault: string;
+	tagPublishToVaultDesc: string;
 }
 
 const en: TranslationSchema = {
@@ -131,6 +140,14 @@ const en: TranslationSchema = {
 	swapFromClipboard: 'Paste from clipboard',
 	swapBtn: 'Swap',
 	swapSuccess: 'Media swapped!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const zh: TranslationSchema = {
@@ -192,6 +209,14 @@ const zh: TranslationSchema = {
 	swapFromClipboard: '从剪贴板粘贴',
 	swapBtn: '替换',
 	swapSuccess: '媒体已替换！',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const zhTW: TranslationSchema = {
@@ -253,6 +278,14 @@ const zhTW: TranslationSchema = {
 	swapFromClipboard: '從剪貼簿貼上',
 	swapBtn: '替換',
 	swapSuccess: '媒體已替換！',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const es: TranslationSchema = {
@@ -314,6 +347,14 @@ const es: TranslationSchema = {
 	swapFromClipboard: 'Pegar desde el portapapeles',
 	swapBtn: 'Cambiar',
 	swapSuccess: '¡Medio cambiado!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const fr: TranslationSchema = {
@@ -375,6 +416,14 @@ const fr: TranslationSchema = {
 	swapFromClipboard: 'Coller depuis le presse-papiers',
 	swapBtn: 'Remplacer',
 	swapSuccess: 'Média remplacé !',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: "When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian's tag pane and search.",
 };
 
 const de: TranslationSchema = {
@@ -436,6 +485,14 @@ const de: TranslationSchema = {
 	swapFromClipboard: 'Aus Zwischenablage einfügen',
 	swapBtn: 'Austauschen',
 	swapSuccess: 'Medien ausgetauscht!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const ja: TranslationSchema = {
@@ -497,6 +554,14 @@ const ja: TranslationSchema = {
 	swapFromClipboard: 'クリップボードから貼り付け',
 	swapBtn: '差し替え',
 	swapSuccess: 'メディアを差し替えました！',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const ko: TranslationSchema = {
@@ -558,6 +623,14 @@ const ko: TranslationSchema = {
 	swapFromClipboard: '클립보드에서 붙여넣기',
 	swapBtn: '교체',
 	swapSuccess: '미디어가 교체되었습니다!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const ru: TranslationSchema = {
@@ -619,6 +692,14 @@ const ru: TranslationSchema = {
 	swapFromClipboard: 'Вставить из буфера обмена',
 	swapBtn: 'Заменить',
 	swapSuccess: 'Медиа заменено!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const pt: TranslationSchema = {
@@ -680,6 +761,14 @@ const pt: TranslationSchema = {
 	swapFromClipboard: 'Colar da área de transferência',
 	swapBtn: 'Trocar',
 	swapSuccess: 'Mídia trocada!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const it: TranslationSchema = {
@@ -741,6 +830,14 @@ const it: TranslationSchema = {
 	swapFromClipboard: 'Incolla dagli appunti',
 	swapBtn: 'Sostituisci',
 	swapSuccess: 'Media sostituito!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const ar: TranslationSchema = {
@@ -802,6 +899,14 @@ const ar: TranslationSchema = {
 	swapFromClipboard: 'لصق من الحافظة',
 	swapBtn: 'استبدال',
 	swapSuccess: 'تم استبدال الوسائط!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const he: TranslationSchema = {
@@ -863,6 +968,14 @@ const he: TranslationSchema = {
 	swapFromClipboard: 'הדבק מלוח הגזירים',
 	swapBtn: 'החלף',
 	swapSuccess: 'המדיה הוחלפה!',
+	tagNodes: 'Add / Edit Tags…',
+	tagModalTitle: 'Tags',
+	tagPlaceholder: '#tag, press Enter to add',
+	tagFilterPanel: 'Filter by tag',
+	tagClearFilter: 'Clear filter',
+	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagPublishToVault: 'Sync tags to vault',
+	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
 };
 
 const localeMap: Record<string, TranslationSchema> = {
@@ -886,7 +999,9 @@ const localeMap: Record<string, TranslationSchema> = {
 export function getText(): TranslationSchema {
 	const lang = getLanguage() || moment.locale() || 'en';
 	const normalizedLang = lang.toLowerCase();
-	return localeMap[normalizedLang] || localeMap[normalizedLang.split('-')[0]] || en;
+	const locale = localeMap[normalizedLang] || localeMap[normalizedLang.split('-')[0]];
+	// Merge with English so any missing keys fall back to English
+	return locale ? { ...en, ...locale } : en;
 }
 
 

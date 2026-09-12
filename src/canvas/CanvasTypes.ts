@@ -18,6 +18,7 @@ export interface CanvasNodeData {
 	kambasGrayscale?: boolean;
 	kambasPalette?: boolean;
 	kambasOpacity?: number; // 0–1, default 1 (fully opaque)
+	kambasTags?: string[]; // canvas-local tags for this node
 	originalWidth?: number;
 	originalHeight?: number;
 	isLocked?: boolean;
@@ -34,6 +35,7 @@ export interface CanvasEdgeData {
 export interface CanvasFileData {
 	nodes?: CanvasNodeData[];
 	edges?: CanvasEdgeData[];
+	kambasTagsPublic?: boolean; // if true, canvas tags are synced to vault frontmatter
 }
 
 export interface CanvasElement {

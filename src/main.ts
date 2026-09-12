@@ -222,6 +222,15 @@ export default class KambasPlugin extends Plugin {
 						});
 				});
 			}
+
+			// Tags — available on any node (not just media, so mobile works too)
+			menu.addItem((item: import('obsidian').MenuItem) => {
+				item.setTitle(t.tagNodes)
+					.setIcon('tag')
+					.onClick(() => {
+						this.canvasImageHandler.openTagModal(activeView, targetNodeEl);
+					});
+			});
 		};
 
 		// Single node context menu
@@ -281,6 +290,23 @@ export default class KambasPlugin extends Plugin {
 				if (activeView && activeView.getViewType() === 'canvas') {
 					if (!checking) {
 						this.canvasImageHandler.setAwayMode(activeView);
+					}
+					return true;
+				}
+				return false;
+			},
+		});
+
+		// Register command: Filter by tag (opens / closes the tag filter panel)
+		this.addCommand({
+			id: 'canvas-filter-by-tag',
+			name: getText().tagFilterPanel,
+			icon: 'tag',
+			checkCallback: (checking: boolean) => {
+				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				if (activeView && activeView.getViewType() === 'canvas') {
+					if (!checking) {
+						this.canvasImageHandler.openTagFilterPanel(activeView);
 					}
 					return true;
 				}

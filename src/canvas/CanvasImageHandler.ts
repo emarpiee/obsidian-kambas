@@ -1,7 +1,8 @@
-import { App, ItemView, Notice, TFile, TFolder } from 'obsidian';
+import { App, ItemView, Notice, SliderComponent, TFile, TFolder, setIcon } from 'obsidian';
 import { ConvertEmbedChoiceResult, ConvertToEmbedModal, VaultFileAction } from '../modals/ConvertToEmbedModal';
 import { ImageIngestionModal, StorageChoice } from '../modals/ImageIngestionModal';
 import { ImageSwapModal } from '../modals/ImageSwapModal';
+import { TagModal } from '../modals/TagModal';
 import { getText } from '../i18n';
 import {
 	arrayBufferToBase64DataUrl,
@@ -11,6 +12,7 @@ import {
 	saveFileToVault,
 } from '../utils/imageUtils';
 import { CanvasFileData, CanvasItemView, CanvasNodeData, IMAGE_EXTENSIONS } from './CanvasTypes';
+// CanvasTagSync imports removed (unused after sync-to-vault feature removal)
 
 export interface PendingImage {
 	filename: string;
@@ -25,6 +27,13 @@ export class CanvasImageHandler {
 	private editGuardObserver: MutationObserver | null = null;
 	private modifyTimer: number | null = null;
 	private lastMousePos: { x: number; y: number } | null = null;
+
+	// Tag filter panel state
+	private tagFilterPanelEl: HTMLElement | null = null;
+	private activeTagFilters: Set<string> = new Set();
+	private dimOpacity = 0.12;
+	private tagToolbarBtn: HTMLElement | null = null;
+	private tagFilterSelectionGuard: (() => void) | null = null;
 
 	constructor(app: App, plugin: import('../main').default) {
 		this.app = app;
@@ -272,7 +281,7 @@ export class CanvasImageHandler {
 			if (!nodeEl) return;
 
 			// Extract link URL or data directly from canvas node object memory (0ms delay)
-			const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number } }).unknownData;
+			const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number; kambasTags?: string[] } }).unknownData;
 			const nodeUrl = unknownData?.url;
 			const isLinkDataImg = unknownData?.type === 'link' && nodeUrl?.startsWith('data:image/');
 
@@ -356,6 +365,10 @@ export class CanvasImageHandler {
 			} else {
 				nodeEl.setCssProps({ opacity: '' });
 			}
+
+			// Render tag badges
+			const tags = unknownData?.kambasTags ?? [];
+			this.renderTagBadges(nodeEl, tags);
 		});
 
 		// Apply individual edge stored opacity
@@ -393,6 +406,19 @@ export class CanvasImageHandler {
 				}
 			}
 		}
+
+		// Re-apply / restore tag filters after scan
+		const filterFile = activeView.file;
+		if (this.activeTagFilters.size > 0) {
+			// Already have in-memory filters — just re-apply (e.g. after badge re-render)
+			this.applyTagFilters(activeView);
+		} else if (filterFile) {
+			// Try restoring from localStorage (survives panel close / canvas reload)
+			this.restoreFilterState(filterFile, activeView);
+		}
+
+		// Inject tag filter button into canvas toolbar (idempotent)
+		window.setTimeout(() => this.injectTagFilterButton(activeView), 200);
 	}
 
 	public setAwayMode(activeView: CanvasItemView): void {
@@ -1407,6 +1433,590 @@ export class CanvasImageHandler {
 		if (modified) {
 			this.scheduleVaultModify(file, data);
 		}
+	}
+
+	// ──────────────────────────────────────────────────────────────────────────
+	// Tag methods
+	// ──────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Renders (or updates) tag badge pills in the bottom-left of a node element.
+	 */
+	public renderTagBadges(nodeEl: HTMLElement, tags: string[]): void {
+		let bar = nodeEl.querySelector<HTMLElement>('.kambas-tag-bar');
+
+		if (!tags || tags.length === 0) {
+			bar?.remove();
+			return;
+		}
+
+		if (!bar) {
+			bar = nodeEl.createDiv({ cls: 'kambas-tag-bar' });
+		}
+
+		// Only re-render if tags changed
+		const existing = bar.dataset.tags;
+		const tagKey = tags.join(',');
+		if (existing === tagKey) return;
+		bar.dataset.tags = tagKey;
+		bar.empty();
+
+		for (const tag of tags) {
+			bar.createSpan({ cls: 'kambas-tag-pill', text: `#${tag}` });
+		}
+	}
+
+	/**
+	 * Collects all unique tags used in the current canvas in-memory nodes.
+	 */
+	public collectLiveCanvasTags(activeView: CanvasItemView): string[] {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return [];
+		const tagSet = new Set<string>();
+		canvas.nodes.forEach((node) => {
+			const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+			for (const tag of uData?.kambasTags ?? []) {
+				if (tag.trim()) tagSet.add(tag.trim());
+			}
+		});
+		return Array.from(tagSet).sort();
+	}
+
+	/**
+	 * Opens the TagModal for the selected node(s) and applies resulting tags.
+	 */
+	public openTagModal(
+		activeView: CanvasItemView,
+		targetNodeEl?: Element | null
+	): void {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		// Collect initial tags from the first selected node for pre-filling
+		let initialTags: string[] = [];
+		canvas.nodes.forEach((node) => {
+			const nodeEl = node.nodeEl;
+			if (!nodeEl) return;
+			const isSel = nodeEl.classList.contains('is-selected') || (targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
+			if (isSel && initialTags.length === 0) {
+				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+				initialTags = uData?.kambasTags ?? [];
+			}
+		});
+
+		const suggestions = this.collectLiveCanvasTags(activeView);
+
+		new TagModal(this.app, initialTags, suggestions, (tags) => {
+			void this.setNodeTags(activeView, tags, targetNodeEl);
+		}).open();
+	}
+
+	/**
+	 * Writes tags to all selected nodes in-memory and persists via canvas save.
+	 */
+	public async setNodeTags(
+		activeView: CanvasItemView,
+		tags: string[],
+		targetNodeEl?: Element | null
+	): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		const selectedNodeIds: string[] = [];
+
+		canvas.nodes.forEach((node, id) => {
+			const nodeEl = node.nodeEl;
+			if (!nodeEl) return;
+			const isSel = nodeEl.classList.contains('is-selected') || (targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
+			if (isSel) {
+				selectedNodeIds.push(id);
+				const rawNode = node as unknown as { unknownData?: { kambasTags?: string[] } };
+				if (!rawNode.unknownData) rawNode.unknownData = {};
+				rawNode.unknownData.kambasTags = tags.length > 0 ? tags : undefined;
+
+				// Immediately render badges
+				if (nodeEl.instanceOf(HTMLElement)) this.renderTagBadges(nodeEl, tags);
+			}
+		});
+
+		if (selectedNodeIds.length === 0) return;
+
+		// Always write directly to the JSON file — requestSave() alone strips custom unknownData fields.
+		const file = activeView.file;
+		if (file) {
+			await this.persistTags(file, selectedNodeIds, tags);
+			// Re-stamp badges from saved state to confirm persistence
+			window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 100);
+		}
+
+		// Also nudge the canvas so it refreshes internal rendering
+		if (typeof canvas.requestSave === 'function') {
+			try { canvas.requestSave(); } catch { /* ignore */ }
+		}
+
+		// Refresh filter panel if open
+		if (this.tagFilterPanelEl?.isConnected) {
+			window.setTimeout(() => this.refreshTagFilterPanel(activeView), 150);
+		}
+	}
+
+	private async persistTags(file: TFile, selectedNodeIds: string[], tags: string[]): Promise<void> {
+		const content = await this.app.vault.read(file);
+		let data: CanvasFileData;
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch { return; }
+		if (!data.nodes) return;
+		let modified = false;
+		data.nodes.forEach((node) => {
+			if (node.id && selectedNodeIds.includes(node.id)) {
+				if (tags.length > 0) {
+					node.kambasTags = tags;
+				} else {
+					delete node.kambasTags;
+				}
+				modified = true;
+			}
+		});
+		if (modified) this.scheduleVaultModify(file, data);
+	}
+
+	// ──────────────────────────────────────────────────────────────────────────
+	// Tag filter panel
+	// ──────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Opens (or focuses) the in-canvas tag filter sidebar panel.
+	 */
+	public openTagFilterPanel(activeView: CanvasItemView): void {
+		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl
+			?? (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl;
+		if (!container) return;
+
+		// Toggle: close if already open
+		if (this.tagFilterPanelEl?.isConnected) {
+			this.closeTagFilterPanel(activeView);
+			return;
+		}
+
+		const t = getText();
+		const panel = container.createDiv({ cls: 'kambas-tag-panel' });
+		this.tagFilterPanelEl = panel;
+
+		// Set dim-opacity CSS var on the container
+		container.style.setProperty('--kambas-dim-opacity', String(this.dimOpacity));
+
+		// ── Header (drag handle) ─────────────────────────────────────────────
+		const header = panel.createDiv({ cls: 'kambas-tag-panel-header' });
+		header.createSpan({ cls: 'kambas-tag-panel-title', text: t.tagFilterPanel });
+		const headerActions = header.createDiv({ cls: 'kambas-tag-panel-actions' });
+		const closeBtn = headerActions.createDiv({ cls: 'kambas-tag-panel-close' });
+		setIcon(closeBtn, 'x');
+		closeBtn.addEventListener('click', () => this.closeTagFilterPanel(activeView));
+
+		this.makePanelDraggable(panel, header, container);
+
+		// ── Search + tag list body ───────────────────────────────────────────
+		const body = panel.createDiv({ cls: 'kambas-tag-panel-body' });
+		(panel as unknown as { _body: HTMLElement })._body = body;
+		this.renderTagFilterList(body, activeView);
+
+		// ── Opacity slider footer ────────────────────────────────────────────
+		const footer = panel.createDiv({ cls: 'kambas-tag-panel-footer' });
+		footer.createSpan({ cls: 'kambas-tag-slider-label-text', text: 'Dim opacity' });
+
+		// Slider + reset icon on one row
+		const sliderRow = footer.createDiv({ cls: 'kambas-tag-slider-row' });
+
+		const sliderComp = new SliderComponent(sliderRow);
+		sliderComp
+			.setLimits(0, 90, 1)
+			.setValue(Math.round(this.dimOpacity * 100))
+			.setDynamicTooltip()
+			.onChange((value: number) => {
+				this.dimOpacity = value / 100;
+				container.style.setProperty('--kambas-dim-opacity', String(this.dimOpacity));
+				this.savePanelState(panel);
+			});
+		sliderComp.sliderEl.addClass('kambas-tag-slider');
+
+		const resetBtn = sliderRow.createEl('button', { cls: 'kambas-tag-slider-reset' });
+		setIcon(resetBtn, 'rotate-ccw');
+		resetBtn.setAttribute('aria-label', 'Reset opacity to default');
+		resetBtn.addEventListener('click', () => {
+			this.dimOpacity = 0.12;
+			sliderComp.setValue(12);
+			container.setCssProps({ '--kambas-dim-opacity': '0.12' });
+			this.savePanelState(panel);
+		});
+
+		this.tagToolbarBtn?.classList.add('is-active');
+
+		// ── Restore saved position / size ────────────────────────────────────
+		this.restorePanelState(panel);
+
+		// ── Persist position on drag end ─────────────────────────────────────
+		const origOnUp = (): void => this.savePanelState(panel);
+		document.addEventListener('mouseup', origOnUp, { once: false });
+		// Use ResizeObserver to persist size changes
+		const ro = new ResizeObserver(() => this.savePanelState(panel));
+		ro.observe(panel);
+		// Clean up when panel is removed
+		const panelObserver = new MutationObserver(() => {
+			if (!panel.isConnected) { ro.disconnect(); panelObserver.disconnect(); }
+		});
+		panelObserver.observe(document.body, { childList: true, subtree: true });
+	}
+
+	private savePanelState(panel: HTMLElement): void {
+		if (!panel.isConnected) return;
+		try {
+			const state = {
+				top: panel.style.top,
+				left: panel.style.left,
+				width: panel.style.width || panel.offsetWidth + 'px',
+				height: panel.style.height || panel.offsetHeight + 'px',
+				dimOpacity: this.dimOpacity,
+			};
+			this.app.saveLocalStorage('kambas-tag-panel-state', JSON.stringify(state));
+		} catch { /* ignore */ }
+	}
+
+	private restorePanelState(panel: HTMLElement): void {
+		try {
+			const raw = this.app.loadLocalStorage('kambas-tag-panel-state') as string | null;
+			if (!raw) return;
+			const state = JSON.parse(raw) as { top?: string; left?: string; width?: string; height?: string; dimOpacity?: number };
+			if (state.top)    panel.style.top    = state.top;
+			if (state.left)   panel.style.left   = state.left;
+			if (state.width)  panel.style.width  = state.width;
+			if (state.height) panel.style.height = state.height;
+			if (typeof state.dimOpacity === 'number') this.dimOpacity = state.dimOpacity;
+		} catch { /* ignore */ }
+	}
+
+	private makePanelDraggable(panel: HTMLElement, header: HTMLElement, container: HTMLElement): void {
+		let isDragging = false;
+		let dragOffsetX = 0;
+		let dragOffsetY = 0;
+
+		const onMove = (e: MouseEvent): void => {
+			if (!isDragging) return;
+			const cRect = container.getBoundingClientRect();
+			const panW = panel.offsetWidth;
+			const panH = panel.offsetHeight;
+			let newLeft = e.clientX - dragOffsetX - cRect.left;
+			let newTop  = e.clientY - dragOffsetY - cRect.top;
+			// Clamp so panel stays fully inside the container
+			newLeft = Math.max(0, Math.min(newLeft, cRect.width  - panW));
+			newTop  = Math.max(0, Math.min(newTop,  cRect.height - panH));
+			panel.setCssProps({ left: `${newLeft}px`, top: `${newTop}px` });
+		};
+		const onUp = (): void => {
+			isDragging = false;
+			document.removeEventListener('mousemove', onMove);
+			document.removeEventListener('mouseup', onUp);
+		};
+
+		header.addEventListener('mousedown', (e: MouseEvent) => {
+			if ((e.target as HTMLElement).closest('.kambas-tag-panel-close')) return;
+			isDragging = true;
+			const cRect = container.getBoundingClientRect();
+			const pRect = panel.getBoundingClientRect();
+			// Convert from viewport-coords to container-coords before storing
+			panel.setCssProps({ right: 'auto', bottom: 'auto' });
+			panel.setCssProps({ left: `${pRect.left - cRect.left}px`, top: `${pRect.top  - cRect.top}px` });
+			dragOffsetX = e.clientX - pRect.left;
+			dragOffsetY = e.clientY - pRect.top;
+			document.addEventListener('mousemove', onMove);
+			document.addEventListener('mouseup', onUp);
+			e.preventDefault();
+		});
+	}
+
+	private closeTagFilterPanel(_activeView: CanvasItemView): void {
+		// Do NOT clear filters — they should persist while the panel is closed.
+		// The user can clear them explicitly via the × button inside the search bar.
+		this.tagFilterPanelEl?.remove();
+		this.tagFilterPanelEl = null;
+		// Keep toolbar button lit when filters are still active
+		this.updateToolbarButtonState();
+	}
+
+	private refreshTagFilterPanel(activeView: CanvasItemView): void {
+		if (!this.tagFilterPanelEl?.isConnected) return;
+		const body = (this.tagFilterPanelEl as unknown as { _body?: HTMLElement })._body;
+		if (body) this.renderTagFilterList(body, activeView);
+	}
+
+	private renderTagFilterList(body: HTMLElement, activeView: CanvasItemView): void {
+		body.empty();
+		const t = getText();
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		// Build tag → node count map
+		const tagMap = new Map<string, number>();
+		canvas.nodes.forEach((node) => {
+			const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+			for (const tag of uData?.kambasTags ?? []) {
+				if (tag.trim()) tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
+			}
+		});
+
+		if (tagMap.size === 0) {
+			body.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No tags on this canvas yet.' });
+			return;
+		}
+
+		// ── Search box ──────────────────────────────────────────────────────────
+		const searchWrap = body.createDiv({ cls: 'kambas-tag-search-wrap' });
+		const searchIcon = searchWrap.createSpan({ cls: 'kambas-tag-search-icon' });
+		setIcon(searchIcon, 'search');
+		const searchInput = searchWrap.createEl('input', {
+			cls: 'kambas-tag-search',
+			attr: { type: 'text', placeholder: 'Search tags…' },
+		});
+		// Clear × lives inside the search bar — always in the DOM, no layout shift
+		const clearInSearch = searchWrap.createEl('button', {
+			cls: 'kambas-tag-search-clear' + (this.activeTagFilters.size === 0 ? ' is-hidden' : ''),
+			attr: { 'aria-label': t.tagClearFilter },
+		});
+		setIcon(clearInSearch, 'x');
+		clearInSearch.addEventListener('click', () => {
+			this.activeTagFilters.clear();
+			canvas.nodes?.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
+			const clearFile = activeView.file;
+			if (clearFile) this.saveFilterState(clearFile);
+			this.updateToolbarButtonState();
+			this.refreshTagFilterPanel(activeView);
+		});
+
+		// ── Tag list ────────────────────────────────────────────────────────────
+		const listEl = body.createDiv({ cls: 'kambas-tag-panel-list' });
+
+		const renderList = (query: string): void => {
+			listEl.empty();
+			const lower = query.toLowerCase();
+			const sorted = Array.from(tagMap.entries())
+				.filter(([tag]) => !lower || tag.toLowerCase().includes(lower))
+				.sort(([a], [b]) => a.localeCompare(b));
+
+			for (const [tag, count] of sorted) {
+				const isActive = this.activeTagFilters.has(tag);
+				const row = listEl.createDiv({
+					cls: 'kambas-tag-panel-item' + (isActive ? ' is-active' : ''),
+				});
+
+				const checkEl = row.createSpan({ cls: 'kambas-tag-panel-check' });
+				setIcon(checkEl, isActive ? 'check-square' : 'square');
+				row.createSpan({ cls: 'kambas-tag-panel-pill', text: `#${tag}` });
+				row.createSpan({ cls: 'kambas-tag-panel-count', text: t.tagNodesCount(count) });
+
+				// Delete tag from all nodes
+				const deleteBtn = row.createSpan({ cls: 'kambas-tag-panel-delete' });
+				setIcon(deleteBtn, 'trash-2');
+				deleteBtn.setAttribute('aria-label', 'Delete tag from all nodes');
+				deleteBtn.addEventListener('click', (ev) => {
+					ev.stopPropagation();
+					void this.deleteTagFromCanvas(activeView, tag);
+				});
+
+				row.addEventListener('click', () => {
+					if (this.activeTagFilters.has(tag)) {
+						this.activeTagFilters.delete(tag);
+					} else {
+						this.activeTagFilters.add(tag);
+					}
+					this.applyTagFilters(activeView);
+					this.refreshTagFilterPanel(activeView);
+				});
+			}
+
+			if (sorted.length === 0) {
+				listEl.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No tags match.' });
+			}
+		};
+
+		renderList('');
+		searchInput.addEventListener('input', () => renderList(searchInput.value));
+	}
+
+	public async deleteTagFromCanvas(activeView: CanvasItemView, tagToDelete: string): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		canvas.nodes.forEach((node) => {
+			const rawNode = node as unknown as { unknownData?: { kambasTags?: string[] } };
+			const tags = rawNode.unknownData?.kambasTags ?? [];
+			if (!tags.includes(tagToDelete)) return;
+			const newTags = tags.filter((tg) => tg !== tagToDelete);
+			if (rawNode.unknownData) {
+				rawNode.unknownData.kambasTags = newTags.length > 0 ? newTags : undefined;
+			}
+			if (node.nodeEl.instanceOf(HTMLElement)) this.renderTagBadges(node.nodeEl, newTags);
+		});
+
+		this.activeTagFilters.delete(tagToDelete);
+
+		const file = activeView.file;
+		if (file) await this.persistDeleteTag(file, tagToDelete);
+
+		window.setTimeout(() => {
+			this.applyTagFilters(activeView);
+			this.refreshTagFilterPanel(activeView);
+		}, 80);
+	}
+
+	private async persistDeleteTag(file: TFile, tagToDelete: string): Promise<void> {
+		const content = await this.app.vault.read(file);
+		let data: CanvasFileData;
+		try { data = JSON.parse(content) as CanvasFileData; } catch { return; }
+		if (!Array.isArray(data.nodes)) return;
+		let modified = false;
+		for (const node of data.nodes) {
+			// kambasTags is stored as a direct node property in the JSON (not under unknownData)
+			const nd = node as unknown as { kambasTags?: string[] };
+			const tags = nd.kambasTags;
+			if (!tags?.includes(tagToDelete)) continue;
+			const next = tags.filter((tg) => tg !== tagToDelete);
+			nd.kambasTags = next.length > 0 ? next : undefined;
+			if (!nd.kambasTags) delete nd.kambasTags;
+			modified = true;
+		}
+		if (modified) this.scheduleVaultModify(file, data);
+	}
+
+	private updateToolbarButtonState(): void {
+		if (!this.tagToolbarBtn) return;
+		const filtersActive = this.activeTagFilters.size > 0;
+		const panelOpen = this.tagFilterPanelEl?.isConnected ?? false;
+		this.tagToolbarBtn.classList.toggle('is-active', filtersActive || panelOpen);
+	}
+
+	private saveFilterState(file: TFile): void {
+		try {
+			const key = `kambas-filters:${file.path}`;
+			if (this.activeTagFilters.size > 0) {
+				this.app.saveLocalStorage(key, JSON.stringify([...this.activeTagFilters]));
+			} else {
+				this.app.saveLocalStorage(key, null);
+			}
+		} catch { /* ignore */ }
+	}
+
+	private restoreFilterState(file: TFile, activeView: CanvasItemView): void {
+		try {
+			const key = `kambas-filters:${file.path}`;
+			const raw = this.app.loadLocalStorage(key) as string | null;
+			if (!raw) return;
+			const tags = JSON.parse(raw) as string[];
+			if (!Array.isArray(tags) || tags.length === 0) return;
+			this.activeTagFilters = new Set(tags);
+			this.applyTagFilters(activeView);
+			this.updateToolbarButtonState();
+		} catch { /* ignore */ }
+	}
+
+	private installSelectionGuard(activeView: CanvasItemView): void {
+		this.removeSelectionGuard();
+		const canvas = activeView.canvas;
+		if (!canvas) return;
+		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		if (!container) return;
+
+		type CvEx = { selection?: Set<object>; updateSelection?: () => void };
+		const cx = canvas as unknown as CvEx;
+
+		let rafPending = false;
+		const mo = new MutationObserver(() => {
+			// Defer to next frame so Obsidian finishes its own selection update first.
+			// Then strip is-selected from any hidden node — DOM only, no updateSelection()
+			// call (advanced-canvas patches it and the wrapper can throw).
+			if (rafPending) return;
+			rafPending = true;
+			window.requestAnimationFrame(() => {
+				rafPending = false;
+				if (!canvas.nodes) return;
+				canvas.nodes.forEach((node) => {
+					const el = node.nodeEl;
+					if (!el?.classList.contains('kambas-tag-hidden')) return;
+					if (!el.classList.contains('is-selected')) return;
+					// Strip from DOM — enough to prevent visual selection
+					el.classList.remove('is-selected');
+					// Also evict from internal Set via node.unselect() if available,
+					// otherwise direct Set.delete — never call updateSelection() since
+					// third-party plugins may have patched it in a way that throws.
+					const nu = node as unknown as { unselect?: () => void };
+					if (typeof nu.unselect === 'function') {
+						try { nu.unselect(); } catch { /* ignore */ }
+					} else {
+						try { cx.selection?.delete(node); } catch { /* ignore */ }
+					}
+				});
+			});
+		});
+
+		mo.observe(container, { attributes: true, subtree: true, attributeFilter: ['class'] });
+		this.tagFilterSelectionGuard = (): void => { mo.disconnect(); };
+	}
+
+	private removeSelectionGuard(): void {
+		this.tagFilterSelectionGuard?.();
+		this.tagFilterSelectionGuard = null;
+	}
+
+	private applyTagFilters(activeView: CanvasItemView): void {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+		if (this.activeTagFilters.size === 0) {
+			canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
+			this.removeSelectionGuard();
+		} else {
+			canvas.nodes.forEach((node) => {
+				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+				const nodeTags = uData?.kambasTags ?? [];
+				// Show if ANY selected filter tag matches
+				const matches = nodeTags.some((tag) => this.activeTagFilters.has(tag));
+				node.nodeEl?.classList.toggle('kambas-tag-hidden', !matches);
+			});
+			// Guard prevents rubber-band selection from picking up hidden nodes
+			this.installSelectionGuard(activeView);
+		}
+		// Persist filter state so it survives panel close / canvas reopen
+		const file = activeView.file;
+		if (file) this.saveFilterState(file);
+		this.updateToolbarButtonState();
+	}
+
+	/**
+	 * Injects a tag-filter button into the canvas right toolbar.
+	 * Safe to call repeatedly — skips if already injected.
+	 */
+	public injectTagFilterButton(activeView: CanvasItemView): void {
+		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		if (!container) return;
+
+		if (container.querySelector('.kambas-tag-toolbar-btn')) return;
+
+		const controls = container.querySelector<HTMLElement>('.canvas-controls');
+		if (!controls) return;
+
+		const groups = controls.querySelectorAll<HTMLElement>('.canvas-control-group');
+		const targetGroup = groups.length > 0 ? groups[groups.length - 1] : controls;
+
+		const btn = targetGroup.createDiv({
+			cls: 'canvas-control-item kambas-tag-toolbar-btn',
+			attr: { 'aria-label': getText().tagFilterPanel },
+		});
+		setIcon(btn, 'tag');
+		this.tagToolbarBtn = btn;
+
+		btn.addEventListener('click', () => {
+			this.openTagFilterPanel(activeView);
+		});
+		// Reflect current filter state immediately after injection
+		this.updateToolbarButtonState();
 	}
 
 	// ──────────────────────────────────────────────────────────────────────────
