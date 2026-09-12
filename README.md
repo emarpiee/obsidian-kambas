@@ -54,9 +54,9 @@ A right-click context menu appears on any canvas node. For image nodes, this inc
 
 | Command | Description |
 | :--- | :--- |
-| **Flip horizontal / vertical** | Mirror the image along its X or Y axis. |
+| **Flip horizontal / vertical** | Mirror the image along its X or Y axis (persisted across virtualized canvas nodes). |
 | **Toggle grayscale** | Apply a CSS grayscale filter to evaluate value structure and contrast without color distraction. |
-| **Color palette** | Extract and display dominant color swatches as an overlay on the image (3–10 swatches, configurable). |
+| **Color palette** | Extract and display dominant color swatches as an overlay on the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button. |
 | **Change opacity** | Set transparency (0–100%) on any node type — images, text cards, file embeds, or groups. |
 | **Reset to original size** | Restore a scaled node to its native pixel dimensions. |
 | **Copy media to clipboard** | Copy the raw image data from the canvas node to the system clipboard. |
@@ -79,7 +79,7 @@ Multi-file drops are handled in a single batch operation. The **Hide media label
 
 ### Filter Panel (Tags & Colors)
 
-The Filter Panel is a floating, draggable, resizable panel accessible from the **Tags** button in the canvas toolbar. It has two tabs — **Tags** and **Colors** — that work together to isolate, explore, and focus on specific subsets of canvas image nodes.
+The Filter Panel is a floating, draggable, resizable panel accessible from the **Tags** button in the canvas toolbar. It has two tabs — **Tags** and **Colors** — that work together to isolate, explore, and focus on specific subsets of canvas image nodes. Active filter indicators (dot badges) appear on each tab header whenever active filters exist within that tab.
 
 #### How Filtering Works
 
@@ -132,11 +132,13 @@ Hovering over a color row **outlines the matching canvas images** with an accent
 #### Colors Tab
 
 - **Dominant color extraction**: Kambas analyses each image's pixel data using HSV color buckling and classifies it into up to 13 named chromatic and neutral color categories: Black, Gray, White, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink.
+- **Canvas Card Color Filtering**: Optionally filter by native Obsidian canvas node colors (Red, Orange, Yellow, Green, Cyan, Purple, Gray).
 - **Multi-color per image**: An image can belong to multiple color buckets (e.g. a landscape with a red tree on a gray sky belongs to both Red and Gray).
 - **Extraction modes** (configurable in settings):
   - **Auto** — colors are extracted lazily in the background when the Colors tab is opened.
-  - **Manual** — extraction runs only when the "Extract Image Colors" button is clicked.
+  - **Manual** — extraction runs only when the "Scan canvas colors" button is clicked.
   - **Disabled** — color extraction is turned off entirely.
+- **Accent & Name Customization**: Configurable settings to include/ignore minor accent colors and show/hide text color names next to swatches.
 - **Search**: Filter the color list by name in real time.
 - **Clear**: The **×** button inside the search bar clears all active color includes and excludes.
 
@@ -147,6 +149,14 @@ Hovering over a color row **outlines the matching canvas images** with an accent
 - **Toolbar indicator**: The toolbar button remains lit (accent color) whenever any filter is active, even with the panel closed.
 - **Selection guard**: Hidden nodes are automatically deselected during rubber-band selection and `Ctrl+A`, preventing accidental batch operations on filtered-out content.
 - **Drag & resize**: The panel header can be dragged to any position. A plain click on the header never moves the panel — dragging requires actual mouse movement. The panel size is also resizable and persisted.
+
+---
+
+### Internationalization (i18n)
+
+Kambas includes complete native localization for **13 languages**, matching your Obsidian UI language setting automatically:
+
+- **English**, **Deutsch**, **Français**, **Español**, **日本語**, **简体中文**, **繁體中文**, **한국어**, **Русский**, **Italiano**, **Português**, **Nederlands**.
 
 ---
 
@@ -170,12 +180,16 @@ Open **Obsidian Settings > Kambas** to configure:
 | :--- | :--- |
 | **Hide media label** | Hides the raw data URI header above embedded image cards for a cleaner appearance. |
 | **Color palette swatches** | Number of dominant colors to extract and display per image (3–10). |
+| **Palette color separator** | Custom delimiter used when copying all palette colors to clipboard (e.g. `, `, `\n`, ` `). |
 | **Pan speed** | Maximum canvas pan speed per frame (WASD / arrow keys). |
 | **Zoom sensitivity** | Step size for each zoom increment. |
 | **Tag filter dim opacity** | Opacity of hidden nodes while a filter is active (default: 12%). |
 | **Tag badge position** | Outside-below the node, or inside at the bottom-left. |
 | **Zoom on select** | Auto-zoom to fit visible nodes when a filter is toggled. |
-| **Color extraction mode** | Auto, Manual, or Disabled. |
+| **Color extraction mode** | Auto, Manual ("Scan canvas colors"), or Disabled. |
+| **Include accent colors** | Include low-coverage minor accent colors in HSV filter extraction. |
+| **Display color names** | Display color name text labels alongside swatches in the color filter list. |
+| **Include card colors** | Include native Obsidian canvas card/node border and background colors in filtering. |
 
 ---
 
