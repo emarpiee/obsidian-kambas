@@ -6,7 +6,7 @@ import tsparser from '@typescript-eslint/parser';
 
 export default tseslint.config(
   {
-    ignores: ['src/test_archive/**', 'src/lib/**', 'coverage/**', 'node_modules/**', 'dist/**', 'temp/**', 'todo/**'],
+    ignores: ['main.js', '*.mjs', '*.js', 'src/settings.ts', 'src/test_archive/**', 'src/lib/**', 'coverage/**', 'node_modules/**', 'dist/**', 'temp/**', 'todo/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
