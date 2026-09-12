@@ -31,6 +31,7 @@ export class CanvasImageHandler {
 	// Tag filter panel state
 	private tagFilterPanelEl: HTMLElement | null = null;
 	private activeTagFilters: Set<string> = new Set();
+	private activeTagFiltersFile: string | null = null;
 	private dimOpacity = 0.12;
 	private tagToolbarBtn: HTMLElement | null = null;
 	private tagFilterSelectionGuard: (() => void) | null = null;
@@ -409,12 +410,24 @@ export class CanvasImageHandler {
 
 		// Re-apply / restore tag filters after scan
 		const filterFile = activeView.file;
-		if (this.activeTagFilters.size > 0) {
-			// Already have in-memory filters — just re-apply (e.g. after badge re-render)
-			this.applyTagFilters(activeView);
-		} else if (filterFile) {
-			// Try restoring from localStorage (survives panel close / canvas reload)
-			this.restoreFilterState(filterFile, activeView);
+		if (filterFile) {
+			if (this.activeTagFiltersFile !== filterFile.path) {
+				// Canvas file changed! Close panel if open, clear previous file's selection guard & filters
+				if (this.tagFilterPanelEl) {
+					this.closeTagFilterPanel(activeView);
+				}
+				this.removeSelectionGuard();
+				this.activeTagFilters.clear();
+				this.activeTagFiltersFile = filterFile.path;
+				this.restoreFilterState(filterFile, activeView);
+			} else if (this.activeTagFilters.size > 0) {
+				// Same file, active filters — re-apply (e.g. after badge re-render)
+				this.applyTagFilters(activeView);
+			} else {
+				// Same file, NO active filters — ensure all nodes are visible and interactive!
+				canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
+				this.removeSelectionGuard();
+			}
 		}
 
 		// Inject tag filter button into canvas toolbar (idempotent)
@@ -1785,8 +1798,8 @@ export class CanvasImageHandler {
 		setIcon(clearInSearch, 'x');
 		clearInSearch.addEventListener('click', () => {
 			this.activeTagFilters.clear();
-			// Route through applyTagFilters so zoom-to-fit and persistence run consistently
-			this.applyTagFilters(activeView);
+			// Route through applyTagFilters with performZoom=true on explicit clear click
+			this.applyTagFilters(activeView, true);
 			this.refreshTagFilterPanel(activeView);
 		});
 
@@ -1826,7 +1839,8 @@ export class CanvasImageHandler {
 					} else {
 						this.activeTagFilters.add(tag);
 					}
-					this.applyTagFilters(activeView);
+					// Pass performZoom=true only when user explicitly toggles a filter row
+					this.applyTagFilters(activeView, true);
 					this.refreshTagFilterPanel(activeView);
 				});
 			}
@@ -1857,7 +1871,13 @@ export class CanvasImageHandler {
 
 		this.activeTagFilters.delete(tagToDelete);
 
+		// ⚠️ Save filter state to localStorage NOW — before persistDeleteTag triggers
+		// a vault modify event → scanAndRestoreTransforms → restoreFilterState, which
+		// would re-read stale localStorage and re-apply the deleted tag as an active
+		// filter, keeping hidden nodes dimmed despite the deletion.
 		const file = activeView.file;
+		if (file) this.saveFilterState(file);
+
 		if (file) await this.persistDeleteTag(file, tagToDelete);
 
 		window.setTimeout(() => {
@@ -1894,6 +1914,7 @@ export class CanvasImageHandler {
 
 	private saveFilterState(file: TFile): void {
 		try {
+			this.activeTagFiltersFile = file.path;
 			const key = `kambas-filters:${file.path}`;
 			if (this.activeTagFilters.size > 0) {
 				this.app.saveLocalStorage(key, JSON.stringify([...this.activeTagFilters]));
@@ -1905,11 +1926,20 @@ export class CanvasImageHandler {
 
 	private restoreFilterState(file: TFile, activeView: CanvasItemView): void {
 		try {
+			this.activeTagFiltersFile = file.path;
 			const key = `kambas-filters:${file.path}`;
 			const raw = this.app.loadLocalStorage(key) as string | null;
-			if (!raw) return;
+			if (!raw) {
+				this.activeTagFilters.clear();
+				this.applyTagFilters(activeView);
+				return;
+			}
 			const tags = JSON.parse(raw) as string[];
-			if (!Array.isArray(tags) || tags.length === 0) return;
+			if (!Array.isArray(tags) || tags.length === 0) {
+				this.activeTagFilters.clear();
+				this.applyTagFilters(activeView);
+				return;
+			}
 			this.activeTagFilters = new Set(tags);
 			this.applyTagFilters(activeView);
 			this.updateToolbarButtonState();
@@ -1964,14 +1994,16 @@ export class CanvasImageHandler {
 		this.tagFilterSelectionGuard = null;
 	}
 
-	private applyTagFilters(activeView: CanvasItemView): void {
+	private applyTagFilters(activeView: CanvasItemView, performZoom = false): void {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 		if (this.activeTagFilters.size === 0) {
 			canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
 			this.removeSelectionGuard();
-			// Zoom to fit all nodes now that everything is visible again
-			window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
+			// Zoom to fit all nodes once when explicitly clearing/unselecting filters
+			if (performZoom) {
+				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
+			}
 		} else {
 			canvas.nodes.forEach((node) => {
 				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
@@ -1982,8 +2014,10 @@ export class CanvasImageHandler {
 			});
 			// Guard prevents rubber-band selection from picking up hidden nodes
 			this.installSelectionGuard(activeView);
-			// Zoom canvas to fit all visible nodes (like double-click zoom-to-fit but filtered)
-			window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
+			// Zoom canvas to fit visible nodes ONCE when user explicitly toggles a filter tag
+			if (performZoom) {
+				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
+			}
 		}
 		// Persist filter state so it survives panel close / canvas reopen
 		const file = activeView.file;

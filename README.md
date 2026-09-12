@@ -42,6 +42,18 @@ Like **PureRef** — the industry standard reference viewer for digital artists 
 - **Clipboard Integration**: Copy clean image data directly from canvas nodes to system clipboard.
 - **Swap Media**: Replace any image or video node with another file from your vault, a local file, or directly from your clipboard—preserving position and natural aspect ratio.
 
+### 🏷️ Canvas Media Tagging & Filter Panel
+- **Tag Filter Panel**: A floating, draggable, and resizable panel that lists all unique tags across every node in the active canvas. Open it from the canvas toolbar.
+- **Real-Time Search**: Type to filter the tag list instantly — `Ctrl+A` inside the search field selects (or deselects) all currently visible tags.
+- **Range & Multi Selection**: `Shift+Click` a tag to activate or deactivate the entire range between your last-clicked tag and the current one — identical to file-manager range selection.
+- **Active-Tag Highlighting**: Active filter tags are highlighted using native Obsidian accent colors so it's always clear which tags are filtering.
+- **Dim Opacity for Hidden Nodes**: A slider controls how opaque hidden (non-matching) nodes appear while a filter is active — giving context without distraction. A reset button (↺) restores the default 12 % opacity.
+- **Delete Tag from Canvas**: Each tag row has a trash icon to remove that tag from every node in the canvas simultaneously — changes are persisted to the `.canvas` file immediately.
+- **Auto Zoom-to-Fit**: Toggling a tag filter automatically zooms and pans the viewport to fit only the matching visible nodes. Clearing all filters zooms to fit the entire canvas.
+- **Persistent Filters**: Active tag selections survive panel close, canvas reopen, and Obsidian restarts — stored per canvas file path.
+- **Toolbar State Indicator**: The toolbar button stays lit (accent color) whenever any filter is active, even when the panel is closed.
+- **Selection Guard**: Hidden nodes are automatically deselected (covers rubber-band drag and `Ctrl+A` on the canvas) so batch operations never accidentally affect filtered-out nodes.
+
 ### 📥 Storage & Attachment Management
 - **Smart Ingestion Modal**: Prompt on paste or drag-and-drop to choose vault attachment storage vs. inline Base64 embedding.
 - **Batch Processing**: Handle multi-file drag-and-drop operations effortlessly in one step.
@@ -68,6 +80,7 @@ Obsidian Canvas files reserve an `unknownData` JSON object per node for plugin s
   "id": "node-id-123",
   "type": "file",
   "file": "attachments/image.png",
+  "kambasTags": ["mood", "reference", "character"],
   "unknownData": {
     "kambasFlipH": true,
     "kambasFlipV": false,
@@ -79,6 +92,8 @@ Obsidian Canvas files reserve an `unknownData` JSON object per node for plugin s
   }
 }
 ```
+
+- **`kambasTags`**: Array of tag strings attached to the node, stored as a top-level canvas JSON property alongside `unknownData`. The tag filter panel reads and writes this property directly.
 
 - **Cross-Session Stability**: Visual settings persist across device syncs, Obsidian restarts, and canvas reloads.
 - **Non-Destructive**: Disabling Kambas leaves original image files completely untouched. Visual metadata remains cleanly tucked inside the `.canvas` JSON file.
@@ -116,6 +131,23 @@ Right-click any node or selection inside an active Canvas view:
 | **Copy media to clipboard** | Image nodes | Copies raw image payload or file to clipboard. |
 | **Move / Copy media to...** | Vault media nodes | Launches folder picker to relocate or duplicate vault file. |
 
+### Tag Filter Panel
+
+Open via the **Tags** button in the canvas toolbar:
+
+| Gesture / Action | What happens |
+| :--- | :--- |
+| **Click a tag** | Toggle that tag filter on/off; sets it as the selection anchor. Viewport auto-zooms to matching nodes. |
+| **Shift+Click a tag** | Activates (or deactivates) every tag between the anchor and the clicked tag. |
+| **Ctrl+A** (panel focused) | Selects all visible tags in the list — or deselects all if every visible tag is already active. |
+| **Search field** | Filters the tag list in real time; `Ctrl+A` applies only to visible (filtered) results. |
+| **× (clear) button** | Clears all active filters and zooms to fit the entire canvas. |
+| **Trash icon** (per row) | Permanently removes that tag from every node in the canvas. |
+| **Dim opacity slider** | Sets the opacity of hidden (non-matching) nodes while a filter is active. |
+| **↺ (reset) button** | Restores the dim opacity to the default 12 %. |
+| **Drag panel header** | Repositions the panel anywhere on screen; position is saved between sessions. |
+| **Resize panel corner** | Resizes the panel; size is also persisted across sessions. |
+
 ### Keyboard Shortcuts
 
 | Action | Default Shortcut | Configuration Path |
@@ -133,6 +165,7 @@ Manage settings in **Obsidian Settings** > **Kambas**:
 - **Color palette swatches**: Number of dominant colors to display when the color palette is enabled on an image (3–10).
 - **Pan controls**: Configure key bindings and set maximum pan speed (units per frame).
 - **Zoom controls**: Configure zoom shortcuts and adjust zoom step sensitivity.
+- **Tag filter dim opacity**: Default opacity (%) for nodes hidden by an active tag filter. Adjustable live via the slider inside the tag filter panel.
 
 ---
 
