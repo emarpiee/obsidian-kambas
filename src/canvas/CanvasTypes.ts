@@ -46,7 +46,7 @@ export interface CanvasElement {
 	panTo?: (x: number, y: number) => void;
 	nodes?: Map<string, { nodeEl?: HTMLElement; x: number; y: number; width: number; height: number }>;
 	edges?: Map<string, { lineGroupEl?: HTMLElement; lineElement?: HTMLElement; lineEndGroupEl?: HTMLElement; unknownData?: { kambasOpacity?: number } }>;
-	zoomToBbox?: (bbox: { x: number; y: number; width: number; height: number }) => void;
+	zoomToBbox?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
 	zoomToSelection?: () => void;
 	zoomToFit?: () => void;
 	zoomBy?: (delta: number) => void;

@@ -1785,10 +1785,8 @@ export class CanvasImageHandler {
 		setIcon(clearInSearch, 'x');
 		clearInSearch.addEventListener('click', () => {
 			this.activeTagFilters.clear();
-			canvas.nodes?.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
-			const clearFile = activeView.file;
-			if (clearFile) this.saveFilterState(clearFile);
-			this.updateToolbarButtonState();
+			// Route through applyTagFilters so zoom-to-fit and persistence run consistently
+			this.applyTagFilters(activeView);
 			this.refreshTagFilterPanel(activeView);
 		});
 
@@ -1972,6 +1970,8 @@ export class CanvasImageHandler {
 		if (this.activeTagFilters.size === 0) {
 			canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
 			this.removeSelectionGuard();
+			// Zoom to fit all nodes now that everything is visible again
+			window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 		} else {
 			canvas.nodes.forEach((node) => {
 				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
@@ -1982,11 +1982,65 @@ export class CanvasImageHandler {
 			});
 			// Guard prevents rubber-band selection from picking up hidden nodes
 			this.installSelectionGuard(activeView);
+			// Zoom canvas to fit all visible nodes (like double-click zoom-to-fit but filtered)
+			window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 		}
 		// Persist filter state so it survives panel close / canvas reopen
 		const file = activeView.file;
 		if (file) this.saveFilterState(file);
 		this.updateToolbarButtonState();
+	}
+
+	/** Zoom / pan the canvas to fit all nodes that are not hidden by tag filter. */
+	private zoomToVisibleNodes(activeView: CanvasItemView): void {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		let hasVisible = false;
+
+		canvas.nodes.forEach((node) => {
+			if (node.nodeEl?.classList.contains('kambas-tag-hidden')) return;
+			hasVisible = true;
+			minX = Math.min(minX, node.x);
+			minY = Math.min(minY, node.y);
+			maxX = Math.max(maxX, node.x + node.width);
+			maxY = Math.max(maxY, node.y + node.height);
+		});
+
+		if (!hasVisible) return;
+
+		const PADDING = 80;
+		const bMinX = minX - PADDING;
+		const bMinY = minY - PADDING;
+		const bMaxX = maxX + PADDING;
+		const bMaxY = maxY + PADDING;
+
+		// Use Obsidian's built-in zoomToBbox if available (correct format: minX/minY/maxX/maxY)
+		if (canvas.zoomToBbox) {
+			canvas.zoomToBbox({ minX: bMinX, minY: bMinY, maxX: bMaxX, maxY: bMaxY });
+			return;
+		}
+
+		// Manual fallback: compute pan+zoom from canvas transform formula
+		// screen_pos = canvas_pos * zoom + (viewport_center + translation)
+		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		if (!container) return;
+		const vpW = container.offsetWidth;
+		const vpH = container.offsetHeight;
+		const bboxW = bMaxX - bMinX;
+		const bboxH = bMaxY - bMinY;
+		if (bboxW <= 0 || bboxH <= 0) return;
+
+		const newZoom = Math.min(vpW / bboxW, vpH / bboxH, 2); // cap at 2×
+		const centerX = (bMinX + bMaxX) / 2;
+		const centerY = (bMinY + bMaxY) / 2;
+
+		// tx/ty such that canvas center maps to viewport center
+		canvas.tx = vpW / 2 - centerX * newZoom;
+		canvas.ty = vpH / 2 - centerY * newZoom;
+		canvas.zoom = newZoom;
+		canvas.markViewportChanged?.();
 	}
 
 	/**
