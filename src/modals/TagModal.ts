@@ -105,8 +105,14 @@ export class TagModal extends Modal {
 	// ── Chip helpers ─────────────────────────────────────────────────────────
 
 	private normalizeTag(raw: string): string {
-		// Strip leading # and trim; lowercase
-		return raw.replace(/^#+/, '').trim().toLowerCase().replace(/\s+/g, '-');
+		// Strip leading # and trim, lowercase, replace spaces with hyphens, and remove trailing punctuation like periods
+		return raw
+			.replace(/^#+/, '')
+			.trim()
+			.toLowerCase()
+			.replace(/\s+/g, '-')
+			.replace(/[.,;!?]+$/, '')
+			.trim();
 	}
 
 	private commitInputValue(): void {
