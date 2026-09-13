@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+import { getText } from '../i18n';
 import { NumberFormatStyle, formatIncrementalNumber } from '../utils/numberFormatters';
 
 export type NamingStrategyOption = 'default' | 'tag' | 'custom' | 'cancel';
@@ -47,16 +48,17 @@ export class MediaFilenameModal extends Modal {
 		const { contentEl, titleEl } = this;
 		contentEl.empty();
 
-		const actionTitle = this.isCopy ? 'Copy Media to Vault' : 'Move Media to Vault';
+		const t = getText();
+		const actionTitle = this.isCopy ? (t.namingModalTitleCopy ?? 'Copy Media to Vault') : (t.namingModalTitleMove ?? 'Move Media to Vault');
 		titleEl.setText(actionTitle);
 
-		const displayFolder = this.targetFolderPath === '/' || this.targetFolderPath === '' ? '/ (Vault root)' : this.targetFolderPath;
+		const displayFolder = this.targetFolderPath === '/' || this.targetFolderPath === '' ? (t.namingModalVaultRoot ?? '/ (Vault root)') : this.targetFolderPath;
 		const folderNotice = contentEl.createDiv({ cls: 'kambas-target-folder-notice' });
-		folderNotice.createSpan({ text: 'Destination Folder: ' });
+		folderNotice.createSpan({ text: t.destinationFolderNotice ?? 'Destination Folder: ' });
 		folderNotice.createEl('code', { text: displayFolder });
 
 		const descP = contentEl.createEl('p', { cls: 'kambas-modal-desc' });
-		descP.setText('Choose how the media file should be named in your vault:');
+		descP.setText(t.chooseNamingStrategy ?? 'Choose how the media file should be named in your vault:');
 
 		let applyAll = false;
 
@@ -68,26 +70,26 @@ export class MediaFilenameModal extends Modal {
 		const defaultRadio = optDefault.createEl('input', { type: 'radio', attr: { name: 'naming_opt', id: 'opt_default' } });
 		defaultRadio.checked = true;
 		const defaultLabel = optDefault.createEl('label', { attr: { for: 'opt_default' } });
-		defaultLabel.createDiv({ cls: 'kambas-opt-title', text: 'Default Filename' });
+		defaultLabel.createDiv({ cls: 'kambas-opt-title', text: t.defaultFilenameOptTitle ?? 'Default Filename' });
 		defaultLabel.createDiv({ cls: 'kambas-opt-subtitle', text: `e.g. ${this.defaultName}` });
 
 		// Option 2: Tag Filename
 		const optTag = optionsContainer.createDiv({ cls: 'kambas-naming-option' });
 		const tagRadio = optTag.createEl('input', { type: 'radio', attr: { name: 'naming_opt', id: 'opt_tag' } });
 		const tagLabel = optTag.createEl('label', { attr: { for: 'opt_tag' } });
-		tagLabel.createDiv({ cls: 'kambas-opt-title', text: 'Tag Filename' });
+		tagLabel.createDiv({ cls: 'kambas-opt-title', text: t.tagFilenameOptTitle ?? 'Tag Filename' });
 		const tagSubEl = tagLabel.createDiv({ cls: 'kambas-opt-subtitle' });
 
 		// Option 3: Custom Filename
 		const optCustom = optionsContainer.createDiv({ cls: 'kambas-naming-option' });
 		const customRadio = optCustom.createEl('input', { type: 'radio', attr: { name: 'naming_opt', id: 'opt_custom' } });
 		const customLabel = optCustom.createEl('label', { attr: { for: 'opt_custom' } });
-		customLabel.createDiv({ cls: 'kambas-opt-title', text: 'Custom Filename' });
+		customLabel.createDiv({ cls: 'kambas-opt-title', text: t.customFilenameOptTitle ?? 'Custom Filename' });
 		
 		const customInputContainer = optCustom.createDiv({ cls: 'kambas-custom-input-wrap' });
 		const customInput = customInputContainer.createEl('input', {
 			type: 'text',
-			placeholder: 'e.g. my-image',
+			placeholder: t.customFilenamePlaceholder ?? 'e.g. my-image',
 			cls: 'kambas-custom-filename-input'
 		});
 		customInput.disabled = true;
@@ -98,7 +100,7 @@ export class MediaFilenameModal extends Modal {
 			tagSubEl.setText(
 				cleanedTags.length > 0
 					? `${cleanedTags.join('-')}-${numStr}`
-					: '(No tags on current media - will fallback to default)'
+					: (t.noTagsFallbackNotice ?? '(No tags on current media - will fallback to default)')
 			);
 		};
 
@@ -129,16 +131,16 @@ export class MediaFilenameModal extends Modal {
 
 		// 2. Numbering Format Dropdown Setting
 		new Setting(contentEl)
-			.setName('Numbering format')
-			.setDesc('Format used for incremental counters (e.g., when duplicate names exist or in batch exports).')
+			.setName(t.numberingFormatName ?? 'Numbering format')
+			.setDesc(t.numberingFormatDesc ?? 'Format used for incremental counters (e.g., when duplicate names exist or in batch exports).')
 			.addDropdown((dd) => {
-				dd.addOption('padded_2', '01, 02, 03... (2 Digits)')
-					.addOption('padded_3', '001, 002, 003... (3 Digits)')
-					.addOption('simple', '1, 2, 3... (Unpadded)')
-					.addOption('roman_upper', 'I, ii, iii, iv... (Roman upper)')
-					.addOption('roman_lower', 'I, ii, iii, iv... (Roman lower)')
-					.addOption('letter_upper', 'A, b, c... (Alphabet upper)')
-					.addOption('letter_lower', 'A, b, c... (Alphabet lower)')
+				dd.addOption('padded_2', t.numberFormatPadded2 ?? '01, 02, 03... (2 Digits)')
+					.addOption('padded_3', t.numberFormatPadded3 ?? '001, 002, 003... (3 Digits)')
+					.addOption('simple', t.numberFormatSimple ?? '1, 2, 3... (Unpadded)')
+					.addOption('roman_upper', t.numberFormatRomanUpper ?? 'I, II, III, IV... (Roman upper)')
+					.addOption('roman_lower', t.numberFormatRomanLower ?? 'i, ii, iii, iv... (Roman lower)')
+					.addOption('letter_upper', t.numberFormatLetterUpper ?? 'A, B, C... (Alphabet upper)')
+					.addOption('letter_lower', t.numberFormatLetterLower ?? 'a, b, c... (Alphabet lower)')
 					.setValue(this.selectedNumberFormat)
 					.onChange((val: string) => {
 						this.selectedNumberFormat = val as NumberFormatStyle;
@@ -149,7 +151,7 @@ export class MediaFilenameModal extends Modal {
 		// 3. Batch toggle option
 		if (this.remainingCount > 1) {
 			new Setting(contentEl)
-				.setName(`Apply to all ${this.remainingCount} remaining items`)
+				.setName(t.applyToAllRemaining ? t.applyToAllRemaining(this.remainingCount) : `Apply to all ${this.remainingCount} remaining items`)
 				.setDesc('Uses the selected naming strategy and numbering format for all remaining items.')
 				.addToggle((toggle) =>
 					toggle.setValue(false).onChange((v) => {
@@ -161,13 +163,13 @@ export class MediaFilenameModal extends Modal {
 		// 4. Action Buttons
 		const btnContainer = contentEl.createDiv({ cls: 'modal-button-container' });
 
-		const cancelBtn = btnContainer.createEl('button', { text: 'Cancel' });
+		const cancelBtn = btnContainer.createEl('button', { text: t.cancelBtn });
 		cancelBtn.addEventListener('click', () => {
 			this.close();
 		});
 
 		const confirmBtn = btnContainer.createEl('button', {
-			text: 'Confirm',
+			text: t.applyBtn,
 			cls: 'mod-cta'
 		});
 		confirmBtn.addEventListener('click', () => {

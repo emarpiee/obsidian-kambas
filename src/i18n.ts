@@ -122,6 +122,57 @@ export interface TranslationSchema {
 	colorExtractModeDesc: string;
 	noImageInClipboardNotice: string;
 	unableAccessClipboardNotice: string;
+
+	// Base64 Optimization
+	base64Heading?: string;
+	autoOptimizeBase64Name?: string;
+	autoOptimizeBase64Desc?: string;
+	base64MaxDimensionName?: string;
+	base64MaxDimensionDesc?: string;
+	optimizedNotice?: (count: number, kbSaved: number) => string;
+	noCompressibleNotice?: string;
+
+	// Visual Inspection (Loupe)
+	loupeHeading?: string;
+	loupeHotkeyName?: string;
+	loupeHotkeyDesc?: string;
+	loupeZoomLevelName?: string;
+	loupeZoomLevelDesc?: string;
+	loupeSizeName?: string;
+	loupeSizeDesc?: string;
+	loupeShapeName?: string;
+	loupeShapeDesc?: string;
+	loupeShapeCircle?: string;
+	loupeShapeRounded?: string;
+	loupeShapeSquare?: string;
+	loupeSmoothingName?: string;
+	loupeSmoothingDesc?: string;
+
+	// Selection Zoom
+	selectionZoomHotkeyName?: string;
+	selectionZoomHotkeyDesc?: string;
+
+	// Media Filename Modal
+	namingModalTitleCopy?: string;
+	namingModalTitleMove?: string;
+	namingModalVaultRoot?: string;
+	destinationFolderNotice?: string;
+	chooseNamingStrategy?: string;
+	defaultFilenameOptTitle?: string;
+	tagFilenameOptTitle?: string;
+	noTagsFallbackNotice?: string;
+	customFilenameOptTitle?: string;
+	customFilenamePlaceholder?: string;
+	numberingFormatName?: string;
+	numberingFormatDesc?: string;
+	applyToAllRemaining?: (count: number) => string;
+	numberFormatPadded2?: string;
+	numberFormatPadded3?: string;
+	numberFormatSimple?: string;
+	numberFormatRomanUpper?: string;
+	numberFormatRomanLower?: string;
+	numberFormatLetterUpper?: string;
+	numberFormatLetterLower?: string;
 }
 
 const en: TranslationSchema = {
@@ -238,6 +289,53 @@ const en: TranslationSchema = {
 	colorExtractModeDesc: 'Controls when dominant colors are extracted from canvas images for the color filter panel.',
 	noImageInClipboardNotice: 'No image found in clipboard',
 	unableAccessClipboardNotice: 'Unable to access clipboard',
+
+	base64Heading: 'Base64 image optimization',
+	autoOptimizeBase64Name: 'Auto-optimize Base64 on paste / drop',
+	autoOptimizeBase64Desc: 'Automatically compress pasted or dropped Base64 images to WebP format (Default: Disabled).',
+	base64MaxDimensionName: 'Maximum image dimension (px)',
+	base64MaxDimensionDesc: 'Resize images exceeding this width/height before embedding in canvas (Default: 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) => `Optimized ${count} embedded image(s), saved ~${kbSaved} KB!`,
+	noCompressibleNotice: 'No compressible base64 images selected.',
+
+	loupeHeading: 'Visual inspection (Loupe Tool)',
+	loupeHotkeyName: 'Loupe activation hotkey',
+	loupeHotkeyDesc: 'Hold down this key while hovering over an image node to inspect details (Default: Q).',
+	loupeZoomLevelName: 'Loupe magnification level',
+	loupeZoomLevelDesc: 'Zoom multiplier for the loupe lens from 1.5x to 10.0x (Default: 3.0x).',
+	loupeSizeName: 'Loupe lens diameter (px)',
+	loupeSizeDesc: 'Size of the loupe lens in pixels from 100px to 600px (Default: 260px).',
+	loupeShapeName: 'Loupe lens shape',
+	loupeShapeDesc: 'Visual shape of the magnifying lens frame (Default: Circle).',
+	loupeShapeCircle: 'Circle',
+	loupeShapeRounded: 'Rounded rectangle',
+	loupeShapeSquare: 'Square',
+	loupeSmoothingName: 'Loupe motion smoothing / dampening',
+	loupeSmoothingDesc: 'Smooths out mouse jitter when panning across images (Lower = smoother & less sensitive, Higher = faster tracking. Default: 0.50).',
+
+	selectionZoomHotkeyName: 'Zoom to fit selection hotkey',
+	selectionZoomHotkeyDesc: 'Press this hotkey when elements are selected to zoom to fit them. Press again to zoom back out (Default: Space).',
+
+	namingModalTitleCopy: 'Copy Media to Vault',
+	namingModalTitleMove: 'Move Media to Vault',
+	namingModalVaultRoot: '/ (Vault root)',
+	destinationFolderNotice: 'Destination Folder: ',
+	chooseNamingStrategy: 'Choose how the media file should be named in your vault:',
+	defaultFilenameOptTitle: 'Default Filename',
+	tagFilenameOptTitle: 'Tag Filename',
+	noTagsFallbackNotice: '(No tags on current media - will fallback to default)',
+	customFilenameOptTitle: 'Custom Filename',
+	customFilenamePlaceholder: 'e.g. my-image',
+	numberingFormatName: 'Numbering format',
+	numberingFormatDesc: 'Format used for incremental counters (e.g., when duplicate names exist or in batch exports).',
+	applyToAllRemaining: (count: number) => `Apply to all ${count} remaining items`,
+	numberFormatPadded2: '01, 02, 03... (2 Digits)',
+	numberFormatPadded3: '001, 002, 003... (3 Digits)',
+	numberFormatSimple: '1, 2, 3... (Unpadded)',
+	numberFormatRomanUpper: 'I, II, III, IV... (Roman upper)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (Roman lower)',
+	numberFormatLetterUpper: 'A, B, C... (Alphabet upper)',
+	numberFormatLetterLower: 'a, b, c... (Alphabet lower)',
 };
 
 const zh: TranslationSchema = {

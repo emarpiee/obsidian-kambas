@@ -190,17 +190,12 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		// Performance & Base64 Optimization Section
 		new Setting(containerEl)
-			.setName('Base64 image optimization')
-			.setHeading();
-
-		// Performance & Base64 Optimization Section
-		new Setting(containerEl)
-			.setName('Base64 image optimization')
+			.setName(t.base64Heading)
 			.setHeading();
 
 		new Setting(containerEl)
-			.setName('Auto-optimize Base64 on paste / drop')
-			.setDesc('Automatically compress pasted or dropped Base64 images to WebP format (Default: Disabled).')
+			.setName(t.autoOptimizeBase64Name)
+			.setDesc(t.autoOptimizeBase64Desc)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.autoOptimizeBase64OnIngest ?? false)
@@ -211,8 +206,8 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Maximum image dimension (px)')
-			.setDesc('Resize images exceeding this width/height before embedding in canvas (Default: 2048px).')
+			.setName(t.base64MaxDimensionName)
+			.setDesc(t.base64MaxDimensionDesc)
 			.addText((text) =>
 				text
 					.setPlaceholder('2048')
@@ -228,12 +223,12 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		// Visual Inspection Section
 		new Setting(containerEl)
-			.setName('Visual inspection (Loupe Tool)')
+			.setName(t.loupeHeading)
 			.setHeading();
 
 		new Setting(containerEl)
-			.setName('Loupe activation hotkey')
-			.setDesc('Hold down this key while hovering over an image node to inspect details (Default: Q).')
+			.setName(t.loupeHotkeyName)
+			.setDesc(t.loupeHotkeyDesc)
 			.addText((text) =>
 				text
 					.setPlaceholder('q')
@@ -245,8 +240,8 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Loupe magnification level')
-			.setDesc('Zoom multiplier for the loupe lens from 1.5x to 10.0x (Default: 3.0x).')
+			.setName(t.loupeZoomLevelName)
+			.setDesc(t.loupeZoomLevelDesc)
 			.addSlider((slider) =>
 				slider
 					.setLimits(1.5, 10.0, 0.5)
@@ -259,8 +254,8 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Loupe lens diameter (px)')
-			.setDesc('Size of the loupe lens in pixels from 100px to 600px (Default: 260px).')
+			.setName(t.loupeSizeName)
+			.setDesc(t.loupeSizeDesc)
 			.addSlider((slider) =>
 				slider
 					.setLimits(100, 600, 20)
@@ -273,13 +268,13 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Loupe lens shape')
-			.setDesc('Visual shape of the magnifying lens frame (Default: Circle).')
+			.setName(t.loupeShapeName)
+			.setDesc(t.loupeShapeDesc)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption('circle', 'Circle')
-					.addOption('rounded', 'Rounded rectangle')
-					.addOption('square', 'Square')
+					.addOption('circle', t.loupeShapeCircle)
+					.addOption('rounded', t.loupeShapeRounded)
+					.addOption('square', t.loupeShapeSquare)
 					.setValue(this.plugin.settings.loupeShape ?? 'circle')
 					.onChange(async (value: string) => {
 						this.plugin.settings.loupeShape = value as 'circle' | 'square' | 'rounded';
@@ -288,8 +283,8 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Loupe motion smoothing / dampening')
-			.setDesc('Smooths out mouse jitter when panning across images (Lower = smoother & less sensitive, Higher = faster tracking. Default: 0.50).')
+			.setName(t.loupeSmoothingName)
+			.setDesc(t.loupeSmoothingDesc)
 			.addSlider((slider) =>
 				slider
 					.setLimits(0.05, 1.0, 0.05)
@@ -302,8 +297,8 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Zoom to fit selection hotkey')
-			.setDesc('Press this hotkey when elements are selected to zoom to fit them. Press again to zoom back out (Default: Space).')
+			.setName(t.selectionZoomHotkeyName)
+			.setDesc(t.selectionZoomHotkeyDesc)
 			.addText((text) =>
 				text
 					.setPlaceholder('Space')

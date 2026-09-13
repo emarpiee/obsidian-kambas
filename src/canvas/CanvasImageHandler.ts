@@ -3798,11 +3798,12 @@ export class CanvasImageHandler {
 			try { canvas.requestSave(); } catch { /* Handled */ }
 		}
 
+		const t = getText();
 		if (optimizedCount > 0) {
 			const kbSaved = Math.round(totalBytesSaved / 1024);
-			new Notice(`Optimized ${optimizedCount} embedded image(s), saved ~${kbSaved} KB!`);
+			new Notice(t.optimizedNotice(optimizedCount, kbSaved));
 		} else {
-			new Notice('No compressible base64 images selected.');
+			new Notice(t.noCompressibleNotice);
 		}
 	}
 }
