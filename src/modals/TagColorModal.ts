@@ -140,7 +140,7 @@ export class TagColorModal extends Modal {
 			.setName(t.bgColorLabel ?? 'Background color')
 			.addText((text) => {
 				bgInputEl = text.inputEl;
-				text.setPlaceholder('#ffffff')
+				text.setPlaceholder('#Ffffff')
 					.setValue(this.bgColor)
 					.onChange((val) => {
 						this.bgColor = val;
@@ -163,7 +163,7 @@ export class TagColorModal extends Modal {
 			this.updatePreview();
 		});
 
-		this.updateInputs = () => {
+		this.updateInputs = (): void => {
 			if (textInputEl) textInputEl.value = this.textColor;
 			if (textColorPickerEl && /^#[0-9A-Fa-f]{6}$/.test(this.textColor)) {
 				textColorPickerEl.value = this.textColor;
