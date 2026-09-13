@@ -30,6 +30,7 @@ export class MediaFilenameModal extends Modal {
 		tags: string[],
 		remainingCount: number,
 		isCopy: boolean,
+		initialNumberFormat: NumberFormatStyle = 'padded_2',
 		onChoose: (result: MediaFilenameResult) => void
 	) {
 		super(app);
@@ -38,6 +39,7 @@ export class MediaFilenameModal extends Modal {
 		this.tags = tags;
 		this.remainingCount = remainingCount;
 		this.isCopy = isCopy;
+		this.selectedNumberFormat = initialNumberFormat;
 		this.onChoose = onChoose;
 	}
 
@@ -137,7 +139,7 @@ export class MediaFilenameModal extends Modal {
 					.addOption('roman_lower', 'I, ii, iii, iv... (Roman lower)')
 					.addOption('letter_upper', 'A, b, c... (Alphabet upper)')
 					.addOption('letter_lower', 'A, b, c... (Alphabet lower)')
-					.setValue('padded_2')
+					.setValue(this.selectedNumberFormat)
 					.onChange((val: string) => {
 						this.selectedNumberFormat = val as NumberFormatStyle;
 						updateSubtitles();

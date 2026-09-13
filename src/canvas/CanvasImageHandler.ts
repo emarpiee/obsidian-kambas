@@ -1194,6 +1194,7 @@ export class CanvasImageHandler {
 								tags,
 								remainingCount,
 								false,
+								currentNumberFormat,
 								(res) => resolve(res)
 							);
 							modal.open();
@@ -1272,6 +1273,7 @@ export class CanvasImageHandler {
 							tags,
 							remainingCount,
 							false,
+							currentNumberFormat,
 							(res) => resolve(res)
 						);
 						modal.open();
@@ -1444,6 +1446,7 @@ export class CanvasImageHandler {
 								tags,
 								remainingCount,
 								true,
+								currentCopyNumberFormat,
 								(res) => resolve(res)
 							);
 							modal.open();
@@ -1532,6 +1535,7 @@ export class CanvasImageHandler {
 							tags,
 							remainingCount,
 							true,
+							currentCopyNumberFormat,
 							(res) => resolve(res)
 						);
 						modal.open();
