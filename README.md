@@ -155,6 +155,9 @@ Native localization support for **14 languages**, matching Obsidian UI automatic
 
 ### Keyboard Navigation
 
+> [!NOTE]
+> Keyboard panning functionality is inspired by and based on the [Canvas Keyboard Pan](https://github.com/nathonius/obsidian-canvas-pan) plugin.
+
 - **Pan Canvas (Up / Down / Left / Right)**: `W` / `S` / `A` / `D` or `Arrow Keys`
 - **Zoom In / Out**: `+` / `-`
 - **Selection Zoom to Fit**: `Space`
