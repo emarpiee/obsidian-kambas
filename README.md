@@ -7,6 +7,15 @@
 
 Kambas transforms Obsidian Canvas into a self-contained, portable reference environment for designers, researchers, and visual creators. Its core feature is **embedded image storage** — images are encoded as Base64 data URIs and stored directly inside the `.canvas` file itself, eliminating vault clutter and broken link dependencies entirely.
 
+
+
+https://github.com/user-attachments/assets/4b6e2661-50bb-4cc6-9e38-4e62132822d9
+
+
+
+
+
+
 ---
 
 ## The Problem Kambas Solves
