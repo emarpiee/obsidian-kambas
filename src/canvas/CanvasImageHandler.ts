@@ -1683,11 +1683,11 @@ export class CanvasImageHandler {
 						width: canvasNodeData.width,
 						height: canvasNodeData.height,
 					};
-					const flipH = canvasNodeData.kambasFlipH;
-					const flipV = canvasNodeData.kambasFlipV;
-					const grayscale = canvasNodeData.kambasGrayscale;
-					const opacity = canvasNodeData.kambasOpacity;
-					const tags = canvasNodeData.kambasTags;
+					const flipH = canvasNodeData.kambasFlipH ?? (nodeObj as { unknownData?: { kambasFlipH?: boolean } }).unknownData?.kambasFlipH;
+					const flipV = canvasNodeData.kambasFlipV ?? (nodeObj as { unknownData?: { kambasFlipV?: boolean } }).unknownData?.kambasFlipV;
+					const grayscale = canvasNodeData.kambasGrayscale ?? (nodeObj as { unknownData?: { kambasGrayscale?: boolean } }).unknownData?.kambasGrayscale;
+					const opacity = canvasNodeData.kambasOpacity ?? (nodeObj as { unknownData?: { kambasOpacity?: number } }).unknownData?.kambasOpacity;
+					const tags = canvasNodeData.kambasTags || (nodeObj as { unknownData?: { kambasTags?: string[] } }).unknownData?.kambasTags || (nodeObj as { kambasTags?: string[] }).kambasTags;
 
 					// 2. Remove old link node from canvas
 					const rawCanvas = canvas as unknown as {
@@ -1702,16 +1702,26 @@ export class CanvasImageHandler {
 					}
 
 					// 3. Create native Obsidian file node
-					canvas.createFileNode({
+					const existingNodeIds = new Set(canvas.nodes ? Array.from(canvas.nodes.keys()) : []);
+					const createdNode = canvas.createFileNode({
 						file: savedFile,
 						pos,
 						size,
 						save: true,
 					});
 
-					// 4. Find newly created file node and apply preserved transform & tag properties
-					const newCanvasNode = Array.from(canvas.nodes?.values() || []).find(
-						(n) => {
+					// 4. Find newly created file node (via return value or newly added node ID)
+					let newCanvasNode: unknown = createdNode;
+					if (!newCanvasNode && canvas.nodes) {
+						for (const [nodeId, n] of canvas.nodes.entries()) {
+							if (!existingNodeIds.has(nodeId)) {
+								newCanvasNode = n;
+								break;
+							}
+						}
+					}
+					if (!newCanvasNode && canvas.nodes) {
+						newCanvasNode = Array.from(canvas.nodes.values()).find((n) => {
 							const rawN = n as unknown as {
 								file?: TFile | string;
 								unknownData?: { file?: string };
@@ -1721,11 +1731,14 @@ export class CanvasImageHandler {
 								rawN.file === savedPath ||
 								rawN.unknownData?.file === savedPath
 							);
-						}
-					);
+						});
+					}
 
 					if (newCanvasNode) {
-						const rawN = newCanvasNode as unknown as {
+						const rawN = newCanvasNode as {
+							id?: string;
+							nodeEl?: HTMLElement;
+							kambasTags?: string[];
 							unknownData?: {
 								type?: string;
 								file?: string;
@@ -1743,8 +1756,38 @@ export class CanvasImageHandler {
 						if (flipV) rawN.unknownData.kambasFlipV = flipV;
 						if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 						if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
-						if (Array.isArray(tags) && tags.length > 0)
+						if (Array.isArray(tags) && tags.length > 0) {
 							rawN.unknownData.kambasTags = [...tags];
+							rawN.kambasTags = [...tags];
+						}
+
+						// Sync tags and transform data into canvas.data.nodes so canvas.requestSave() persists them
+						const rawCanvas = canvas as unknown as {
+							data?: { nodes?: Array<{ id?: string; file?: string }> };
+						};
+						const canvasDataNode = rawCanvas.data?.nodes?.find(
+							(n) => (rawN.id && n.id === rawN.id) || n.file === savedPath
+						);
+						if (canvasDataNode) {
+							const rawCDN = canvasDataNode as unknown as {
+								kambasFlipH?: boolean;
+								kambasFlipV?: boolean;
+								kambasGrayscale?: boolean;
+								kambasOpacity?: number;
+								kambasTags?: string[];
+							};
+							if (flipH) rawCDN.kambasFlipH = flipH;
+							if (flipV) rawCDN.kambasFlipV = flipV;
+							if (grayscale) rawCDN.kambasGrayscale = grayscale;
+							if (opacity !== undefined) rawCDN.kambasOpacity = opacity;
+							if (Array.isArray(tags) && tags.length > 0) {
+								rawCDN.kambasTags = [...tags];
+							}
+						}
+
+						if (rawN.nodeEl && Array.isArray(tags) && tags.length > 0) {
+							this.renderTagBadges(rawN.nodeEl, tags);
+						}
 					}
 
 					modified = true;
@@ -2165,7 +2208,28 @@ export class CanvasImageHandler {
 			}
 
 			const canvasNodeData = canvasFileData.nodes.find((n) => n.id === id);
-			if (!canvasNodeData) continue;
+			const rawObj = nodeObj as {
+				x?: number;
+				y?: number;
+				width?: number;
+				height?: number;
+				kambasFlipH?: boolean;
+				kambasFlipV?: boolean;
+				kambasGrayscale?: boolean;
+				kambasOpacity?: number;
+				kambasTags?: string[];
+				unknownData?: {
+					x?: number;
+					y?: number;
+					width?: number;
+					height?: number;
+					kambasFlipH?: boolean;
+					kambasFlipV?: boolean;
+					kambasGrayscale?: boolean;
+					kambasOpacity?: number;
+					kambasTags?: string[];
+				};
+			};
 
 			// Read vault image file and encode to base64 data URL
 			const arrayBuffer = await this.app.vault.readBinary(tfile);
@@ -2173,16 +2237,19 @@ export class CanvasImageHandler {
 			const dataUrl = arrayBufferToBase64DataUrl(arrayBuffer, mimeType);
 
 			// 1. Preserve position, size, transform & tag data
-			const pos = { x: canvasNodeData.x, y: canvasNodeData.y };
-			const size = {
-				width: canvasNodeData.width,
-				height: canvasNodeData.height,
+			const pos = {
+				x: canvasNodeData?.x ?? rawObj.x ?? rawObj.unknownData?.x ?? 0,
+				y: canvasNodeData?.y ?? rawObj.y ?? rawObj.unknownData?.y ?? 0,
 			};
-			const flipH = canvasNodeData.kambasFlipH;
-			const flipV = canvasNodeData.kambasFlipV;
-			const grayscale = canvasNodeData.kambasGrayscale;
-			const opacity = canvasNodeData.kambasOpacity;
-			const tags = canvasNodeData.kambasTags;
+			const size = {
+				width: canvasNodeData?.width ?? rawObj.width ?? rawObj.unknownData?.width ?? 400,
+				height: canvasNodeData?.height ?? rawObj.height ?? rawObj.unknownData?.height ?? 300,
+			};
+			const flipH = canvasNodeData?.kambasFlipH ?? rawObj.kambasFlipH ?? rawObj.unknownData?.kambasFlipH;
+			const flipV = canvasNodeData?.kambasFlipV ?? rawObj.kambasFlipV ?? rawObj.unknownData?.kambasFlipV;
+			const grayscale = canvasNodeData?.kambasGrayscale ?? rawObj.kambasGrayscale ?? rawObj.unknownData?.kambasGrayscale;
+			const opacity = canvasNodeData?.kambasOpacity ?? rawObj.kambasOpacity ?? rawObj.unknownData?.kambasOpacity;
+			const tags = canvasNodeData?.kambasTags || rawObj.kambasTags || rawObj.unknownData?.kambasTags || [];
 
 			// 2. Remove old native file node from canvas
 			const rawCanvas = canvas as unknown as {
@@ -2198,26 +2265,39 @@ export class CanvasImageHandler {
 
 			// 3. Create link node storing embedded base64 data URL
 			if (typeof canvas.createLinkNode === 'function') {
-				canvas.createLinkNode({
+				const existingNodeIds = new Set(canvas.nodes ? Array.from(canvas.nodes.keys()) : []);
+				const createdNode = canvas.createLinkNode({
 					url: dataUrl,
 					pos,
 					size,
 					save: true,
 				});
 
-				// 4. Find newly created link node and apply preserved transform & tag properties
-				const newCanvasNode = Array.from(canvas.nodes?.values() || []).find(
-					(n) => {
+				// 4. Find newly created link node (via return value or newly added node ID)
+				let newCanvasNode: unknown = createdNode;
+				if (!newCanvasNode && canvas.nodes) {
+					for (const [nodeId, n] of canvas.nodes.entries()) {
+						if (!existingNodeIds.has(nodeId)) {
+							newCanvasNode = n;
+							break;
+						}
+					}
+				}
+				if (!newCanvasNode && canvas.nodes) {
+					newCanvasNode = Array.from(canvas.nodes.values()).find((n) => {
 						const rawN = n as unknown as {
 							url?: string;
 							unknownData?: { url?: string };
 						};
 						return rawN.url === dataUrl || rawN.unknownData?.url === dataUrl;
-					}
-				);
+					});
+				}
 
 				if (newCanvasNode) {
-					const rawN = newCanvasNode as unknown as {
+					const rawN = newCanvasNode as {
+						id?: string;
+						nodeEl?: HTMLElement;
+						kambasTags?: string[];
 						unknownData?: {
 							type?: string;
 							url?: string;
@@ -2235,8 +2315,38 @@ export class CanvasImageHandler {
 					if (flipV) rawN.unknownData.kambasFlipV = flipV;
 					if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 					if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
-					if (Array.isArray(tags) && tags.length > 0)
+					if (Array.isArray(tags) && tags.length > 0) {
 						rawN.unknownData.kambasTags = [...tags];
+						rawN.kambasTags = [...tags];
+					}
+
+					// Sync tags and transform data into canvas.data.nodes so canvas.requestSave() persists them cleanly
+					const rawCanvasForData = canvas as unknown as {
+						data?: { nodes?: Array<{ id?: string; url?: string }> };
+					};
+					const canvasDataNode = rawCanvasForData.data?.nodes?.find(
+						(n) => (rawN.id && n.id === rawN.id) || n.url === dataUrl
+					);
+					if (canvasDataNode) {
+						const rawCDN = canvasDataNode as unknown as {
+							kambasFlipH?: boolean;
+							kambasFlipV?: boolean;
+							kambasGrayscale?: boolean;
+							kambasOpacity?: number;
+							kambasTags?: string[];
+						};
+						if (flipH) rawCDN.kambasFlipH = flipH;
+						if (flipV) rawCDN.kambasFlipV = flipV;
+						if (grayscale) rawCDN.kambasGrayscale = grayscale;
+						if (opacity !== undefined) rawCDN.kambasOpacity = opacity;
+						if (Array.isArray(tags) && tags.length > 0) {
+							rawCDN.kambasTags = [...tags];
+						}
+					}
+
+					if (rawN.nodeEl && Array.isArray(tags) && tags.length > 0) {
+						this.renderTagBadges(rawN.nodeEl, tags);
+					}
 				}
 
 				modified = true;
