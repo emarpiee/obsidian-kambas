@@ -732,9 +732,9 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 /* ── Canvas node highlight (row hover → node glow) ───────────────────────── */
 .kambas-color-highlight {
-	outline: 2px solid var(--interactive-accent) !important;
-	outline-offset: 3px;
-	box-shadow: 0 0 0 4px rgba(var(--interactive-accent-rgb, 99, 102, 241), 0.2) !important;
+	outline: 3px solid var(--interactive-accent) !important;
+	outline-offset: 3px !important;
+	border-radius: var(--radius-m) !important;
 	z-index: 10 !important;
 }
 
