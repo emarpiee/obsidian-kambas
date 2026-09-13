@@ -102,6 +102,9 @@ export interface CanvasElement {
 	}) => void;
 	posFromEvent?: (evt: MouseEvent) => { x: number; y: number };
 	requestSave?: () => void;
+	readonly?: boolean;
+	isReadOnly?: boolean;
+	setReadOnly?: (readOnly: boolean) => void;
 }
 
 export interface CanvasItemView {

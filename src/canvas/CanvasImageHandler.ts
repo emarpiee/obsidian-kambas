@@ -728,6 +728,51 @@ export class CanvasImageHandler {
 			}
 		}
 
+		// Toggle native Obsidian Canvas read-only mode alongside Away Mode
+		const isAway = targetOpacity === 0;
+		type NativeCanvasEx = {
+			readonly?: boolean;
+			isReadOnly?: boolean;
+			readOnly?: boolean;
+			setReadOnly?: (ro: boolean) => void;
+			setReadonly?: (ro: boolean) => void;
+		};
+		const cx = canvas as unknown as NativeCanvasEx;
+		if (typeof cx.setReadOnly === 'function') {
+			try {
+				cx.setReadOnly(isAway);
+			} catch {
+				/* ignore */
+			}
+		}
+		if (typeof cx.setReadonly === 'function') {
+			try {
+				cx.setReadonly(isAway);
+			} catch {
+				/* ignore */
+			}
+		}
+		cx.readonly = isAway;
+		cx.isReadOnly = isAway;
+		cx.readOnly = isAway;
+
+		const vx = activeView as unknown as NativeCanvasEx;
+		if (typeof vx.setReadOnly === 'function') {
+			try {
+				vx.setReadOnly(isAway);
+			} catch {
+				/* ignore */
+			}
+		}
+		vx.readonly = isAway;
+		vx.isReadOnly = isAway;
+		vx.readOnly = isAway;
+
+		if (canvasEl) {
+			canvasEl.classList.toggle('is-readonly', isAway);
+			canvasEl.classList.toggle('is-read-only', isAway);
+		}
+
 		if (selectedNodeIds.length === 0) return;
 
 		if (typeof canvas.requestSave === 'function') {
