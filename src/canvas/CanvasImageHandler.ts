@@ -364,25 +364,29 @@ export class CanvasImageHandler {
 			if (!nodeEl) return;
 
 			// Extract link URL or data directly from canvas node object memory (0ms delay)
-			const unknownData = (
-				canvasNode as unknown as {
-					unknownData?: {
-						type?: string;
-						url?: string;
-						kambasFlipH?: boolean;
-						kambasFlipV?: boolean;
-						kambasGrayscale?: boolean;
-						kambasPalette?: boolean;
-						kambasOpacity?: number;
-						kambasTags?: string[];
-					};
-				}
-			).unknownData;
-			const nodeUrl = unknownData?.url;
-			const isLinkDataImg =
-				unknownData?.type === 'link' && nodeUrl?.startsWith('data:image/');
+			const rawNodeObj = canvasNode as unknown as {
+				url?: string;
+				type?: string;
+				unknownData?: {
+					type?: string;
+					url?: string;
+					kambasFlipH?: boolean;
+					kambasFlipV?: boolean;
+					kambasGrayscale?: boolean;
+					kambasPalette?: boolean;
+					kambasOpacity?: number;
+					kambasTags?: string[];
+				};
+			};
+			if (!rawNodeObj.unknownData) rawNodeObj.unknownData = {};
+			const unknownData = rawNodeObj.unknownData;
+			const nodeUrl = rawNodeObj.url || unknownData.url;
+			const isLinkDataImg = Boolean(nodeUrl && nodeUrl.startsWith('data:image/'));
 
 			if (isLinkDataImg && nodeUrl) {
+				unknownData.type = 'link';
+				unknownData.url = nodeUrl;
+
 				const container =
 					nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
 				let existingImg = container.querySelector<HTMLImageElement>(
@@ -399,6 +403,8 @@ export class CanvasImageHandler {
 								'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;display:block;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;',
 						},
 					});
+				} else if (existingImg.src !== nodeUrl) {
+					existingImg.src = nodeUrl;
 				}
 
 				// Lock parent node aspect ratio to natural image dimensions
@@ -1721,6 +1727,8 @@ export class CanvasImageHandler {
 					if (newCanvasNode) {
 						const rawN = newCanvasNode as unknown as {
 							unknownData?: {
+								type?: string;
+								file?: string;
 								kambasFlipH?: boolean;
 								kambasFlipV?: boolean;
 								kambasGrayscale?: boolean;
@@ -1729,6 +1737,8 @@ export class CanvasImageHandler {
 							};
 						};
 						if (!rawN.unknownData) rawN.unknownData = {};
+						rawN.unknownData.type = 'file';
+						rawN.unknownData.file = savedPath;
 						if (flipH) rawN.unknownData.kambasFlipH = flipH;
 						if (flipV) rawN.unknownData.kambasFlipV = flipV;
 						if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
@@ -1751,9 +1761,13 @@ export class CanvasImageHandler {
 				}
 			}
 
+			this.scanAndRestoreTransforms(activeView);
 			window.setTimeout(() => {
 				this.scanAndRestoreTransforms(activeView);
-			}, 100);
+			}, 50);
+			window.setTimeout(() => {
+				this.scanAndRestoreTransforms(activeView);
+			}, 200);
 		}
 	}
 
@@ -2205,6 +2219,8 @@ export class CanvasImageHandler {
 				if (newCanvasNode) {
 					const rawN = newCanvasNode as unknown as {
 						unknownData?: {
+							type?: string;
+							url?: string;
 							kambasFlipH?: boolean;
 							kambasFlipV?: boolean;
 							kambasGrayscale?: boolean;
@@ -2213,6 +2229,8 @@ export class CanvasImageHandler {
 						};
 					};
 					if (!rawN.unknownData) rawN.unknownData = {};
+					rawN.unknownData.type = 'link';
+					rawN.unknownData.url = dataUrl;
 					if (flipH) rawN.unknownData.kambasFlipH = flipH;
 					if (flipV) rawN.unknownData.kambasFlipV = flipV;
 					if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
@@ -2238,9 +2256,13 @@ export class CanvasImageHandler {
 				}
 			}
 
+			this.scanAndRestoreTransforms(activeView);
 			window.setTimeout(() => {
 				this.scanAndRestoreTransforms(activeView);
-			}, 100);
+			}, 50);
+			window.setTimeout(() => {
+				this.scanAndRestoreTransforms(activeView);
+			}, 200);
 		}
 
 		// Delete original files if requested

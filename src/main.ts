@@ -1,4 +1,4 @@
-import { ItemView, Menu, Plugin } from 'obsidian';
+import { ItemView, Menu, Plugin, TFile } from 'obsidian';
 
 import { getText } from './i18n';
 import './main.css';
@@ -97,48 +97,64 @@ export default class KambasPlugin extends Plugin {
 						selectedImageCount++;
 					}
 
-					const unknownData = (
-						canvasNode as unknown as {
-							unknownData?: {
-								type?: string;
-								url?: string;
-								file?: string;
-								kambasFlipH?: boolean;
-								kambasFlipV?: boolean;
-								kambasGrayscale?: boolean;
-								kambasPalette?: boolean;
-								kambasOpacity?: number;
-								originalWidth?: number;
-								originalHeight?: number;
-							};
-						}
-					).unknownData;
-					if (
-						unknownData?.type === 'file' ||
-						(unknownData?.type === 'link' &&
-							unknownData?.url?.startsWith('data:image/'))
-					) {
+					const rawNodeObj = canvasNode as unknown as {
+						file?: TFile | string | { path?: string };
+						filePath?: string;
+						url?: string;
+						type?: string;
+						unknownData?: {
+							type?: string;
+							url?: string;
+							file?: string;
+							kambasFlipH?: boolean;
+							kambasFlipV?: boolean;
+							kambasGrayscale?: boolean;
+							kambasPalette?: boolean;
+							kambasOpacity?: number;
+							originalWidth?: number;
+							originalHeight?: number;
+						};
+					};
+					const unknownData = rawNodeObj.unknownData;
+
+					const nodeUrl = rawNodeObj.url || unknownData?.url;
+					let extractedPath: string | undefined;
+					if (rawNodeObj.file instanceof TFile) {
+						extractedPath = rawNodeObj.file.path;
+					} else if (typeof rawNodeObj.file === 'string') {
+						extractedPath = rawNodeObj.file;
+					} else if (rawNodeObj.file && typeof rawNodeObj.file === 'object' && 'path' in rawNodeObj.file) {
+						extractedPath = (rawNodeObj.file as { path: string }).path;
+					} else if (rawNodeObj.filePath) {
+						extractedPath = rawNodeObj.filePath;
+					} else if (unknownData?.file) {
+						extractedPath = unknownData.file;
+					}
+
+					const isEmbeddedLink = Boolean(nodeUrl && nodeUrl.startsWith('data:image/'));
+					const ext = extractedPath ? extractedPath.split('.').pop()?.toLowerCase() || '' : '';
+					const isVaultImageFile = Boolean(
+						extractedPath &&
+						[
+							'png',
+							'jpg',
+							'jpeg',
+							'gif',
+							'bmp',
+							'webp',
+							'svg',
+							'avif',
+							'tiff',
+							'tif',
+						].includes(ext)
+					);
+
+					if (isEmbeddedLink || isVaultImageFile) {
 						hasAnyMedia = true;
 					}
 
-					if (unknownData?.type === 'file' && unknownData?.file) {
-						const ext = unknownData.file.split('.').pop()?.toLowerCase() || '';
-						if (
-							[
-								'png',
-								'jpg',
-								'jpeg',
-								'gif',
-								'bmp',
-								'webp',
-								'svg',
-								'avif',
-								'tiff',
-								'tif',
-							].includes(ext)
-						) {
-							hasNativeImage = true;
-						}
+					if (isVaultImageFile) {
+						hasNativeImage = true;
 					}
 
 					if (unknownData?.kambasFlipH) isFlippedH = true;
