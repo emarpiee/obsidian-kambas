@@ -11,6 +11,7 @@ export class CanvasSelectionZoom {
 	private plugin: KambasPlugin;
 	private focusedZoomNodeEl: Element | null = null;
 	private focusedZoomNodeId: string | null = null;
+	private focusedZoomSelectionKey: string | null = null;
 
 	constructor(plugin: KambasPlugin) {
 		this.plugin = plugin;
@@ -69,6 +70,11 @@ export class CanvasSelectionZoom {
 		const selectedNodes = this.getSelectedNodes(canvas);
 		const currentFirstEl = selectedNodes[0]?.nodeEl ?? null;
 
+		// Build selection key based on current selected node objects
+		const currentSelectionKey = selectedNodes.length > 0
+			? selectedNodes.map((n) => (n as unknown as { id?: string }).id ?? n.x + ',' + n.y).sort().join('|')
+			: null;
+
 		// Only intercept if there's a selection or we're already zoomed in
 		if (!currentFirstEl && !this.focusedZoomNodeEl) return;
 
@@ -83,22 +89,25 @@ export class CanvasSelectionZoom {
 			window.setTimeout(() => wrapperEl.classList.remove('kambas-smooth-zoom'), 350);
 		}
 
-		// Determine if same node as last zoom-in (by DOM ref)
-		const isSameNode = this.focusedZoomNodeEl !== null && this.focusedZoomNodeEl === currentFirstEl;
+		// Determine if same selection as last zoom-in
+		const isSameSelection = (this.focusedZoomNodeEl !== null || this.focusedZoomSelectionKey !== null) &&
+			(this.focusedZoomSelectionKey === currentSelectionKey || (this.focusedZoomSelectionKey === null && this.focusedZoomNodeEl === currentFirstEl));
 
-		if (isSameNode) {
-			// Same node pressed again — ZOOM OUT to fit whole canvas
+		if (isSameSelection) {
+			// Same selection pressed again — ZOOM OUT to fit whole canvas
 			this.focusedZoomNodeId = null;
 			this.focusedZoomNodeEl = null;
+			this.focusedZoomSelectionKey = null;
 			if (typeof canvas.zoomToFit === 'function') {
 				try { canvas.zoomToFit(); } catch { /* ignore */ }
 			}
 			return;
 		}
 
-		// New node or first press — ZOOM IN to selection
+		// New selection or first press — ZOOM IN to selection
 		this.focusedZoomNodeId = null;
 		this.focusedZoomNodeEl = currentFirstEl;
+		this.focusedZoomSelectionKey = currentSelectionKey;
 
 		this.zoomToNodes(canvas, selectedNodes);
 	}
