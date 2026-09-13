@@ -2496,24 +2496,17 @@ export class CanvasImageHandler {
 				) as unknown as CanvasItemView | null;
 				if (!activeView || activeView.getViewType() !== 'canvas') return;
 
-				// Open panel if not currently open
-				if (!this.tagFilterPanelEl?.isConnected) {
-					this.openTagFilterPanel(activeView);
-				}
-
-				// Switch tab to 'tag' if on 'color'
-				if (this.activeFilterTab !== 'tag') {
+				// If panel is currently open and on 'color' tab, switch tab to 'tag'
+				if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab !== 'tag') {
 					this.activeFilterTab = 'tag';
-					if (this.tagFilterPanelEl?.isConnected) {
-						const tagTabEl = this.tagFilterPanelEl.querySelector(
-							'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)'
-						);
-						const colorTabEl = this.tagFilterPanelEl.querySelector(
-							'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(2)'
-						);
-						tagTabEl?.classList.add('is-active');
-						colorTabEl?.classList.remove('is-active');
-					}
+					const tagTabEl = this.tagFilterPanelEl.querySelector(
+						'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)'
+					);
+					const colorTabEl = this.tagFilterPanelEl.querySelector(
+						'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(2)'
+					);
+					tagTabEl?.classList.add('is-active');
+					colorTabEl?.classList.remove('is-active');
 				}
 
 				// Set focus on this specific tag filter
@@ -4264,6 +4257,7 @@ export class CanvasImageHandler {
 			'is-active',
 			filtersActive || panelOpen
 		);
+		this.tagToolbarBtn.classList.toggle('has-filter', filtersActive);
 
 		if (this.tagToolbarClearBtn) {
 			this.tagToolbarClearBtn.style.display = filtersActive ? '' : 'none';

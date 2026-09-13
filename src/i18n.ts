@@ -287,7 +287,7 @@ const en: TranslationSchema = {
 	tagPlaceholder: '#tag, press Enter to add',
 	tagFilterPanel: 'Filter by tag',
 	tagClearFilter: 'Clear filter',
-	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
+	tagNodesCount: (count: number) => `${count} item${count === 1 ? '' : 's'}`,
 	tagPublishToVault: 'Sync tags to vault',
 	tagPublishToVaultDesc:
 		"When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian's tag pane and search.",

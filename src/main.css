@@ -1211,6 +1211,10 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	opacity: 1;
 }
 
+.kambas-tag-toolbar-btn.has-filter svg.svg-icon {
+	fill: currentColor;
+}
+
 .kambas-tag-toolbar-btn svg.svg-icon,
 .kambas-tag-toolbar-clear-btn svg.svg-icon {
 	width: 18px;
