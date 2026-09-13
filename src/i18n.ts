@@ -152,6 +152,28 @@ export interface TranslationSchema {
 	selectionZoomHotkeyName?: string;
 	selectionZoomHotkeyDesc?: string;
 
+	// Filter panel strings
+	dimOpacityLabel?: string;
+	resetOpacityTooltip?: string;
+	searchColorsPlaceholder?: string;
+	searchTagsPlaceholder?: string;
+	includeMinorColors?: string;
+	includeCardColors?: string;
+	displayColorName?: string;
+	inViewCount?: (count: number) => string;
+	itemCount?: (count: number) => string;
+	notInCurrentView?: string;
+	deleteTagTooltip?: string;
+	noColorsMatch?: string;
+	noTagsMatch?: string;
+	noTagsOnCanvas?: string;
+	extractingOrNoColors?: string;
+	clickToExtractColors?: string;
+	resetActiveFilter?: string;
+	quickTagsHeader?: string;
+	doneBtn?: string;
+	itemsSelectedTitle?: (title: string, count: number) => string;
+
 	// Media Filename Modal
 	namingModalTitleCopy?: string;
 	namingModalTitleMove?: string;
@@ -166,6 +188,7 @@ export interface TranslationSchema {
 	numberingFormatName?: string;
 	numberingFormatDesc?: string;
 	applyToAllRemaining?: (count: number) => string;
+	applyToAllRemainingDesc?: string;
 	numberFormatPadded2?: string;
 	numberFormatPadded3?: string;
 	numberFormatSimple?: string;
@@ -338,6 +361,28 @@ const en: TranslationSchema = {
 	selectionZoomHotkeyDesc:
 		'Press this hotkey when elements are selected to zoom to fit them. Press again to zoom back out (Default: Space).',
 
+	dimOpacityLabel: 'Dim opacity',
+	resetOpacityTooltip: 'Reset opacity to default',
+	searchColorsPlaceholder: 'Search colors…',
+	searchTagsPlaceholder: 'Search tags…',
+	includeMinorColors: 'Include minor colors',
+	includeCardColors: 'Include card colors',
+	displayColorName: 'Display color name',
+	inViewCount: (count: number) => `${count} in view`,
+	itemCount: (count: number) => `${count} item${count === 1 ? '' : 's'}`,
+	notInCurrentView: 'Not in current view',
+	deleteTagTooltip: 'Delete tag from all nodes',
+	noColorsMatch: 'No colors match.',
+	noTagsMatch: 'No tags match.',
+	noTagsOnCanvas: 'No tags on this canvas yet.',
+	extractingOrNoColors: 'Extracting or no colors found...',
+	clickToExtractColors: 'Click button above to extract image colors.',
+	resetActiveFilter: 'Reset active filter',
+	quickTagsHeader: 'Quick Tags:',
+	doneBtn: 'Done',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (${count} items selected)`,
+
 	namingModalTitleCopy: 'Copy Media to Vault',
 	namingModalTitleMove: 'Move Media to Vault',
 	namingModalVaultRoot: '/ (Vault root)',
@@ -354,6 +399,8 @@ const en: TranslationSchema = {
 		'Format used for incremental counters (e.g., when duplicate names exist or in batch exports).',
 	applyToAllRemaining: (count: number) =>
 		`Apply to all ${count} remaining items`,
+	applyToAllRemainingDesc:
+		'Uses the selected naming strategy and numbering format for all remaining items.',
 	numberFormatPadded2: '01, 02, 03... (2 Digits)',
 	numberFormatPadded3: '001, 002, 003... (3 Digits)',
 	numberFormatSimple: '1, 2, 3... (Unpadded)',
@@ -481,6 +528,97 @@ const zh: TranslationSchema = {
 	colorExtractModeDesc: '控制何时从画布图片中提取代表颜色以用于颜色筛选面板。',
 	noImageInClipboardNotice: '剪贴板中未找到图片',
 	unableAccessClipboardNotice: '无法访问剪贴板',
+
+	// Palette Swatches & Base64 Optimization
+	paletteSwatchCountName: '调色板色块数量',
+	paletteSwatchCountDesc:
+		'在图片上启用调色板时显示的代表颜色数量（3–10）。',
+	base64Heading: 'Base64 图片优化',
+	autoOptimizeBase64Name: '粘贴 / 拖放时自动优化 Base64',
+	autoOptimizeBase64Desc:
+		'自动将粘贴或拖放的 Base64 图片压缩为 WebP 格式（默认：禁用）。',
+	base64MaxDimensionName: '最大图片尺寸 (px)',
+	base64MaxDimensionDesc:
+		'在嵌入画布前，将超过此宽度/高度的图片调整大小（默认：2048px）。',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`已优化 ${count} 张嵌入图片，节省了约 ${kbSaved} KB！`,
+	noCompressibleNotice: '未选择可压缩的 base64 图片。',
+
+	// Visual Inspection (Loupe Tool)
+	loupeHeading: '视觉检查（放大镜工具）',
+	loupeHotkeyName: '放大镜激活热键',
+	loupeHotkeyDesc:
+		'悬停在图片节点上时按住此键以检查细节（默认：Q）。',
+	loupeZoomLevelName: '放大镜放大倍率',
+	loupeZoomLevelDesc:
+		'放大镜镜头的缩放倍数，从 1.5x 到 10.0x（默认：3.0x）。',
+	loupeSizeName: '放大镜镜头直径 (px)',
+	loupeSizeDesc:
+		'放大镜镜头的像素大小，从 100px 到 600px（默认：260px）。',
+	loupeShapeName: '放大镜镜头形状',
+	loupeShapeDesc:
+		'放大镜框的视觉形状（默认：圆形）。',
+	loupeShapeCircle: '圆形',
+	loupeShapeRounded: '圆角矩形',
+	loupeShapeSquare: '方形',
+	loupeSmoothingName: '放大镜运动平滑 / 缓冲',
+	loupeSmoothingDesc:
+		'在平移图片时平滑鼠标抖动（越低越平滑且灵敏度越低，越高跟踪越快。默认：0.50）。',
+
+	// Selection Zoom
+	selectionZoomHotkeyName: '缩放适应选中项热键',
+	selectionZoomHotkeyDesc:
+		'选中元素时按下此热键可缩放适应它们。再次按下可缩放回原位（默认：空格）。',
+
+	// Filter panel strings
+	dimOpacityLabel: '遮罩不透明度',
+	resetOpacityTooltip: '恢复默认不透明度',
+	searchColorsPlaceholder: '搜索颜色…',
+	searchTagsPlaceholder: '搜索标签…',
+	includeMinorColors: '包含次要颜色',
+	includeCardColors: '包含卡片颜色',
+	displayColorName: '显示颜色名称',
+	inViewCount: (count: number) => `当前视图 ${count} 个`,
+	itemCount: (count: number) => `${count} 个元素`,
+	notInCurrentView: '不在当前视图中',
+	deleteTagTooltip: '从所有节点中删除标签',
+	noColorsMatch: '没有匹配的颜色。',
+	noTagsMatch: '没有匹配的标签。',
+	noTagsOnCanvas: '当前画布尚无标签。',
+	extractingOrNoColors: '正在提取或未找到颜色…',
+	clickToExtractColors: '点击上方按钮提取图片颜色。',
+	resetActiveFilter: '重置当前筛选',
+	quickTagsHeader: '快捷标签：',
+	doneBtn: '完成',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title}（已选择 ${count} 项）`,
+
+	// Media Filename Modal
+	namingModalTitleCopy: '复制媒体到宝库',
+	namingModalTitleMove: '移动媒体到宝库',
+	namingModalVaultRoot: '/ (宝库根目录)',
+	destinationFolderNotice: '目标文件夹：',
+	chooseNamingStrategy:
+		'选择媒体文件在宝库中的命名方式：',
+	defaultFilenameOptTitle: '默认文件名',
+	tagFilenameOptTitle: '标签文件名',
+	noTagsFallbackNotice: '（当前媒体没有标签 - 将回退到默认设置）',
+	customFilenameOptTitle: '自定义文件名',
+	customFilenamePlaceholder: '例如 my-image',
+	numberingFormatName: '编号格式',
+	numberingFormatDesc:
+		'用于递增计数器的格式（例如，当存在重复名称或批量导出时）。',
+	applyToAllRemaining: (count: number) =>
+		`应用到剩余的 ${count} 项`,
+	applyToAllRemainingDesc:
+		'为所有剩余项使用选定的命名策略和编号格式。',
+	numberFormatPadded2: '01, 02, 03... (2 位数)',
+	numberFormatPadded3: '001, 002, 003... (3 位数)',
+	numberFormatSimple: '1, 2, 3... (无补零)',
+	numberFormatRomanUpper: 'I, II, III, IV... (大写罗马数字)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (小写罗马数字)',
+	numberFormatLetterUpper: 'A, B, C... (大写字母)',
+	numberFormatLetterLower: 'a, b, c... (小写字母)',
 };
 
 const zhTW: TranslationSchema = {
@@ -601,6 +739,77 @@ const zhTW: TranslationSchema = {
 	colorExtractModeDesc: '控制何時從畫布圖片中擷取代表顏色以用於顏色篩選面板。',
 	noImageInClipboardNotice: '剪貼簿中未找到圖片',
 	unableAccessClipboardNotice: '無法存取剪貼簿',
+
+	paletteSwatchCountName: '調色板色塊數量',
+	paletteSwatchCountDesc: '在圖片上啟用調色板時顯示的代表顏色數量（3–10）。',
+	base64Heading: 'Base64 圖片優化',
+	autoOptimizeBase64Name: '貼上 / 拖放時自動優化 Base64',
+	autoOptimizeBase64Desc: '自動將貼上或拖放的 Base64 圖片壓縮為 WebP 格式（預設：停用）。',
+	base64MaxDimensionName: '最大圖片尺寸 (px)',
+	base64MaxDimensionDesc: '在嵌入畫布前，將超過此寬度/高度的圖片調整大小（預設：2048px）。',
+	optimizedNotice: (count: number, kbSaved: number) => `已優化 ${count} 張嵌入圖片，節省了約 ${kbSaved} KB！`,
+	noCompressibleNotice: '未選擇可壓縮的 base64 圖片。',
+
+	loupeHeading: '視覺檢查（放大鏡工具）',
+	loupeHotkeyName: '放大鏡啟動熱鍵',
+	loupeHotkeyDesc: '懸停在圖片節點上時按住此鍵以檢查細節（預設：Q）。',
+	loupeZoomLevelName: '放大鏡放大倍率',
+	loupeZoomLevelDesc: '放大鏡鏡頭的縮放倍率，從 1.5x 到 10.0x（預設：3.0x）。',
+	loupeSizeName: '放大鏡鏡頭直徑 (px)',
+	loupeSizeDesc: '放大鏡鏡頭的像素大小，從 100px 到 600px（預設：260px）。',
+	loupeShapeName: '放大鏡鏡頭形狀',
+	loupeShapeDesc: '放大鏡框的視覺形狀（預設：圓形）。',
+	loupeShapeCircle: '圓形',
+	loupeShapeRounded: '圓角矩形',
+	loupeShapeSquare: '方形',
+	loupeSmoothingName: '放大鏡運動平滑 / 緩衝',
+	loupeSmoothingDesc: '在平移圖片時平滑滑鼠抖動（越低越平滑且靈敏度越低，越高追蹤越快。預設：0.50）。',
+
+	selectionZoomHotkeyName: '縮放適應選取項熱鍵',
+	selectionZoomHotkeyDesc: '選取元素時按下此熱鍵可縮放適應它們。再次按下可縮放回原位（預設：空白鍵）。',
+
+	dimOpacityLabel: '遮罩不透明度',
+	resetOpacityTooltip: '恢復預設不透明度',
+	searchColorsPlaceholder: '搜尋顏色…',
+	searchTagsPlaceholder: '搜尋標籤…',
+	includeMinorColors: '包含次要顏色',
+	includeCardColors: '包含卡片顏色',
+	displayColorName: '顯示顏色名稱',
+	inViewCount: (count: number) => `目前檢視 ${count} 個`,
+	itemCount: (count: number) => `${count} 個元素`,
+	notInCurrentView: '不在目前檢視中',
+	deleteTagTooltip: '從所有節點中刪除標籤',
+	noColorsMatch: '沒有符合的顏色。',
+	noTagsMatch: '沒有符合的標籤。',
+	noTagsOnCanvas: '目前畫布尚無標籤。',
+	extractingOrNoColors: '正在擷取或未找到顏色…',
+	clickToExtractColors: '點擊上方按鈕擷取圖片顏色。',
+	resetActiveFilter: '重置目前篩選',
+	quickTagsHeader: '快捷標籤：',
+	doneBtn: '完成',
+	itemsSelectedTitle: (title: string, count: number) => `${title}（已選擇 ${count} 項）`,
+
+	namingModalTitleCopy: '複製媒體至寶庫',
+	namingModalTitleMove: '移動媒體至寶庫',
+	namingModalVaultRoot: '/ (寶庫根目錄)',
+	destinationFolderNotice: '目標資料夾：',
+	chooseNamingStrategy: '選擇媒體檔案在寶庫中的命名方式：',
+	defaultFilenameOptTitle: '預設檔案名稱',
+	tagFilenameOptTitle: '標籤檔案名稱',
+	noTagsFallbackNotice: '（目前媒體沒有標籤 - 將退回至預設設定）',
+	customFilenameOptTitle: '自訂檔案名稱',
+	customFilenamePlaceholder: '例如 my-image',
+	numberingFormatName: '編號格式',
+	numberingFormatDesc: '用於遞增計數器的格式（例如，當存在重複名稱或批次匯出時）。',
+	applyToAllRemaining: (count: number) => `套用至剩餘的 ${count} 項`,
+	applyToAllRemainingDesc: '為所有剩餘項使用選定的命名策略和編號格式。',
+	numberFormatPadded2: '01, 02, 03... (2 位數)',
+	numberFormatPadded3: '001, 002, 003... (3 位數)',
+	numberFormatSimple: '1, 2, 3... (無補零)',
+	numberFormatRomanUpper: 'I, II, III, IV... (大寫羅馬數字)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (小寫羅馬數字)',
+	numberFormatLetterUpper: 'A, B, C... (大寫字母)',
+	numberFormatLetterLower: 'a, b, c... (小寫字母)',
 };
 
 const es: TranslationSchema = {
@@ -729,6 +938,93 @@ const es: TranslationSchema = {
 		'Controla cuándo se extraen los colores dominantes de las imágenes del lienzo para el panel de filtro de color.',
 	noImageInClipboardNotice: 'No se encontró ninguna imagen en el portapapeles',
 	unableAccessClipboardNotice: 'No se puede acceder al portapapeles',
+
+	paletteSwatchCountName: 'Muestras de la paleta de colores',
+	paletteSwatchCountDesc:
+		'Número de colores dominantes para mostrar cuando la paleta de colores está activada en una imagen (3–10).',
+	base64Heading: 'Optimización de imágenes Base64',
+	autoOptimizeBase64Name: 'Auto-optimizar Base64 al pegar / soltar',
+	autoOptimizeBase64Desc:
+		'Comprime automáticamente imágenes Base64 pegadas o soltadas a formato WebP (Predeterminado: Desactivado).',
+	base64MaxDimensionName: 'Dimensión máxima de imagen (px)',
+	base64MaxDimensionDesc:
+		'Redimensiona imágenes que superen este ancho/alto antes de incrustarlas en el lienzo (Predeterminado: 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`¡${count} imagen(es) incrustada(s) optimizada(s), ~${kbSaved} KB guardados!`,
+	noCompressibleNotice: 'No se seleccionaron imágenes base64 compresibles.',
+
+	loupeHeading: 'Inspección visual (Herramienta Lupa)',
+	loupeHotkeyName: 'Atajo para activar la lupa',
+	loupeHotkeyDesc:
+		'Mantenga presionada esta tecla sobre un nodo de imagen para inspeccionar detalles (Predeterminado: Q).',
+	loupeZoomLevelName: 'Nivel de magnificación de la lupa',
+	loupeZoomLevelDesc:
+		'Multiplicador de zoom para la lupa de 1.5x a 10.0x (Predeterminado: 3.0x).',
+	loupeSizeName: 'Diámetro de la lente de la lupa (px)',
+	loupeSizeDesc:
+		'Tamaño de la lente de la lupa en píxeles de 100px a 600px (Predeterminado: 260px).',
+	loupeShapeName: 'Forma de la lente de la lupa',
+	loupeShapeDesc:
+		'Forma visual del marco de la lupa (Predeterminado: Círculo).',
+	loupeShapeCircle: 'Círculo',
+	loupeShapeRounded: 'Rectángulo redondeado',
+	loupeShapeSquare: 'Cuadrado',
+	loupeSmoothingName: 'Suavizado / amortiguación de movimiento de la lupa',
+	loupeSmoothingDesc:
+		'Suaviza el temblor del ratón al desplazarse por las imágenes (Menor = más suave, Mayor = seguimiento más rápido. Predeterminado: 0.50).',
+
+	selectionZoomHotkeyName: 'Atajo para ajustar zoom a la selección',
+	selectionZoomHotkeyDesc:
+		'Presione este atajo cuando haya elementos seleccionados para ajustar el zoom a ellos (Predeterminado: Espacio).',
+
+	dimOpacityLabel: 'Opacidad del atenuado',
+	resetOpacityTooltip: 'Restablecer opacidad predeterminada',
+	searchColorsPlaceholder: 'Buscar colores…',
+	searchTagsPlaceholder: 'Buscar etiquetas…',
+	includeMinorColors: 'Incluir colores secundarios',
+	includeCardColors: 'Incluir colores de tarjeta',
+	displayColorName: 'Mostrar nombre del color',
+	inViewCount: (count: number) => `${count} en vista`,
+	itemCount: (count: number) => `${count} elemento${count === 1 ? '' : 's'}`,
+	notInCurrentView: 'No está en la vista actual',
+	deleteTagTooltip: 'Eliminar etiqueta de todos los nodos',
+	noColorsMatch: 'No coinciden colores.',
+	noTagsMatch: 'No coinciden etiquetas.',
+	noTagsOnCanvas: 'Aún no hay etiquetas en este lienzo.',
+	extractingOrNoColors: 'Extrayendo o no se encontraron colores…',
+	clickToExtractColors: 'Haga clic en el botón de arriba para extraer colores.',
+	resetActiveFilter: 'Restablecer filtro activo',
+	quickTagsHeader: 'Etiquetas rápidas:',
+	doneBtn: 'Listo',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (${count} elementos seleccionados)`,
+
+	namingModalTitleCopy: 'Copiar archivo multimedia a la bóveda',
+	namingModalTitleMove: 'Mover archivo multimedia a la bóveda',
+	namingModalVaultRoot: '/ (Raíz de la bóveda)',
+	destinationFolderNotice: 'Carpeta de destino: ',
+	chooseNamingStrategy:
+		'Elija cómo nombrar el archivo multimedia en su bóveda:',
+	defaultFilenameOptTitle: 'Nombre predeterminado',
+	tagFilenameOptTitle: 'Nombre por etiqueta',
+	noTagsFallbackNotice:
+		'(Sin etiquetas en el medio actual: se usará el predeterminado)',
+	customFilenameOptTitle: 'Nombre personalizado',
+	customFilenamePlaceholder: 'ej. mi-imagen',
+	numberingFormatName: 'Formato de numeración',
+	numberingFormatDesc:
+		'Formato utilizado para contadores incrementales (ej. duplicados o exportaciones en lote).',
+	applyToAllRemaining: (count: number) =>
+		`Aplicar a los ${count} elementos restantes`,
+	applyToAllRemainingDesc:
+		'Utiliza la estrategia de nombre y formato seleccionados para todos los elementos restantes.',
+	numberFormatPadded2: '01, 02, 03... (2 dígitos)',
+	numberFormatPadded3: '001, 002, 003... (3 dígitos)',
+	numberFormatSimple: '1, 2, 3... (Sin relleno)',
+	numberFormatRomanUpper: 'I, II, III, IV... (Romano mayúscula)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (Romano minúscula)',
+	numberFormatLetterUpper: 'A, B, C... (Alfabeto mayúscula)',
+	numberFormatLetterLower: 'a, b, c... (Alfabeto minúscula)',
 };
 
 const fr: TranslationSchema = {
@@ -857,6 +1153,95 @@ const fr: TranslationSchema = {
 		'Contrôle le moment où les couleurs dominantes sont extraites des images du canevas pour le panneau de filtre de couleur.',
 	noImageInClipboardNotice: 'Aucune image trouvée dans le presse-papiers',
 	unableAccessClipboardNotice: 'Impossible d’accéder au presse-papiers',
+
+	paletteSwatchCountName: 'Échantillons de la palette de couleurs',
+	paletteSwatchCountDesc:
+		'Nombre de couleurs dominantes à afficher lorsque la palette de couleurs est activée sur une image (3–10).',
+	base64Heading: 'Optimisation des images Base64',
+	autoOptimizeBase64Name:
+		'Optimiser automatiquement le Base64 au coller / déposer',
+	autoOptimizeBase64Desc:
+		'Compresse automatiquement les images Base64 collées ou déposées au format WebP (Par défaut : Désactivé).',
+	base64MaxDimensionName: 'Dimension maximale de l\'image (px)',
+	base64MaxDimensionDesc:
+		'Redimensionne les images dépassant cette largeur/hauteur avant l\'intégration sur le canevas (Par défaut : 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`${count} image(s) intégrée(s) optimisée(s), ~${kbSaved} KO économisés !`,
+	noCompressibleNotice: 'Aucune image base64 compressible sélectionnée.',
+
+	loupeHeading: 'Inspection visuelle (Outil Loupe)',
+	loupeHotkeyName: 'Raccourci d\'activation de la loupe',
+	loupeHotkeyDesc:
+		'Maintenez cette touche enfoncée en survolant un nœud d\'image pour l\'inspecter (Par défaut : Q).',
+	loupeZoomLevelName: 'Niveau de grossissement de la loupe',
+	loupeZoomLevelDesc:
+		'Multiplicateur de zoom pour la loupe de 1.5x à 10.0x (Par défaut : 3.0x).',
+	loupeSizeName: 'Diamètre de la loupe (px)',
+	loupeSizeDesc:
+		'Taille de la loupe en pixels de 100px à 600px (Par défaut : 260px).',
+	loupeShapeName: 'Forme de la loupe',
+	loupeShapeDesc:
+		'Forme visuelle du cadre de la loupe (Par défaut : Cercle).',
+	loupeShapeCircle: 'Cercle',
+	loupeShapeRounded: 'Rectangle arrondi',
+	loupeShapeSquare: 'Carré',
+	loupeSmoothingName: 'Lissage / amortissement du mouvement de la loupe',
+	loupeSmoothingDesc:
+		'Lisse les tremblements de la souris lors du déplacement (Plus bas = plus lisse, Plus haut = suivi plus rapide. Par défaut : 0.50).',
+
+	selectionZoomHotkeyName: 'Raccourci pour ajuster le zoom à la sélection',
+	selectionZoomHotkeyDesc:
+		'Appuyez sur ce raccourci lorsque des éléments sont sélectionnés pour faire un zoom ajusté (Par défaut : Espace).',
+
+	dimOpacityLabel: 'Opacité d\'atténuation',
+	resetOpacityTooltip: 'Réinitialiser l\'opacité par défaut',
+	searchColorsPlaceholder: 'Rechercher des couleurs…',
+	searchTagsPlaceholder: 'Rechercher des étiquettes…',
+	includeMinorColors: 'Inclure les couleurs secondaires',
+	includeCardColors: 'Inclure les couleurs de carte',
+	displayColorName: 'Afficher le nom de la couleur',
+	inViewCount: (count: number) => `${count} visibles`,
+	itemCount: (count: number) => `${count} élément${count === 1 ? '' : 's'}`,
+	notInCurrentView: 'Pas dans la vue actuelle',
+	deleteTagTooltip: 'Supprimer l\'étiquette de tous les nœuds',
+	noColorsMatch: 'Aucune couleur ne correspond.',
+	noTagsMatch: 'Aucune étiquette ne correspond.',
+	noTagsOnCanvas: 'Aucune étiquette sur ce canevas pour le moment.',
+	extractingOrNoColors: 'Extraction en cours ou aucune couleur trouvée…',
+	clickToExtractColors:
+		'Cliquez sur le bouton ci-dessus pour extraire les couleurs.',
+	resetActiveFilter: 'Réinitialiser le filtre actif',
+	quickTagsHeader: 'Étiquettes rapides :',
+	doneBtn: 'Terminé',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (${count} éléments sélectionnés)`,
+
+	namingModalTitleCopy: 'Copier le fichier média dans le coffre',
+	namingModalTitleMove: 'Déplacer le fichier média dans le coffre',
+	namingModalVaultRoot: '/ (Racine du coffre)',
+	destinationFolderNotice: 'Dossier de destination : ',
+	chooseNamingStrategy:
+		'Choisissez comment le fichier média doit être nommé dans votre coffre :',
+	defaultFilenameOptTitle: 'Nom de fichier par défaut',
+	tagFilenameOptTitle: 'Nom de fichier par étiquette',
+	noTagsFallbackNotice:
+		'(Aucune étiquette sur le média - retour à la valeur par défaut)',
+	customFilenameOptTitle: 'Nom de fichier personnalisé',
+	customFilenamePlaceholder: 'ex. mon-image',
+	numberingFormatName: 'Format de numérotation',
+	numberingFormatDesc:
+		'Format utilisé pour les compteurs incrémentiels (ex. doublons ou exportations par lots).',
+	applyToAllRemaining: (count: number) =>
+		`Appliquer aux ${count} éléments restants`,
+	applyToAllRemainingDesc:
+		'Utilise la stratégie de nommage et le format de numérotation sélectionnés pour les éléments restants.',
+	numberFormatPadded2: '01, 02, 03... (2 chiffres)',
+	numberFormatPadded3: '001, 002, 003... (3 chiffres)',
+	numberFormatSimple: '1, 2, 3... (Non complété)',
+	numberFormatRomanUpper: 'I, II, III, IV... (Romain majuscule)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (Romain minuscule)',
+	numberFormatLetterUpper: 'A, B, C... (Alphabet majuscule)',
+	numberFormatLetterLower: 'a, b, c... (Alphabet minuscule)',
 };
 
 const de: TranslationSchema = {
@@ -986,6 +1371,95 @@ const de: TranslationSchema = {
 		'Steuert, wann dominante Farben aus Canvas-Bildern für das Farbfilter-Panel extrahiert werden.',
 	noImageInClipboardNotice: 'Kein Bild in der Zwischenablage gefunden',
 	unableAccessClipboardNotice: 'Zugriff auf die Zwischenablage nicht möglich',
+
+	paletteSwatchCountName: 'Farbpaletten-Muster',
+	paletteSwatchCountDesc:
+		'Anzahl der zu angezeigten dominanten Farben, wenn die Farbpalette auf einem Bild aktiviert ist (3–10).',
+	base64Heading: 'Base64-Bildoptimierung',
+	autoOptimizeBase64Name:
+		'Base64 beim Einfügen / Ablegen automatisch optimieren',
+	autoOptimizeBase64Desc:
+		'Komprimiert eingefügte oder abgelegte Base64-Bilder automatisch in das WebP-Format (Standard: Deaktiviert).',
+	base64MaxDimensionName: 'Maximale Bildabmessung (px)',
+	base64MaxDimensionDesc:
+		'Skaliert Bilder neu, die diese Breite/Höhe überschreiten, bevor sie auf dem Canvas eingebettet werden (Standard: 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`${count} eingebettete(s) Bild(er) optimiert, ~${kbSaved} KB gespart!`,
+	noCompressibleNotice: 'Keine komprimierbaren Base64-Bilder ausgewählt.',
+
+	loupeHeading: 'Visuelle Inspektion (Lupe-Werkzeug)',
+	loupeHotkeyName: 'Aktivierungs-Hot-Key für Lupe',
+	loupeHotkeyDesc:
+		'Halten Sie diese Taste gedrückt, während Sie über einen Bild-Knoten fahren, um Details zu prüfen (Standard: Q).',
+	loupeZoomLevelName: 'Vergrößerungsstufe der Lupe',
+	loupeZoomLevelDesc:
+		'Zoom-Multiplikator für die Lupe von 1,5x bis 10,0x (Standard: 3,0x).',
+	loupeSizeName: 'Linsendurchmesser der Lupe (px)',
+	loupeSizeDesc:
+		'Größe der Lupenlinse in Pixel von 100px bis 600px (Standard: 260px).',
+	loupeShapeName: 'Form der Lupenlinse',
+	loupeShapeDesc: 'Visuelle Form des Lupenrahmens (Standard: Kreis).',
+	loupeShapeCircle: 'Kreis',
+	loupeShapeRounded: 'Abgerundetes Rechteck',
+	loupeShapeSquare: 'Quadrat',
+	loupeSmoothingName: 'Lupen-Glättung / Dämpfung',
+	loupeSmoothingDesc:
+		'Glättet Mauszeiger-Ruckeln beim Bewegen über Bilder (Niedriger = glatter, Höher = schneller. Standard: 0,50).',
+
+	selectionZoomHotkeyName:
+		'Hot-Key zum Anpassen des Zooms an die Auswahl',
+	selectionZoomHotkeyDesc:
+		'Drücken Sie diesen Hot-Key bei ausgewählten Elementen, um sie einzupassen (Standard: Leertaste).',
+
+	dimOpacityLabel: 'Abdunkelungs-Deckkraft',
+	resetOpacityTooltip: 'Deckkraft auf Standard zurücksetzen',
+	searchColorsPlaceholder: 'Farben suchen…',
+	searchTagsPlaceholder: 'Tags suchen…',
+	includeMinorColors: 'Nebenfarben einschließen',
+	includeCardColors: 'Kartenfarben einschließen',
+	displayColorName: 'Farbnamen anzeigen',
+	inViewCount: (count: number) => `${count} sichtbar`,
+	itemCount: (count: number) => `${count} Element${count === 1 ? '' : 'e'}`,
+	notInCurrentView: 'Nicht in aktueller Ansicht',
+	deleteTagTooltip: 'Tag von allen Knoten löschen',
+	noColorsMatch: 'Keine passenden Farben.',
+	noTagsMatch: 'Keine passenden Tags.',
+	noTagsOnCanvas: 'Noch keine Tags auf diesem Canvas.',
+	extractingOrNoColors: 'Extrahiere oder keine Farben gefunden…',
+	clickToExtractColors:
+		'Klicken Sie auf die Schaltfläche oben, um Bildfarben zu extrahieren.',
+	resetActiveFilter: 'Aktiven Filter zurücksetzen',
+	quickTagsHeader: 'Schnell-Tags:',
+	doneBtn: 'Fertig',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (${count} Elemente ausgewählt)`,
+
+	namingModalTitleCopy: 'Medien in den Vault kopieren',
+	namingModalTitleMove: 'Medien in den Vault verschieben',
+	namingModalVaultRoot: '/ (Vault-Stammverzeichnis)',
+	destinationFolderNotice: 'Zielordner: ',
+	chooseNamingStrategy:
+		'Wählen Sie, wie die Mediendatei in Ihrem Vault benannt werden soll:',
+	defaultFilenameOptTitle: 'Standard-Dateiname',
+	tagFilenameOptTitle: 'Tag-Dateiname',
+	noTagsFallbackNotice:
+		'(Keine Tags beim aktuellen Medium vorhanden - Standard wird verwendet)',
+	customFilenameOptTitle: 'Benutzerdefinierter Dateiname',
+	customFilenamePlaceholder: 'z.B. mein-bild',
+	numberingFormatName: 'Nummerierungsformat',
+	numberingFormatDesc:
+		'Format für fortlaufende Zähler (z.B. bei Duplikaten oder Staperexporten).',
+	applyToAllRemaining: (count: number) =>
+		`Auf alle verbleibenden ${count} Elemente anwenden`,
+	applyToAllRemainingDesc:
+		'Verwendet die gewählte Benennungsstrategie und das Nummerierungsformat für alle verbleibenden Elemente.',
+	numberFormatPadded2: '01, 02, 03... (2 Stellen)',
+	numberFormatPadded3: '001, 002, 003... (3 Stellen)',
+	numberFormatSimple: '1, 2, 3... (Ungefüllt)',
+	numberFormatRomanUpper: 'I, II, III, IV... (Römisch groß)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (Römisch klein)',
+	numberFormatLetterUpper: 'A, B, C... (Alphabet groß)',
+	numberFormatLetterLower: 'a, b, c... (Alphabet klein)',
 };
 
 const ja: TranslationSchema = {
@@ -1104,6 +1578,9 @@ const ja: TranslationSchema = {
 	tagZoomOnSelectName: 'タグ選択時の自動ズーム',
 	tagZoomOnSelectDesc:
 		'パネルでタグフィルターを選択または解除したときに、表示要素に合わせて自動的にズーム・フィットさせます。',
+	paletteSwatchCountName: 'カラーパレットのスウォッチ数',
+	paletteSwatchCountDesc:
+		'画像でカラーパレットを有効にした際に表示する主要な色の数（3～10）。',
 	paletteCopySeparatorName: 'カラーパレットコピーの区切り文字',
 	paletteCopySeparatorDesc:
 		'カラーパレットのコピーボタンを押してすべてのHEX値をクリップボードにコピーする際の区切り文字。',
@@ -1112,6 +1589,94 @@ const ja: TranslationSchema = {
 		'カラーフィルターパネル用にキャンバス画像から主要な色を抽出するタイミングを制御します。',
 	noImageInClipboardNotice: 'クリップボードに画像が見つかりません',
 	unableAccessClipboardNotice: 'クリップボードにアクセスできません',
+
+	// Base64 Optimization
+	base64Heading: 'Base64画像の最適化',
+	autoOptimizeBase64Name: '貼り付け / ドロップ時にBase64を自動最適化',
+	autoOptimizeBase64Desc:
+		'貼り付けまたはドロップされたBase64画像を自動的にWebP形式に圧縮します（デフォルト: 無効）。',
+	base64MaxDimensionName: '最大画像寸法 (px)',
+	base64MaxDimensionDesc:
+		'キャンバスに埋め込む前に、この幅/高さを超える画像をリサイズします（デフォルト: 2048px）。',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`${count}件の埋め込み画像を最適化し、約${kbSaved}KB削減しました！`,
+	noCompressibleNotice: '圧縮可能なBase64画像が選択されていません。',
+
+	// Visual Inspection (Loupe Tool)
+	loupeHeading: '視覚検査 (ルーペツール)',
+	loupeHotkeyName: 'ルーペ起動ホットキー',
+	loupeHotkeyDesc:
+		'画像ノードの上にホバーしながらこのキーを押し続けると詳細を検査できます（デフォルト: Q）。',
+	loupeZoomLevelName: 'ルーペ拡大倍率',
+	loupeZoomLevelDesc:
+		'ルーペレンズのズーム倍率を1.5倍から10.0倍まで設定します（デフォルト: 3.0倍）。',
+	loupeSizeName: 'ルーペレンズの直径 (px)',
+	loupeSizeDesc:
+		'ルーペレンズのサイズを100pxから600pxの間で設定します（デフォルト: 260px）。',
+	loupeShapeName: 'ルーペレンズの形状',
+	loupeShapeDesc:
+		'拡大レンズフレームの視覚形状（デフォルト: 円形）。',
+	loupeShapeCircle: '円形',
+	loupeShapeRounded: '角丸長方形',
+	loupeShapeSquare: '正方形',
+	loupeSmoothingName: 'ルーペ移動のスムージング / 減衰',
+	loupeSmoothingDesc:
+		'画像上をパン移動する際のマウスのブレを滑らかにします（低い値 = より滑らか & 低感度、高い値 = 高速追従。デフォルト: 0.50）。',
+
+	// Selection Zoom
+	selectionZoomHotkeyName: '選択要素へのズームフィットホットキー',
+	selectionZoomHotkeyDesc:
+		'要素が選択されている時にこのホットキーを押すと全体にフィットするようズームします。再度押すと元に戻ります（デフォルト: Space）。',
+
+	// Filter panel strings
+	dimOpacityLabel: '減衰不透明度',
+	resetOpacityTooltip: '不透明度をデフォルトに戻す',
+	searchColorsPlaceholder: '色を検索…',
+	searchTagsPlaceholder: 'タグを検索…',
+	includeMinorColors: 'サブカラーを含める',
+	includeCardColors: 'カードカラーを含める',
+	displayColorName: '色名を表示',
+	inViewCount: (count: number) => `表示中 ${count} 件`,
+	itemCount: (count: number) => `${count} 件の要素`,
+	notInCurrentView: '現在のビュー外',
+	deleteTagTooltip: 'すべてのノードからタグを削除',
+	noColorsMatch: '一致する色がありません。',
+	noTagsMatch: '一致するタグがありません。',
+	noTagsOnCanvas: 'このキャンバスにはまだタグがありません。',
+	extractingOrNoColors: '抽出中または色が見つかりません…',
+	clickToExtractColors: '上のボタンをクリックして画像の色を抽出してください。',
+	resetActiveFilter: 'アクティブなフィルターを解除',
+	quickTagsHeader: 'クイックタグ:',
+	doneBtn: '完了',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (${count}件の要素を選択中)`,
+
+	// Media Filename Modal
+	namingModalTitleCopy: 'メディアをVaultにコピー',
+	namingModalTitleMove: 'メディアをVaultに移動',
+	namingModalVaultRoot: '/ (Vault ルート)',
+	destinationFolderNotice: '保存先フォルダ: ',
+	chooseNamingStrategy:
+		'Vault内でのメディアファイルの命名方法を選択してください:',
+	defaultFilenameOptTitle: 'デフォルトファイル名',
+	tagFilenameOptTitle: 'タグファイル名',
+	noTagsFallbackNotice: '(現在のメディアにタグがありません - デフォルトに戻ります)',
+	customFilenameOptTitle: 'カスタムファイル名',
+	customFilenamePlaceholder: '例: my-image',
+	numberingFormatName: '連番フォーマット',
+	numberingFormatDesc:
+		'同名ファイルが存在する場合や一括エクスポート時に使用される連番カウンターの形式。',
+	applyToAllRemaining: (count: number) =>
+		`残りの${count}件すべてに適用`,
+	applyToAllRemainingDesc:
+		'選択した命名戦略と連番フォーマットを残りのすべてのアイテムに適用します。',
+	numberFormatPadded2: '01, 02, 03... (2桁)',
+	numberFormatPadded3: '001, 002, 003... (3桁)',
+	numberFormatSimple: '1, 2, 3... (パディングなし)',
+	numberFormatRomanUpper: 'I, II, III, IV... (ローマ数字大文字)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (ローマ数字小文字)',
+	numberFormatLetterUpper: 'A, B, C... (アルファベット大文字)',
+	numberFormatLetterLower: 'a, b, c... (アルファベット小文字)',
 };
 
 const ko: TranslationSchema = {
@@ -1237,6 +1802,89 @@ const ko: TranslationSchema = {
 		'색상 필터 패널용으로 캔버스 이미지에서 대표 색상을 추출할 시점을 제어합니다.',
 	noImageInClipboardNotice: '클립보드에서 이미지를 찾을 수 없습니다',
 	unableAccessClipboardNotice: '클립보드에 접근할 수 없습니다',
+
+	paletteSwatchCountName: '색상 팔레트 스와치',
+	paletteSwatchCountDesc:
+		'이미지에 색상 팔레트가 활성화되었을 때 표시할 주요 색상 수입니다 (3–10).',
+	base64Heading: 'Base64 이미지 최적화',
+	autoOptimizeBase64Name: '붙여넣기 / 드롭 시 Base64 자동 최적화',
+	autoOptimizeBase64Desc:
+		'붙여넣거나 드롭한 Base64 이미지를 WebP 형식으로 자동 압축합니다 (기본값: 비활성화).',
+	base64MaxDimensionName: '최대 이미지 크기 (px)',
+	base64MaxDimensionDesc:
+		'캔버스에 임베드하기 전에 이 너비/높이를 초과하는 이미지의 크기를 조정합니다 (기본값: 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`${count}개의 임베디드 이미지가 최적화되었으며, 약 ${kbSaved} KB를 절약했습니다!`,
+	noCompressibleNotice: '압축 가능한 base64 이미지가 선택되지 않았습니다.',
+
+	loupeHeading: '시각적 검사 (돋보기 도구)',
+	loupeHotkeyName: '돋보기 활성화 단축키',
+	loupeHotkeyDesc:
+		'이미지 노드 위에 마우스를 올린 상태에서 이 키를 누르고 있으면 세부 정보를 검사합니다 (기본값: Q).',
+	loupeZoomLevelName: '돋보기 확대 배율',
+	loupeZoomLevelDesc:
+		'돋보기 렌즈의 확대 배율을 1.5x에서 10.0x까지 설정합니다 (기본값: 3.0x).',
+	loupeSizeName: '돋보기 렌즈 직경 (px)',
+	loupeSizeDesc: '돋보기 렌즈의 픽셀 크기 (100px ~ 600px, 기본값: 260px).',
+	loupeShapeName: '돋보기 렌즈 모양',
+	loupeShapeDesc: '돋보기 프레임의 시각적 모양입니다 (기본값: 원형).',
+	loupeShapeCircle: '원형',
+	loupeShapeRounded: '둥근 사각형',
+	loupeShapeSquare: '정사각형',
+	loupeSmoothingName: '돋보기 이동 부드럽게하기 / 감쇄',
+	loupeSmoothingDesc:
+		'이미지를 이동할 때 마우스 떨림을 부드럽게 합니다 (낮음 = 더 부드럽고 둔감함, 높음 = 빠른 추적. 기본값: 0.50).',
+
+	selectionZoomHotkeyName: '선택 영역 맞춤 확대 단축키',
+	selectionZoomHotkeyDesc:
+		'요소가 선택되었을 때 이 단축키를 누르면 전체 화면에 맞게 확대됩니다 (기본값: 스페이스바).',
+
+	dimOpacityLabel: '어둡게 불투명도',
+	resetOpacityTooltip: '불투명도 기본값으로 복원',
+	searchColorsPlaceholder: '색상 검색…',
+	searchTagsPlaceholder: '태그 검색…',
+	includeMinorColors: '보조 색상 포함',
+	includeCardColors: '카드 색상 포함',
+	displayColorName: '색상 이름 표시',
+	inViewCount: (count: number) => `현재 화면에 ${count}개`,
+	itemCount: (count: number) => `${count}개 항목`,
+	notInCurrentView: '현재 화면에 없음',
+	deleteTagTooltip: '모든 노드에서 태그 삭제',
+	noColorsMatch: '일치하는 색상이 없습니다.',
+	noTagsMatch: '일치하는 태그가 없습니다.',
+	noTagsOnCanvas: '이 캔버스에는 아직 태그가 없습니다.',
+	extractingOrNoColors: '색상 추출 중이거나 발견되지 않았습니다…',
+	clickToExtractColors: '위 버튼을 클릭하여 이미지 색상을 추출하세요.',
+	resetActiveFilter: '활성 필터 초기화',
+	quickTagsHeader: '빠른 태그:',
+	doneBtn: '완료',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (${count}개 항목 선택됨)`,
+
+	namingModalTitleCopy: '보관함으로 미디어 복사',
+	namingModalTitleMove: '보관함으로 미디어 이동',
+	namingModalVaultRoot: '/ (보관함 루트)',
+	destinationFolderNotice: '대상 폴더: ',
+	chooseNamingStrategy:
+		'보관함에 저장할 미디어 파일의 이름 지정 방법을 선택하세요:',
+	defaultFilenameOptTitle: '기본 파일 이름',
+	tagFilenameOptTitle: '태그 파일 이름',
+	noTagsFallbackNotice: '(현재 미디어에 태그가 없음 - 기본값으로 설정됨)',
+	customFilenameOptTitle: '사용자 지정 파일 이름',
+	customFilenamePlaceholder: '예: my-image',
+	numberingFormatName: '번호 지정 형식',
+	numberingFormatDesc:
+		'중복 이름이 있거나 일괄 내보내기를 할 때 사용되는 카운터 형식입니다.',
+	applyToAllRemaining: (count: number) => `남은 ${count}개 항목 전체에 적용`,
+	applyToAllRemainingDesc:
+		'선택한 이름 지정 전략 및 번호 형식을 모든 남은 항목에 사용합니다.',
+	numberFormatPadded2: '01, 02, 03... (2자리)',
+	numberFormatPadded3: '001, 002, 003... (3자리)',
+	numberFormatSimple: '1, 2, 3... (패딩 없음)',
+	numberFormatRomanUpper: 'I, II, III, IV... (로마자 대문자)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (로마자 소문자)',
+	numberFormatLetterUpper: 'A, B, C... (알파벳 대문자)',
+	numberFormatLetterLower: 'a, b, c... (알파벳 소문자)',
 };
 
 const ru: TranslationSchema = {
@@ -1364,6 +2012,95 @@ const ru: TranslationSchema = {
 		'Управляет тем, когда преобладающие цвета извлекаются из изображений холста для панели фильтрации цветов.',
 	noImageInClipboardNotice: 'Изображение в буфере обмена не найдено',
 	unableAccessClipboardNotice: 'Не удалось получить доступ к буферу обмена',
+
+	paletteSwatchCountName: 'Образцы палитры цветов',
+	paletteSwatchCountDesc:
+		'Количество доминирующих цветов для отображения на изображении (3–10).',
+	base64Heading: 'Оптимизация изображений Base64',
+	autoOptimizeBase64Name:
+		'Авто-оптимизация Base64 при вставке / перетаскивании',
+	autoOptimizeBase64Desc:
+		'Автоматически сжимает вставленные изображения Base64 в формат WebP (По умолчанию: Отключено).',
+	base64MaxDimensionName: 'Максимальный размер изображения (px)',
+	base64MaxDimensionDesc:
+		'Изменяет размер изображений, превышающих эту ширину/высоту, перед внедрением (По умолчанию: 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`Оптимизировано ${count} встроенных изображений, сэкономлено ~${kbSaved} КБ!`,
+	noCompressibleNotice: 'Не выбраны сжимаемые изображения base64.',
+
+	loupeHeading: 'Визуальный осмотр (Инструмент Лупа)',
+	loupeHotkeyName: 'Горячая клавиша активации лупы',
+	loupeHotkeyDesc:
+		'Удерживайте эту клавишу при наведении на узел изображения (По умолчанию: Q).',
+	loupeZoomLevelName: 'Уровень увеличения лупы',
+	loupeZoomLevelDesc:
+		'Коэффициент увеличения для лупы от 1.5x до 10.0x (По умолчанию: 3.0x).',
+	loupeSizeName: 'Диаметр линзы лупы (px)',
+	loupeSizeDesc:
+		'Размер линзы лупы в пикселях от 100px до 600px (По умолчанию: 260px).',
+	loupeShapeName: 'Форма линзы лупы',
+	loupeShapeDesc: 'Форма рамки лупы (По умолчанию: Круг).',
+	loupeShapeCircle: 'Круг',
+	loupeShapeRounded: 'Закругленный прямоугольник',
+	loupeShapeSquare: 'Квадрат',
+	loupeSmoothingName: 'Сглаживание / затухание движения лупы',
+	loupeSmoothingDesc:
+		'Сглаживает дрожание мыши при перемещении (Ниже = глаже, Выше = быстрее. По умолчанию: 0.50).',
+
+	selectionZoomHotkeyName:
+		'Горячая клавиша масштабирования к выделенному',
+	selectionZoomHotkeyDesc:
+		'Нажмите эту клавишу при выделении элементов, чтобы приблизить их (По умолчанию: Пробел).',
+
+	dimOpacityLabel: 'Прозрачность затемнения',
+	resetOpacityTooltip: 'Сбросить прозрачность по умолчанию',
+	searchColorsPlaceholder: 'Поиск цветов…',
+	searchTagsPlaceholder: 'Поиск тегов…',
+	includeMinorColors: 'Включать второстепенные цвета',
+	includeCardColors: 'Включать цвета карточек',
+	displayColorName: 'Отображать название цвета',
+	inViewCount: (count: number) => `${count} в области видимости`,
+	itemCount: (count: number) => `${count} элемент${count === 1 ? '' : 'ов'}`,
+	notInCurrentView: 'Вне текущей области видимости',
+	deleteTagTooltip: 'Удалить тег со всех узлов',
+	noColorsMatch: 'Совпадающих цветов не найдено.',
+	noTagsMatch: 'Совпадающих тегов не найдено.',
+	noTagsOnCanvas: 'На этом холсте пока нет тегов.',
+	extractingOrNoColors: 'Извлечение или цвета не найдены…',
+	clickToExtractColors:
+		'Нажмите кнопку выше, чтобы извлечь цвета.',
+	resetActiveFilter: 'Сбросить активный фильтр',
+	quickTagsHeader: 'Быстрые теги:',
+	doneBtn: 'Готово',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (выбрано элементов: ${count})`,
+
+	namingModalTitleCopy: 'Копировать медиафайл в хранилище',
+	namingModalTitleMove: 'Переместить медиафайл в хранилище',
+	namingModalVaultRoot: '/ (Корень хранилища)',
+	destinationFolderNotice: 'Целевая папка: ',
+	chooseNamingStrategy:
+		'Выберите способ именования медиафайла в хранилище:',
+	defaultFilenameOptTitle: 'Имя по умолчанию',
+	tagFilenameOptTitle: 'Имя на основе тегов',
+	noTagsFallbackNotice:
+		'(У файла нет тегов - будет использовано имя по умолчанию)',
+	customFilenameOptTitle: 'Пользовательское имя',
+	customFilenamePlaceholder: 'напр. моё-изображение',
+	numberingFormatName: 'Формат нумерации',
+	numberingFormatDesc:
+		'Формат для счетчиков при дубликатах или пакетном экспорте.',
+	applyToAllRemaining: (count: number) =>
+		`Применить ко всем оставшимся (${count})`,
+	applyToAllRemainingDesc:
+		'Использует выбранную стратегию именования и формат нумерации для всех оставшихся файлов.',
+	numberFormatPadded2: '01, 02, 03... (2 цифры)',
+	numberFormatPadded3: '001, 002, 003... (3 цифры)',
+	numberFormatSimple: '1, 2, 3... (Без дополнения)',
+	numberFormatRomanUpper: 'I, II, III, IV... (Римские заглавные)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (Римские строчные)',
+	numberFormatLetterUpper: 'A, B, C... (Алфавит заглавные)',
+	numberFormatLetterLower: 'a, b, c... (Алфавит строчные)',
 };
 
 const pt: TranslationSchema = {
@@ -1495,42 +2232,122 @@ const pt: TranslationSchema = {
 		'Nenhuma imagem encontrada na área de transferência',
 	unableAccessClipboardNotice:
 		'Não foi possível acessar a área de transferência',
+
+	paletteSwatchCountName: 'Amostras da paleta de cores',
+	paletteSwatchCountDesc:
+		'Número de cores dominantes a exibir quando a paleta de cores está ativada numa imagem (3–10).',
+	base64Heading: 'Otimização de imagem Base64',
+	autoOptimizeBase64Name: 'Otimizar automaticamente Base64 ao colar / arrastar',
+	autoOptimizeBase64Desc:
+		'Comprime automaticamente imagens Base64 coladas ou arrastadas para formato WebP (Padrão: Desativado).',
+	base64MaxDimensionName: 'Dimensão máxima da imagem (px)',
+	base64MaxDimensionDesc:
+		'Redimensiona imagens que excedam esta largura/altura antes de incorporar na tela (Padrão: 2048 px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`${count} imagem(ns) incorporada(s) otimizada(s), economizando ~${kbSaved} KB!`,
+	noCompressibleNotice: 'Nenhuma imagem base64 compressível selecionada.',
+
+	loupeHeading: 'Inspeção visual (ferramenta de lupa)',
+	loupeHotkeyName: 'Atalho de ativação da lupa',
+	loupeHotkeyDesc:
+		'Mantenha pressionada esta tecla ao passar o mouse sobre uma imagem para inspecionar detalhes (Padrão: Q).',
+	loupeZoomLevelName: 'Nível de zoom da lupa',
+	loupeZoomLevelDesc:
+		'Multiplicador de zoom da lupa de 1.5x a 10.0x (Padrão: 3.0x).',
+	loupeSizeName: 'Diâmetro da lupa (px)',
+	loupeSizeDesc:
+		'Tamanho da lente da lupa em pixels de 100px a 600px (Padrão: 260px).',
+	loupeShapeName: 'Formato da lupa',
+	loupeShapeDesc: 'Formato visual do quadro da lupa (Padrão: Círculo).',
+	loupeShapeCircle: 'Círculo',
+	loupeShapeRounded: 'Retângulo arredondado',
+	loupeShapeSquare: 'Quadrado',
+	loupeSmoothingName: 'Suavização / amortecimento da lupa',
+	loupeSmoothingDesc:
+		'Suaviza o movimento do mouse ao rastrear imagens (menor = mais suave/menos sensível, maior = rastreamento mais rápido. Padrão: 0.50).',
+
+	selectionZoomHotkeyName: 'Atalho de zoom na seleção',
+	selectionZoomHotkeyDesc:
+		'Pressione esta tecla com elementos selecionados para dar zoom e ajustá-los à tela (Padrão: Espaço).',
+
+	dimOpacityLabel: 'Opacidade do escurecimento',
+	resetOpacityTooltip: 'Restaurar opacidade padrão',
+	searchColorsPlaceholder: 'Pesquisar cores…',
+	searchTagsPlaceholder: 'Pesquisar tags…',
+	includeMinorColors: 'Incluir cores secundárias',
+	includeCardColors: 'Incluir cores dos cartões',
+	displayColorName: 'Exibir nome da cor',
+	inViewCount: (count: number) => `${count} na exibição`,
+	itemCount: (count: number) => `${count} item(ns)`,
+	notInCurrentView: 'Não está na exibição atual',
+	deleteTagTooltip: 'Excluir tag de todos os nós',
+	noColorsMatch: 'Nenhuma cor correspondente.',
+	noTagsMatch: 'Nenhuma tag correspondente.',
+	noTagsOnCanvas: 'Nenhuma tag nesta tela ainda.',
+	extractingOrNoColors: 'Extraindo ou nenhuma cor encontrada…',
+	clickToExtractColors: 'Clique para extrair cores dominantes das imagens da tela',
+	resetActiveFilter: 'Redefinir filtro ativo',
+	namingModalTitleCopy: 'Copiar mídia para o cofre',
+	namingModalTitleMove: 'Mover mídia para o cofre',
+	namingModalVaultRoot: '/ (Raiz do cofre)',
+	destinationFolderNotice: 'Pasta de destino: ',
+	chooseNamingStrategy: 'Escolha como nomear o arquivo de mídia no cofre:',
+	defaultFilenameOptTitle: 'Nome de arquivo padrão',
+	tagFilenameOptTitle: 'Nome de arquivo por tag',
+	noTagsFallbackNotice:
+		'(Nenhuma tag na mídia - usará o padrão)',
+	customFilenameOptTitle: 'Nome de arquivo personalizado',
+	customFilenamePlaceholder: 'ex. minha-imagem',
+	numberingFormatName: 'Formato de numeração',
+	numberingFormatDesc:
+		'Formato usado para contadores incrementais (ex. duplicatas ou exportações em lote).',
+	applyToAllRemaining: (count: number) =>
+		`Aplicar a todos os ${count} itens restantes`,
+	applyToAllRemainingDesc:
+		'Usar estratégia de nomenclatura e formato selecionados para todos os itens restantes.',
+	numberFormatPadded2: '01, 02, 03... (2 dígitos)',
+	numberFormatPadded3: '001, 002, 003... (3 dígitos)',
+	numberFormatSimple: '1, 2, 3... (Sem zeros)',
+	numberFormatRomanUpper: 'I, II, III, IV... (Romano maiúsculo)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (Romano minúsculo)',
+	numberFormatLetterUpper: 'A, B, C... (Alfabeto maiúsculo)',
+	numberFormatLetterLower: 'a, b, c... (Alfabeto minúsculo)',
 };
 
 const it: TranslationSchema = {
-	settingsHeading: 'Visualizzazione e tela',
+	settingsHeading: 'Visualizzazione e Tela',
 	hideImageLabelName: 'Nascondi etichetta media',
 	hideImageLabelDesc:
-		'Nasconde l’intestazione dell’etichetta dati / URL base64 visualizzata sopra le schede media incorporate.',
-	keyboardPanHeading: 'Controlli di panoramica della tela da tastiera',
+		'Nascondi l’intestazione dell’etichetta del data / URL base64 mostrata sopra le schede media incorporate.',
+	keyboardPanHeading: 'Controlli di panoramica da tastiera',
 	panControlsName: 'Controlli di panoramica',
-	panControlsDesc: 'Insieme di tasti per spostare la tela.',
+	panControlsDesc: 'Insieme di tasti per scorrere la tela.',
 	restoreDefaultTooltip: 'Ripristina predefiniti',
 	updatePanControlsButton: 'Aggiorna controlli di panoramica',
 	maxPanSpeedName: 'Velocità massima di panoramica',
-	maxPanSpeedDesc: 'Unità della tela per lo spostamento',
-	keyboardZoomHeading: 'Controlli di zoom della tela da tastiera',
+	maxPanSpeedDesc: 'Unità della tela da spostare',
+	keyboardZoomHeading: 'Controlli di zoom da tastiera',
 	zoomControlsName: 'Controlli di zoom',
-	zoomControlsDesc: 'Insieme di tasti per ingrandire e rimpicciolire la tela.',
+	zoomControlsDesc: 'Insieme di tasti per ingrandire o rimpicciolire la tela.',
 	updateZoomControlsButton: 'Aggiorna controlli di zoom',
-	zoomSpeedName: 'Velocità di zoom',
+	zoomSpeedName: 'Velocità dello zoom',
 	zoomSpeedDesc: 'Tasso di modifica dello zoom per fotogramma',
 	duplicateKeyNotice:
-		'Le scorciatoie da tastiera duplicate non sono consentite. Scegli tasti univoci per ogni azione.',
+		'I tasti duplicati non sono consentiti. Scegli tasti univoci per ciascuna azione.',
 
 	modalTitle: 'Aggiungi media al file della tela',
 	modalDescription: (filename: string) =>
-		`Come desideri memorizzare "${filename}"?`,
+		`Come desideri archiviare "${filename}"?`,
 	applyRemaining: (count: number) =>
-		`Applica scelta ai restanti ${count} media`,
-	saveToVault: 'Salva nella cassaforte',
+		`Applica scelta ai rimanenti ${count} elementi media`,
+	saveToVault: 'Salva nel vault',
 	embedInCanvas: 'Incorpora nel file della tela',
 
 	convertModalTitle: 'Incorpora media nel file della tela',
 	convertModalDesc: (filename: string) =>
-		`Incorporamento di "${filename}" direttamente nel file della tela. Cosa desideri fare con il file originale della cassaforte?`,
+		`Incorporazione di "${filename}" direttamente nel file della tela. Cosa desideri fare con il file originale nel vault?`,
 	applyRemainingConvert: (count: number) =>
-		`Applica scelta ai restanti ${count} file media`,
+		`Applica scelta ai rimanenti ${count} file media`,
 	deleteOriginalFile: 'Elimina file originale',
 	keepOriginalFile: 'Conserva file originale',
 
@@ -1623,6 +2440,94 @@ const it: TranslationSchema = {
 		'Controlla quando i colori dominanti vengono estratti dalle immagini della tela per il pannello di filtraggio colore.',
 	noImageInClipboardNotice: 'Nessuna immagine trovata negli appunti',
 	unableAccessClipboardNotice: 'Impossibile accedere agli appunti',
+
+	paletteSwatchCountName: 'Campioni della tavolozza colori',
+	paletteSwatchCountDesc:
+		'Numero di colori dominanti da mostrare quando la tavolozza colori è abilitata su un\'immagine (3–10).',
+	base64Heading: 'Ottimizzazione immagini Base64',
+	autoOptimizeBase64Name:
+		'Ottimizza automaticamente Base64 all\'incolla / rilascia',
+	autoOptimizeBase64Desc:
+		'Comprime automaticamente le immagini Base64 incollate o rilasciate nel formato WebP (Predefinito: Disabilitato).',
+	base64MaxDimensionName: 'Dimensione massima immagine (px)',
+	base64MaxDimensionDesc:
+		'Ridimensiona le immagini che superano questa larghezza/altezza prima di incorporarle nella tela (Predefinito: 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`${count} immagine/i incorporata/e ottimizzata/e, ~${kbSaved} KB risparmiati!`,
+	noCompressibleNotice: 'Nessuna immagine base64 comprimibile selezionata.',
+
+	loupeHeading: 'Ispezione visiva (Strumento Lente)',
+	loupeHotkeyName: 'Scorciatoia attivazione lente',
+	loupeHotkeyDesc:
+		'Tieni premuto questo tasto mentre passi sopra un nodo immagine per ispezionarlo (Predefinito: Q).',
+	loupeZoomLevelName: 'Livello d\'ingrandimento della lente',
+	loupeZoomLevelDesc:
+		'Moltiplicatore di zoom per la lente da 1.5x a 10.0x (Predefinito: 3.0x).',
+	loupeSizeName: 'Diametro lente (px)',
+	loupeSizeDesc:
+		'Dimensione della lente in pixel da 100px a 600px (Predefinito: 260px).',
+	loupeShapeName: 'Forma della lente',
+	loupeShapeDesc:
+		'Forma visiva della lente d\'ingrandimento (Predefinito: Cerchio).',
+	loupeShapeCircle: 'Cerchio',
+	loupeShapeRounded: 'Rettangolo arrotondato',
+	loupeShapeSquare: 'Quadrato',
+	loupeSmoothingName: 'Smorzamento movimento lente',
+	loupeSmoothingDesc:
+		'Attenua i tremolii del mouse durante lo scorrimento (Più basso = più fluido, Più alto = tracciamento più rapido. Predefinito: 0.50).',
+
+	selectionZoomHotkeyName: 'Scorciatoia zoom adatta alla selezione',
+	selectionZoomHotkeyDesc:
+		'Premi questa scorciatoia quando ci sono elementi selezionati per me adattarli allo schermo (Predefinito: Spazio).',
+
+	dimOpacityLabel: 'Opacità oscuramento',
+	resetOpacityTooltip: 'Ripristina opacità predefinita',
+	searchColorsPlaceholder: 'Cerca colori…',
+	searchTagsPlaceholder: 'Cerca tag…',
+	includeMinorColors: 'Includi colori secondari',
+	includeCardColors: 'Includi colori scheda',
+	displayColorName: 'Mostra nome del colore',
+	inViewCount: (count: number) => `${count} in vista`,
+	itemCount: (count: number) => `${count} elemento${count === 1 ? '' : 'i'}`,
+	notInCurrentView: 'Non nella vista attuale',
+	deleteTagTooltip: 'Elimina tag da tutti i nodi',
+	noColorsMatch: 'Nessun colore corrispondente.',
+	noTagsMatch: 'Nessun tag corrispondente.',
+	noTagsOnCanvas: 'Nessun tag su questa tela al momento.',
+	extractingOrNoColors: 'Estrazione in corso o nessun colore trovato…',
+	clickToExtractColors: 'Clicca sul pulsante sopra per estrarre i colori.',
+	resetActiveFilter: 'Ripristina filtro attivo',
+	quickTagsHeader: 'Tag rapidi:',
+	doneBtn: 'Fatto',
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title} (${count} elementi selezionati)`,
+
+	namingModalTitleCopy: 'Copia media nel vault',
+	namingModalTitleMove: 'Sposta media nel vault',
+	namingModalVaultRoot: '/ (Radice della cassaforte)',
+	destinationFolderNotice: 'Cartella di destinazione: ',
+	chooseNamingStrategy:
+		'Scegli come nominare il file multimediale nel vault:',
+	defaultFilenameOptTitle: 'Nome file predefinito',
+	tagFilenameOptTitle: 'Nome file per tag',
+	noTagsFallbackNotice:
+		'(Nessun tag sul file multimediale - userà il predefinito)',
+	customFilenameOptTitle: 'Nome file personalizzato',
+	customFilenamePlaceholder: 'es. mia-immagine',
+	numberingFormatName: 'Formato numerazione',
+	numberingFormatDesc:
+		'Formato usato per i contatori incrementali (es. duplicati o esportazioni in blocco).',
+	applyToAllRemaining: (count: number) =>
+		`Applica a tutti i ${count} elementi rimanenti`,
+	applyToAllRemainingDesc:
+		'Utilizza la strategia di denominazione e il formato selezionati per tutti gli elementi rimanenti.',
+	numberFormatPadded2: '01, 02, 03... (2 cifre)',
+	numberFormatPadded3: '001, 002, 003... (3 cifre)',
+	numberFormatSimple: '1, 2, 3... (Senza zeri)',
+	numberFormatRomanUpper: 'I, II, III, IV... (Romano maiuscolo)',
+	numberFormatRomanLower: 'i, ii, iii, iv... (Romano minuscolo)',
+	numberFormatLetterUpper: 'A, B, C... (Alfabeto maiuscolo)',
+	numberFormatLetterLower: 'a, b, c... (Alfabeto minuscolo)',
 };
 
 const ar: TranslationSchema = {
@@ -1877,6 +2782,7 @@ const localeMap: Record<string, TranslationSchema> = {
 	'zh-cn': zh,
 	zh,
 	'zh-tw': zhTW,
+	zhTW,
 	es,
 	fr,
 	de,

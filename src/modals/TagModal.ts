@@ -64,7 +64,9 @@ export class TagModal extends Modal {
 
 		const titleText =
 			this.selectedCount > 1
-				? `${t.tagModalTitle ?? 'Tags'} (${this.selectedCount} items selected)`
+				? (t.itemsSelectedTitle
+						? t.itemsSelectedTitle(t.tagModalTitle ?? 'Tags', this.selectedCount)
+						: `${t.tagModalTitle ?? 'Tags'} (${this.selectedCount} items selected)`)
 				: (t.tagModalTitle ?? 'Tags');
 		this.titleEl.setText(titleText);
 
@@ -139,7 +141,7 @@ export class TagModal extends Modal {
 
 		const doneBtn = btnRow.createEl('button', {
 			cls: 'mod-cta kambas-tag-done-btn',
-			text: 'Done',
+			text: getText().doneBtn ?? 'Done',
 		});
 		doneBtn.addEventListener('click', () => {
 			if (this.input.value.trim()) this.commitInputValue();
@@ -265,7 +267,7 @@ export class TagModal extends Modal {
 
 		this.presetRow.createDiv({
 			cls: 'kambas-tag-preset-header',
-			text: 'Quick Tags:',
+			text: getText().quickTagsHeader ?? 'Quick Tags:',
 		});
 		const container = this.presetRow.createDiv({
 			cls: 'kambas-tag-preset-container',

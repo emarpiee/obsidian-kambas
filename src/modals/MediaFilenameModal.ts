@@ -236,7 +236,8 @@ export class MediaFilenameModal extends Modal {
 						: `Apply to all ${this.remainingCount} remaining items`
 				)
 				.setDesc(
-					'Uses the selected naming strategy and numbering format for all remaining items.'
+					t.applyToAllRemainingDesc ??
+						'Uses the selected naming strategy and numbering format for all remaining items.'
 				)
 				.addToggle((toggle) =>
 					toggle.setValue(false).onChange((v) => {

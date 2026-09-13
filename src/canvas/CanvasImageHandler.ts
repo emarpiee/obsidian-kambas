@@ -2660,7 +2660,7 @@ export class CanvasImageHandler {
 		const footer = panel.createDiv({ cls: 'kambas-tag-panel-footer' });
 		footer.createSpan({
 			cls: 'kambas-tag-slider-label-text',
-			text: 'Dim opacity',
+			text: t.dimOpacityLabel ?? 'Dim opacity',
 		});
 
 		// Slider + reset icon on one row
@@ -2685,7 +2685,10 @@ export class CanvasImageHandler {
 			cls: 'kambas-tag-slider-reset',
 		});
 		setIcon(resetBtn, 'rotate-ccw');
-		resetBtn.setAttribute('aria-label', 'Reset opacity to default');
+		resetBtn.setAttribute(
+			'aria-label',
+			t.resetOpacityTooltip ?? 'Reset opacity to default'
+		);
 		resetBtn.addEventListener('click', () => {
 			this.dimOpacity = 0.12;
 			sliderComp.setValue(12);
@@ -3164,7 +3167,10 @@ export class CanvasImageHandler {
 		setIcon(searchIcon, 'search');
 		const searchInput = searchWrap.createEl('input', {
 			cls: 'kambas-tag-search',
-			attr: { type: 'text', placeholder: 'Search colors…' },
+			attr: {
+				type: 'text',
+				placeholder: t.searchColorsPlaceholder ?? 'Search colors…',
+			},
 		});
 
 		// Clear 'x' button inside search bar (transferred from standalone button)
@@ -3195,7 +3201,9 @@ export class CanvasImageHandler {
 			attr: { type: 'checkbox' },
 		});
 		minorCheckbox.checked = includeAccents;
-		minorToggleLabel.createSpan({ text: 'Include minor colors' });
+		minorToggleLabel.createSpan({
+			text: t.includeMinorColors ?? 'Include minor colors',
+		});
 		minorCheckbox.addEventListener('change', () => {
 			this.plugin.settings.colorIncludeAccents = minorCheckbox.checked;
 			void this.plugin.saveSettings();
@@ -3211,7 +3219,9 @@ export class CanvasImageHandler {
 			attr: { type: 'checkbox' },
 		});
 		nodeColorCheckbox.checked = includeNodeColor;
-		nodeColorToggleLabel.createSpan({ text: 'Include card colors' });
+		nodeColorToggleLabel.createSpan({
+			text: t.includeCardColors ?? 'Include card colors',
+		});
 		nodeColorCheckbox.addEventListener('change', () => {
 			this.plugin.settings.colorIncludeNodeColor = nodeColorCheckbox.checked;
 			void this.plugin.saveSettings();
@@ -3228,7 +3238,9 @@ export class CanvasImageHandler {
 			attr: { type: 'checkbox' },
 		});
 		nameCheckbox.checked = showName;
-		nameToggleLabel.createSpan({ text: 'Display color name' });
+		nameToggleLabel.createSpan({
+			text: t.displayColorName ?? 'Display color name',
+		});
 		nameCheckbox.addEventListener('change', () => {
 			this.plugin.settings.colorShowName = nameCheckbox.checked;
 			void this.plugin.saveSettings();
@@ -3248,8 +3260,9 @@ export class CanvasImageHandler {
 				cls: 'kambas-tag-panel-empty',
 				text:
 					extractMode === 'auto'
-						? 'Extracting or no colors found...'
-						: 'Click button above to extract image colors.',
+						? (t.extractingOrNoColors ?? 'Extracting or no colors found...')
+						: (t.clickToExtractColors ??
+								'Click button above to extract image colors.'),
 			});
 			if (
 				this.activeColorFilters.size > 0 ||
@@ -3257,7 +3270,7 @@ export class CanvasImageHandler {
 			) {
 				const resetBtn = emptyDiv.createEl('button', {
 					cls: 'mod-warning',
-					text: 'Clear color filter',
+					text: t.colorClearFilter ?? 'Clear color filter',
 				});
 				resetBtn.setCssProps({ marginTop: '10px' });
 				resetBtn.addEventListener('click', () => {
@@ -3417,7 +3430,9 @@ export class CanvasImageHandler {
 				) {
 					dividerInserted = true;
 					const divider = listEl.createDiv({ cls: 'kambas-color-divider' });
-					divider.createSpan({ text: 'Not in current view' });
+					divider.createSpan({
+						text: t.notInCurrentView ?? 'Not in current view',
+					});
 				}
 
 				const rowCls =
@@ -3454,14 +3469,18 @@ export class CanvasImageHandler {
 				if (isRelated) {
 					row.createSpan({
 						cls: 'kambas-tag-panel-count kambas-in-view-count',
-						text: `${visibleCount} in view`,
+						text: t.inViewCount
+							? t.inViewCount(visibleCount)
+							: `${visibleCount} in view`,
 					});
 				}
 				// Single general term: "12 items" / "1 item"
-				const unitText = count === 1 ? 'item' : 'items';
+				const countText = t.itemCount
+					? t.itemCount(count)
+					: `${count} ${count === 1 ? 'item' : 'items'}`;
 				row.createSpan({
 					cls: 'kambas-tag-panel-count',
-					text: `${count} ${unitText}`,
+					text: countText,
 				});
 
 				// Row hover → outline matching canvas image nodes
@@ -3495,7 +3514,7 @@ export class CanvasImageHandler {
 			if (sortedColors.length === 0) {
 				listEl.createDiv({
 					cls: 'kambas-tag-panel-empty',
-					text: 'No colors match.',
+					text: t.noColorsMatch ?? 'No colors match.',
 				});
 			}
 		};
@@ -3542,12 +3561,12 @@ export class CanvasImageHandler {
 		if (tagMap.size === 0) {
 			const emptyDiv = body.createDiv({
 				cls: 'kambas-tag-panel-empty',
-				text: 'No tags on this canvas yet.',
+				text: t.noTagsOnCanvas ?? 'No tags on this canvas yet.',
 			});
 			if (this.activeTagFilters.size > 0) {
 				const resetBtn = emptyDiv.createEl('button', {
 					cls: 'mod-warning',
-					text: 'Reset active filter',
+					text: t.resetActiveFilter ?? 'Reset active filter',
 				});
 				resetBtn.setCssProps({ marginTop: '10px' });
 				resetBtn.addEventListener('click', () => {
@@ -3565,7 +3584,10 @@ export class CanvasImageHandler {
 		setIcon(searchIcon, 'search');
 		const searchInput = searchWrap.createEl('input', {
 			cls: 'kambas-tag-search',
-			attr: { type: 'text', placeholder: 'Search tags…' },
+			attr: {
+				type: 'text',
+				placeholder: t.searchTagsPlaceholder ?? 'Search tags…',
+			},
 		});
 		// Clear × lives inside the search bar — always in the DOM, no layout shift
 		const hasTagActivity =
@@ -3618,7 +3640,9 @@ export class CanvasImageHandler {
 				) {
 					dividerInserted = true;
 					const divider = listEl.createDiv({ cls: 'kambas-color-divider' });
-					divider.createSpan({ text: 'Not in current view' });
+					divider.createSpan({
+						text: t.notInCurrentView ?? 'Not in current view',
+					});
 				}
 
 				const rowCls =
@@ -3639,7 +3663,9 @@ export class CanvasImageHandler {
 				if (isRelated) {
 					row.createSpan({
 						cls: 'kambas-tag-panel-count kambas-in-view-count',
-						text: `${visibleCount} in view`,
+						text: t.inViewCount
+							? t.inViewCount(visibleCount)
+							: `${visibleCount} in view`,
 					});
 				}
 				row.createSpan({
@@ -3650,7 +3676,10 @@ export class CanvasImageHandler {
 				// Delete tag from all nodes
 				const deleteBtn = row.createSpan({ cls: 'kambas-tag-panel-delete' });
 				setIcon(deleteBtn, 'trash-2');
-				deleteBtn.setAttribute('aria-label', 'Delete tag from all nodes');
+				deleteBtn.setAttribute(
+					'aria-label',
+					t.deleteTagTooltip ?? 'Delete tag from all nodes'
+				);
 				deleteBtn.addEventListener('click', (ev) => {
 					ev.stopPropagation();
 					void this.deleteTagFromCanvas(activeView, tag);
@@ -3677,7 +3706,7 @@ export class CanvasImageHandler {
 			if (sorted.length === 0) {
 				listEl.createDiv({
 					cls: 'kambas-tag-panel-empty',
-					text: 'No tags match.',
+					text: t.noTagsMatch ?? 'No tags match.',
 				});
 			}
 		};
