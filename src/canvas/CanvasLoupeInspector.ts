@@ -6,6 +6,7 @@ export class CanvasLoupeInspector {
 	private isKeyDown = false;
 	private rafId: number | null = null;
 	private lastMousePos: { x: number; y: number } | null = null;
+	private currentPos: { x: number; y: number } | null = null;
 
 	private keydownHandler: (evt: KeyboardEvent) => void;
 	private keyupHandler: (evt: KeyboardEvent) => void;
@@ -27,10 +28,7 @@ export class CanvasLoupeInspector {
 		window.removeEventListener('keydown', this.keydownHandler, true);
 		window.removeEventListener('keyup', this.keyupHandler, true);
 		window.removeEventListener('mousemove', this.mousemoveHandler, true);
-		if (this.rafId !== null) {
-			window.cancelAnimationFrame(this.rafId);
-			this.rafId = null;
-		}
+		this.stopLoop();
 		this.removeLoupe();
 	}
 
@@ -44,8 +42,9 @@ export class CanvasLoupeInspector {
 			}
 			this.isKeyDown = true;
 			if (this.lastMousePos) {
-				this.updateLoupeAtPosition(this.lastMousePos.x, this.lastMousePos.y);
+				this.currentPos = { ...this.lastMousePos };
 			}
+			this.startLoop();
 		}
 	}
 
@@ -53,6 +52,7 @@ export class CanvasLoupeInspector {
 		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
 		if (evt.key.toLowerCase() === configuredKey) {
 			this.isKeyDown = false;
+			this.stopLoop();
 			this.removeLoupe();
 		}
 	}
@@ -60,14 +60,47 @@ export class CanvasLoupeInspector {
 	private onMouseMove(evt: MouseEvent): void {
 		this.lastMousePos = { x: evt.clientX, y: evt.clientY };
 		if (!this.isKeyDown) return;
+		if (!this.currentPos) {
+			this.currentPos = { x: evt.clientX, y: evt.clientY };
+		}
+		this.startLoop();
+	}
 
-		if (this.rafId === null) {
-			this.rafId = window.requestAnimationFrame(() => {
-				this.rafId = null;
-				if (this.lastMousePos && this.isKeyDown) {
-					this.updateLoupeAtPosition(this.lastMousePos.x, this.lastMousePos.y);
+	private startLoop(): void {
+		if (this.rafId !== null) return;
+		const loop = (): void => {
+			if (!this.isKeyDown || !this.lastMousePos) {
+				this.stopLoop();
+				return;
+			}
+
+			if (!this.currentPos) {
+				this.currentPos = { ...this.lastMousePos };
+			} else {
+				// Lerp interpolation for smooth dampening & lower panning sensitivity
+				const smoothing = this.plugin.settings.loupeSmoothing ?? 0.15;
+				const dx = this.lastMousePos.x - this.currentPos.x;
+				const dy = this.lastMousePos.y - this.currentPos.y;
+
+				if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
+					this.currentPos.x += dx * smoothing;
+					this.currentPos.y += dy * smoothing;
+				} else {
+					this.currentPos.x = this.lastMousePos.x;
+					this.currentPos.y = this.lastMousePos.y;
 				}
-			});
+			}
+
+			this.updateLoupeAtPosition(this.currentPos.x, this.currentPos.y);
+			this.rafId = window.requestAnimationFrame(loop);
+		};
+		this.rafId = window.requestAnimationFrame(loop);
+	}
+
+	private stopLoop(): void {
+		if (this.rafId !== null) {
+			window.cancelAnimationFrame(this.rafId);
+			this.rafId = null;
 		}
 	}
 
@@ -145,9 +178,7 @@ export class CanvasLoupeInspector {
 			this.loupeEl.remove();
 			this.loupeEl = null;
 		}
-		if (this.rafId !== null) {
-			window.cancelAnimationFrame(this.rafId);
-			this.rafId = null;
-		}
+		this.currentPos = null;
+		this.stopLoop();
 	}
 }

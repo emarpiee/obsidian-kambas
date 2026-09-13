@@ -30,6 +30,7 @@ export interface KambasSettings {
 	loupeZoomLevel: number; // Magnification factor (1.5x - 10.0x)
 	loupeSize: number; // Loupe lens diameter in px (100px - 600px)
 	loupeShape: 'circle' | 'square' | 'rounded'; // Loupe lens shape
+	loupeSmoothing: number; // Mouse tracking interpolation factor (0.05 - 1.0, lower = smoother/less sensitive)
 	selectionZoomToFitHotkey: string; // Hotkey to zoom to fit selected elements
 	keyboardPan: CanvasKeyboardPanSettings;
 }
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	loupeZoomLevel: 3.0,
 	loupeSize: 260,
 	loupeShape: 'circle',
+	loupeSmoothing: 0.50,
 	selectionZoomToFitHotkey: 'Space',
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
@@ -191,9 +193,14 @@ export class KambasSettingTab extends PluginSettingTab {
 			.setName('Base64 image optimization')
 			.setHeading();
 
+		// Performance & Base64 Optimization Section
+		new Setting(containerEl)
+			.setName('Base64 image optimization')
+			.setHeading();
+
 		new Setting(containerEl)
 			.setName('Auto-optimize Base64 on paste / drop')
-			.setDesc('Automatically compress pasted or dropped Base64 images to WebP format.')
+			.setDesc('Automatically compress pasted or dropped Base64 images to WebP format (Default: Disabled).')
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.autoOptimizeBase64OnIngest ?? false)
@@ -205,7 +212,7 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Maximum image dimension (px)')
-			.setDesc('Resize images exceeding this width/height before embedding in canvas (e.g. 2048px).')
+			.setDesc('Resize images exceeding this width/height before embedding in canvas (Default: 2048px).')
 			.addText((text) =>
 				text
 					.setPlaceholder('2048')
@@ -226,7 +233,7 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Loupe activation hotkey')
-			.setDesc('Hold down this key while hovering over an image node to inspect details.')
+			.setDesc('Hold down this key while hovering over an image node to inspect details (Default: Q).')
 			.addText((text) =>
 				text
 					.setPlaceholder('q')
@@ -239,7 +246,7 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Loupe magnification level')
-			.setDesc('Zoom multiplier for the loupe lens (1.5x – 10.0x).')
+			.setDesc('Zoom multiplier for the loupe lens from 1.5x to 10.0x (Default: 3.0x).')
 			.addSlider((slider) =>
 				slider
 					.setLimits(1.5, 10.0, 0.5)
@@ -253,7 +260,7 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Loupe lens diameter (px)')
-			.setDesc('Size of the loupe lens in pixels (100px – 600px).')
+			.setDesc('Size of the loupe lens in pixels from 100px to 600px (Default: 260px).')
 			.addSlider((slider) =>
 				slider
 					.setLimits(100, 600, 20)
@@ -267,7 +274,7 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Loupe lens shape')
-			.setDesc('Visual shape of the magnifying lens frame.')
+			.setDesc('Visual shape of the magnifying lens frame (Default: Circle).')
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption('circle', 'Circle')
@@ -276,6 +283,20 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.loupeShape ?? 'circle')
 					.onChange(async (value: string) => {
 						this.plugin.settings.loupeShape = value as 'circle' | 'square' | 'rounded';
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Loupe motion smoothing / dampening')
+			.setDesc('Smooths out mouse jitter when panning across images (Lower = smoother & less sensitive, Higher = faster tracking. Default: 0.50).')
+			.addSlider((slider) =>
+				slider
+					.setLimits(0.05, 1.0, 0.05)
+					.setValue(this.plugin.settings.loupeSmoothing ?? 0.50)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.loupeSmoothing = value;
 						await this.plugin.saveSettings();
 					})
 			);
