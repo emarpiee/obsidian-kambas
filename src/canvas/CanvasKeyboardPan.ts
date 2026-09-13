@@ -1,4 +1,5 @@
 import { ItemView, Plugin } from 'obsidian';
+
 import { CanvasElement, CanvasItemView } from './CanvasTypes';
 
 export enum Direction {
@@ -53,7 +54,7 @@ export class CanvasKeyboardPan {
 	}
 
 	public registerEvents(): void {
-		this.plugin.registerDomEvent(this.plugin.app.workspace.containerEl, 'keydown', (evt: KeyboardEvent) => {
+		this.plugin.registerDomEvent(window, 'keydown', (evt: KeyboardEvent) => {
 			if (this.isEditingText(evt)) {
 				return;
 			}
@@ -92,7 +93,7 @@ export class CanvasKeyboardPan {
 			}
 		});
 
-		this.plugin.registerDomEvent(this.plugin.app.workspace.containerEl, 'keyup', (evt: KeyboardEvent) => {
+		this.plugin.registerDomEvent(window, 'keyup', (evt: KeyboardEvent) => {
 			const settings = this.getSettings();
 			if (Object.values(settings.keys).includes(evt.key)) {
 				switch (evt.key) {
@@ -134,10 +135,18 @@ export class CanvasKeyboardPan {
 			this.stopPan(true);
 		};
 
-		this.plugin.registerEvent(this.plugin.app.workspace.on('active-leaf-change', stopPanCallback));
-		this.plugin.registerEvent(this.plugin.app.workspace.on('file-open', stopPanCallback));
-		this.plugin.registerEvent(this.plugin.app.workspace.on('file-menu', stopPanCallback));
-		this.plugin.registerEvent(this.plugin.app.workspace.on('files-menu', stopPanCallback));
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('active-leaf-change', stopPanCallback)
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('file-open', stopPanCallback)
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('file-menu', stopPanCallback)
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('files-menu', stopPanCallback)
+		);
 	}
 
 	private isEditingText(evt: KeyboardEvent): boolean {
@@ -147,7 +156,12 @@ export class CanvasKeyboardPan {
 		const target = evt.target as HTMLElement | null;
 		if (!target) return false;
 		const tagName = target.tagName.toLowerCase();
-		if (tagName === 'input' || tagName === 'textarea' || target.isContentEditable || target.closest('.cm-editor')) {
+		if (
+			tagName === 'input' ||
+			tagName === 'textarea' ||
+			target.isContentEditable ||
+			target.closest('.cm-editor')
+		) {
 			return true;
 		}
 		return false;
@@ -155,7 +169,9 @@ export class CanvasKeyboardPan {
 
 	public startPan(): void {
 		if (this.panInterval === undefined) {
-			this.panInterval = this.plugin.registerInterval(window.setInterval(() => this.handlePanKeys(), 10));
+			this.panInterval = this.plugin.registerInterval(
+				window.setInterval(() => this.handlePanKeys(), 10)
+			);
 		}
 	}
 
@@ -184,7 +200,9 @@ export class CanvasKeyboardPan {
 	}
 
 	public getActiveCanvas(): CanvasElement | undefined {
-		const activeView = this.plugin.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		const activeView = this.plugin.app.workspace.getActiveViewOfType(
+			ItemView
+		) as unknown as CanvasItemView | null;
 		if (activeView?.getViewType() !== 'canvas') {
 			this.stopPan();
 			return undefined;

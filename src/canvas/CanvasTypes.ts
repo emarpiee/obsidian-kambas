@@ -44,9 +44,31 @@ export interface CanvasElement {
 	zoom?: number;
 	markViewportChanged?: () => void;
 	panTo?: (x: number, y: number) => void;
-	nodes?: Map<string, { nodeEl?: HTMLElement; x: number; y: number; width: number; height: number }>;
-	edges?: Map<string, { lineGroupEl?: HTMLElement; lineElement?: HTMLElement; lineEndGroupEl?: HTMLElement; unknownData?: { kambasOpacity?: number } }>;
-	zoomToBbox?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
+	nodes?: Map<
+		string,
+		{
+			nodeEl?: HTMLElement;
+			x: number;
+			y: number;
+			width: number;
+			height: number;
+		}
+	>;
+	edges?: Map<
+		string,
+		{
+			lineGroupEl?: HTMLElement;
+			lineElement?: HTMLElement;
+			lineEndGroupEl?: HTMLElement;
+			unknownData?: { kambasOpacity?: number };
+		}
+	>;
+	zoomToBbox?: (bbox: {
+		minX: number;
+		minY: number;
+		maxX: number;
+		maxY: number;
+	}) => void;
 	zoomToSelection?: () => void;
 	zoomToFit?: () => void;
 	zoomBy?: (delta: number) => void;
@@ -86,15 +108,40 @@ export interface CanvasItemView {
 	getViewType: () => string;
 	canvas?: CanvasElement;
 	file?: TFile;
+	containerEl: HTMLElement;
 }
 
 /** Image extensions treated as native canvas images */
 export const IMAGE_EXTENSIONS = new Set([
-	'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'avif', 'tiff', 'tif',
+	'png',
+	'jpg',
+	'jpeg',
+	'gif',
+	'bmp',
+	'webp',
+	'svg',
+	'avif',
+	'tiff',
+	'tif',
 ]);
 
 /** All media extensions accepted by the image swap picker (images + video) */
 export const MEDIA_EXTENSIONS = new Set([
-	'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'avif', 'tiff', 'tif',
-	'mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v', 'ogv',
+	'png',
+	'jpg',
+	'jpeg',
+	'gif',
+	'bmp',
+	'webp',
+	'svg',
+	'avif',
+	'tiff',
+	'tif',
+	'mp4',
+	'webm',
+	'mov',
+	'avi',
+	'mkv',
+	'm4v',
+	'ogv',
 ]);

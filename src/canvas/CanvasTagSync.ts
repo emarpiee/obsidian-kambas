@@ -1,4 +1,5 @@
 import { App, TFile } from 'obsidian';
+
 import { CanvasFileData } from './CanvasTypes';
 
 /**
@@ -28,19 +29,28 @@ export async function syncTagsToFrontmatter(
 	const tags = isPublic ? collectAllCanvasTags(data) : [];
 
 	// Try Obsidian's native processFrontMatter API
-	const fm = (app.fileManager as unknown as {
-		processFrontMatter?: (file: TFile, fn: (fm: Record<string, unknown>) => void) => Promise<void>;
-	}).processFrontMatter;
+	const fm = (
+		app.fileManager as unknown as {
+			processFrontMatter?: (
+				file: TFile,
+				fn: (fm: Record<string, unknown>) => void
+			) => Promise<void>;
+		}
+	).processFrontMatter;
 
 	if (typeof fm === 'function') {
 		try {
-			await fm.call(app.fileManager, canvasFile, (front: Record<string, unknown>) => {
-				if (isPublic && tags.length > 0) {
-					front['tags'] = tags;
-				} else {
-					delete front['tags'];
+			await fm.call(
+				app.fileManager,
+				canvasFile,
+				(front: Record<string, unknown>) => {
+					if (isPublic && tags.length > 0) {
+						front['tags'] = tags;
+					} else {
+						delete front['tags'];
+					}
 				}
-			});
+			);
 			return;
 		} catch {
 			// Fall through to manual approach

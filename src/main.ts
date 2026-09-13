@@ -1,14 +1,16 @@
-import './main.css';
 import { ItemView, Menu, Plugin } from 'obsidian';
+
+import { getText } from './i18n';
+import './main.css';
+import { DEFAULT_SETTINGS, KambasSettingTab, KambasSettings } from './settings';
+
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
 import { CanvasKeyboardPan } from './canvas/CanvasKeyboardPan';
-import { CanvasSelectionZoom } from './canvas/CanvasSelectionZoom';
 import { CanvasLoupeInspector } from './canvas/CanvasLoupeInspector';
+import { CanvasSelectionZoom } from './canvas/CanvasSelectionZoom';
 import { CanvasItemView } from './canvas/CanvasTypes';
-import { getText } from './i18n';
 import { FolderSuggestModal } from './modals/FolderSuggestModal';
 import { OpacityModal } from './modals/OpacityModal';
-import { DEFAULT_SETTINGS, KambasSettings, KambasSettingTab } from './settings';
 
 export default class KambasPlugin extends Plugin {
 	public settings!: KambasSettings;
@@ -23,7 +25,10 @@ export default class KambasPlugin extends Plugin {
 		this.canvasImageHandler = new CanvasImageHandler(this.app, this);
 		this.canvasImageHandler.registerEvents();
 
-		this.canvasKeyboardPan = new CanvasKeyboardPan(this, () => this.settings.keyboardPan);
+		this.canvasKeyboardPan = new CanvasKeyboardPan(
+			this,
+			() => this.settings.keyboardPan
+		);
 		this.canvasKeyboardPan.registerEvents();
 
 		this.canvasSelectionZoom = new CanvasSelectionZoom(this);
@@ -45,12 +50,21 @@ export default class KambasPlugin extends Plugin {
 			}, 10);
 		};
 
-		this.registerEvent(this.app.workspace.on('active-leaf-change', updateActiveCanvas));
-		this.registerEvent(this.app.workspace.on('layout-change', updateActiveCanvas));
+		this.registerEvent(
+			this.app.workspace.on('active-leaf-change', updateActiveCanvas)
+		);
+		this.registerEvent(
+			this.app.workspace.on('layout-change', updateActiveCanvas)
+		);
 
 		// Helper to append image transform items to a menu if any image node is selected
-		const addTransformItemsToMenu = (menu: Menu, targetNodeEl?: HTMLElement): void => {
-			const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		const addTransformItemsToMenu = (
+			menu: Menu,
+			targetNodeEl?: HTMLElement
+		): void => {
+			const activeView = this.app.workspace.getActiveViewOfType(
+				ItemView
+			) as unknown as CanvasItemView | null;
 			if (!activeView || activeView.getViewType() !== 'canvas') return;
 
 			const canvas = activeView.canvas;
@@ -70,22 +84,59 @@ export default class KambasPlugin extends Plugin {
 			canvas.nodes.forEach((canvasNode) => {
 				const el = canvasNode.nodeEl;
 				if (!el) return;
-				const isSel = el.classList.contains('is-selected') || (targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
+				const isSel =
+					el.classList.contains('is-selected') ||
+					(targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
 				if (isSel) {
-					if (el.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(el)) {
+					if (
+						el.querySelector('.kambas-embedded-img') ||
+						this.canvasImageHandler.getNativeImageElement(el)
+					) {
 						hasAnyImage = true;
 						hasAnyMedia = true;
 						selectedImageCount++;
 					}
 
-					const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; file?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number; originalWidth?: number; originalHeight?: number } }).unknownData;
-					if (unknownData?.type === 'file' || (unknownData?.type === 'link' && unknownData?.url?.startsWith('data:image/'))) {
+					const unknownData = (
+						canvasNode as unknown as {
+							unknownData?: {
+								type?: string;
+								url?: string;
+								file?: string;
+								kambasFlipH?: boolean;
+								kambasFlipV?: boolean;
+								kambasGrayscale?: boolean;
+								kambasPalette?: boolean;
+								kambasOpacity?: number;
+								originalWidth?: number;
+								originalHeight?: number;
+							};
+						}
+					).unknownData;
+					if (
+						unknownData?.type === 'file' ||
+						(unknownData?.type === 'link' &&
+							unknownData?.url?.startsWith('data:image/'))
+					) {
 						hasAnyMedia = true;
 					}
 
 					if (unknownData?.type === 'file' && unknownData?.file) {
 						const ext = unknownData.file.split('.').pop()?.toLowerCase() || '';
-						if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'avif', 'tiff', 'tif'].includes(ext)) {
+						if (
+							[
+								'png',
+								'jpg',
+								'jpeg',
+								'gif',
+								'bmp',
+								'webp',
+								'svg',
+								'avif',
+								'tiff',
+								'tif',
+							].includes(ext)
+						) {
 							hasNativeImage = true;
 						}
 					}
@@ -94,15 +145,22 @@ export default class KambasPlugin extends Plugin {
 					if (unknownData?.kambasFlipV) isFlippedV = true;
 					if (unknownData?.kambasGrayscale) isGrayscaled = true;
 					if (unknownData?.kambasPalette) isPaletteOn = true;
-					if (unknownData?.kambasOpacity !== undefined) currentOpacity = unknownData.kambasOpacity;
+					if (unknownData?.kambasOpacity !== undefined)
+						currentOpacity = unknownData.kambasOpacity;
 
-					const rawNode = canvasNode as unknown as { width?: number; height?: number };
+					const rawNode = canvasNode as unknown as {
+						width?: number;
+						height?: number;
+					};
 					const img = el.querySelector<HTMLImageElement>('img');
 					const origW = unknownData?.originalWidth ?? img?.naturalWidth;
 					const origH = unknownData?.originalHeight ?? img?.naturalHeight;
 
 					if (rawNode.width && rawNode.height && origW && origH) {
-						if (Math.abs(rawNode.width - origW) > 2 || Math.abs(rawNode.height - origH) > 2) {
+						if (
+							Math.abs(rawNode.width - origW) > 2 ||
+							Math.abs(rawNode.height - origH) > 2
+						) {
 							isResized = true;
 						}
 					}
@@ -110,7 +168,10 @@ export default class KambasPlugin extends Plugin {
 			});
 
 			if (!hasAnyImage && targetNodeEl) {
-				hasAnyImage = Boolean(targetNodeEl.querySelector('.kambas-embedded-img') || this.canvasImageHandler.getNativeImageElement(targetNodeEl));
+				hasAnyImage = Boolean(
+					targetNodeEl.querySelector('.kambas-embedded-img') ||
+					this.canvasImageHandler.getNativeImageElement(targetNodeEl)
+				);
 				if (hasAnyImage) hasAnyMedia = true;
 			}
 
@@ -119,7 +180,8 @@ export default class KambasPlugin extends Plugin {
 
 			// ── Group 1: General Node Options (available on all canvas nodes) ─────────
 			menu.addItem((item: import('obsidian').MenuItem) => {
-				item.setTitle(t.tagNodes)
+				item
+					.setTitle(t.tagNodes)
 					.setIcon('tag')
 					.onClick(() => {
 						this.canvasImageHandler.openTagModal(activeView, targetNodeEl);
@@ -131,59 +193,87 @@ export default class KambasPlugin extends Plugin {
 				menu.addSeparator();
 
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.flipHorizontal)
+					item
+						.setTitle(t.flipHorizontal)
 						.setIcon('flip-horizontal')
 						.setChecked(isFlippedH)
 						.onClick(() => {
-							void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'h', targetNodeEl);
+							void this.canvasImageHandler.toggleSelectedImageTransform(
+								activeView,
+								'h',
+								targetNodeEl
+							);
 						});
 				});
 
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.flipVertical)
+					item
+						.setTitle(t.flipVertical)
 						.setIcon('flip-vertical')
 						.setChecked(isFlippedV)
 						.onClick(() => {
-							void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'v', targetNodeEl);
+							void this.canvasImageHandler.toggleSelectedImageTransform(
+								activeView,
+								'v',
+								targetNodeEl
+							);
 						});
 				});
 
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.toggleGrayscale)
+					item
+						.setTitle(t.toggleGrayscale)
 						.setIcon('contrast')
 						.setChecked(isGrayscaled)
 						.onClick(() => {
-							void this.canvasImageHandler.toggleSelectedImageTransform(activeView, 'g', targetNodeEl);
+							void this.canvasImageHandler.toggleSelectedImageTransform(
+								activeView,
+								'g',
+								targetNodeEl
+							);
 						});
 				});
 
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.togglePalette)
+					item
+						.setTitle(t.togglePalette)
 						.setIcon('palette')
 						.setChecked(isPaletteOn)
 						.onClick(() => {
-							void this.canvasImageHandler.toggleSelectedImagePalette(activeView, targetNodeEl);
+							void this.canvasImageHandler.toggleSelectedImagePalette(
+								activeView,
+								targetNodeEl
+							);
 						});
 				});
 
 				menu.addItem((item: import('obsidian').MenuItem) => {
 					const opacityPct = Math.round(currentOpacity * 100);
-					item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
+					item
+						.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
 						.setIcon('droplet')
 						.setChecked(currentOpacity < 1)
 						.onClick(() => {
 							new OpacityModal(this.app, currentOpacity, (opacity) => {
-								this.canvasImageHandler.setSelectedNodeOpacity(activeView, opacity, targetNodeEl);
+								this.canvasImageHandler.setSelectedNodeOpacity(
+									activeView,
+									opacity,
+									targetNodeEl
+								);
 							}).open();
 						});
 				});
 
 				if (isResized) {
 					menu.addItem((item: import('obsidian').MenuItem) => {
-						item.setTitle(t.resetSize)
+						item
+							.setTitle(t.resetSize)
 							.setIcon('rotate-ccw')
 							.onClick(() => {
-								this.canvasImageHandler.resetSelectedImageSize(activeView, targetNodeEl);
+								this.canvasImageHandler.resetSelectedImageSize(
+									activeView,
+									targetNodeEl
+								);
 							});
 					});
 				}
@@ -191,12 +281,17 @@ export default class KambasPlugin extends Plugin {
 				// If not an image node, show opacity under general options
 				menu.addItem((item: import('obsidian').MenuItem) => {
 					const opacityPct = Math.round(currentOpacity * 100);
-					item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
+					item
+						.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
 						.setIcon('droplet')
 						.setChecked(currentOpacity < 1)
 						.onClick(() => {
 							new OpacityModal(this.app, currentOpacity, (opacity) => {
-								this.canvasImageHandler.setSelectedNodeOpacity(activeView, opacity, targetNodeEl);
+								this.canvasImageHandler.setSelectedNodeOpacity(
+									activeView,
+									opacity,
+									targetNodeEl
+								);
 							}).open();
 						});
 				});
@@ -209,21 +304,31 @@ export default class KambasPlugin extends Plugin {
 
 			if (hasAnyMedia) {
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.moveSelectedMedia)
+					item
+						.setTitle(t.moveSelectedMedia)
 						.setIcon('folder-output')
 						.onClick(() => {
 							new FolderSuggestModal(this.app, (folder) => {
-								void this.canvasImageHandler.moveSelectedMediaToFolder(activeView, folder, targetNodeEl);
+								void this.canvasImageHandler.moveSelectedMediaToFolder(
+									activeView,
+									folder,
+									targetNodeEl
+								);
 							}).open();
 						});
 				});
 
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.copySelectedMedia)
+					item
+						.setTitle(t.copySelectedMedia)
 						.setIcon('folder-input')
 						.onClick(() => {
 							new FolderSuggestModal(this.app, (folder) => {
-								void this.canvasImageHandler.copySelectedMediaToFolder(activeView, folder, targetNodeEl);
+								void this.canvasImageHandler.copySelectedMediaToFolder(
+									activeView,
+									folder,
+									targetNodeEl
+								);
 							}).open();
 						});
 				});
@@ -231,38 +336,54 @@ export default class KambasPlugin extends Plugin {
 
 			if (hasNativeImage) {
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.convertToEmbed)
+					item
+						.setTitle(t.convertToEmbed)
 						.setIcon('file-input')
 						.onClick(() => {
-							void this.canvasImageHandler.convertSelectedVaultImagesToEmbed(activeView, targetNodeEl);
+							void this.canvasImageHandler.convertSelectedVaultImagesToEmbed(
+								activeView,
+								targetNodeEl
+							);
 						});
 				});
 			}
 
 			if (selectedImageCount === 1) {
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.copyImageToClipboard)
+					item
+						.setTitle(t.copyImageToClipboard)
 						.setIcon('copy')
 						.onClick(() => {
-							void this.canvasImageHandler.copySelectedImagesToClipboard(activeView, targetNodeEl);
+							void this.canvasImageHandler.copySelectedImagesToClipboard(
+								activeView,
+								targetNodeEl
+							);
 						});
 				});
 
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.swapImage)
+					item
+						.setTitle(t.swapImage)
 						.setIcon('image')
 						.onClick(() => {
-							void this.canvasImageHandler.swapSelectedImage(activeView, targetNodeEl);
+							void this.canvasImageHandler.swapSelectedImage(
+								activeView,
+								targetNodeEl
+							);
 						});
 				});
 			}
 
 			if (hasAnyImage) {
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(t.optimizeImageSize)
+					item
+						.setTitle(t.optimizeImageSize)
 						.setIcon('minimize-2')
 						.onClick(() => {
-							void this.canvasImageHandler.optimizeSelectedEmbeddedImages(activeView, targetNodeEl);
+							void this.canvasImageHandler.optimizeSelectedEmbeddedImages(
+								activeView,
+								targetNodeEl
+							);
 						});
 				});
 			}
@@ -270,9 +391,14 @@ export default class KambasPlugin extends Plugin {
 
 		// Single node context menu
 		this.registerEvent(
-			(this.app.workspace as unknown as {
-				on(event: 'canvas:node-menu', handler: (menu: Menu, node: unknown) => void): import('obsidian').EventRef;
-			}).on('canvas:node-menu', (menu: Menu, node: unknown) => {
+			(
+				this.app.workspace as unknown as {
+					on(
+						event: 'canvas:node-menu',
+						handler: (menu: Menu, node: unknown) => void
+					): import('obsidian').EventRef;
+				}
+			).on('canvas:node-menu', (menu: Menu, node: unknown) => {
 				const canvasNode = node as { nodeEl?: HTMLElement };
 				addTransformItemsToMenu(menu, canvasNode.nodeEl);
 			})
@@ -280,35 +406,57 @@ export default class KambasPlugin extends Plugin {
 
 		// Multi-selection context menu
 		this.registerEvent(
-			(this.app.workspace as unknown as {
-				on(event: 'canvas:selection-menu', handler: (menu: Menu) => void): import('obsidian').EventRef;
-			}).on('canvas:selection-menu', (menu: Menu) => {
+			(
+				this.app.workspace as unknown as {
+					on(
+						event: 'canvas:selection-menu',
+						handler: (menu: Menu) => void
+					): import('obsidian').EventRef;
+				}
+			).on('canvas:selection-menu', (menu: Menu) => {
 				addTransformItemsToMenu(menu);
 			})
 		);
 
 		// Canvas edge right-click context menu
 		this.registerEvent(
-			(this.app.workspace as unknown as {
-				on(event: 'canvas:edge-menu', handler: (menu: Menu, edge: unknown) => void): import('obsidian').EventRef;
-			}).on('canvas:edge-menu', (menu: Menu, edge: unknown) => {
-				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+			(
+				this.app.workspace as unknown as {
+					on(
+						event: 'canvas:edge-menu',
+						handler: (menu: Menu, edge: unknown) => void
+					): import('obsidian').EventRef;
+				}
+			).on('canvas:edge-menu', (menu: Menu, edge: unknown) => {
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
 				if (!activeView || activeView.getViewType() !== 'canvas') return;
 				const t = getText();
 
-				const canvasEdge = edge as { lineGroupEl?: HTMLElement; lineElement?: HTMLElement; unknownData?: { kambasOpacity?: number } };
+				const canvasEdge = edge as {
+					lineGroupEl?: HTMLElement;
+					lineElement?: HTMLElement;
+					unknownData?: { kambasOpacity?: number };
+				};
 				const targetEl = canvasEdge.lineGroupEl ?? canvasEdge.lineElement;
 				const currentOpacity = canvasEdge.unknownData?.kambasOpacity ?? 1;
 				const opacityPct = Math.round(currentOpacity * 100);
 
 				menu.addSeparator();
 				menu.addItem((item: import('obsidian').MenuItem) => {
-					item.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
+					item
+						.setTitle(`${t.changeOpacity} (${opacityPct}%)`)
 						.setIcon('droplet')
 						.setChecked(currentOpacity < 1)
 						.onClick(() => {
 							new OpacityModal(this.app, currentOpacity, (opacity) => {
-								this.canvasImageHandler.setSelectedEdgeOpacity(activeView, opacity, targetEl, canvasEdge);
+								this.canvasImageHandler.setSelectedEdgeOpacity(
+									activeView,
+									opacity,
+									targetEl,
+									canvasEdge
+								);
 							}).open();
 						});
 				});
@@ -321,7 +469,9 @@ export default class KambasPlugin extends Plugin {
 			name: getText().awayMode,
 			icon: 'eye-off',
 			checkCallback: (checking: boolean) => {
-				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
 				if (activeView && activeView.getViewType() === 'canvas') {
 					if (!checking) {
 						this.canvasImageHandler.setAwayMode(activeView);
@@ -338,7 +488,9 @@ export default class KambasPlugin extends Plugin {
 			name: getText().tagFilterPanel,
 			icon: 'tag',
 			checkCallback: (checking: boolean) => {
-				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
 				if (activeView && activeView.getViewType() === 'canvas') {
 					if (!checking) {
 						this.canvasImageHandler.openTagFilterPanel(activeView);
@@ -355,7 +507,9 @@ export default class KambasPlugin extends Plugin {
 			name: 'Toggle tag visibility',
 			icon: 'tag',
 			checkCallback: (checking: boolean) => {
-				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
 				if (activeView && activeView.getViewType() === 'canvas') {
 					if (!checking) {
 						document.body.classList.toggle('kambas-hide-all-tags');
@@ -372,7 +526,9 @@ export default class KambasPlugin extends Plugin {
 			name: 'Toggle auto-zoom on tag selection',
 			icon: 'zoom-in',
 			checkCallback: (checking: boolean) => {
-				const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
 				if (activeView && activeView.getViewType() === 'canvas') {
 					if (!checking) {
 						this.settings.tagZoomOnSelect = !this.settings.tagZoomOnSelect;
@@ -385,10 +541,23 @@ export default class KambasPlugin extends Plugin {
 		});
 	}
 
+	public getAllObsidianDocuments(): Document[] {
+		const docs: Document[] = [document];
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			const doc = leaf.view?.containerEl?.ownerDocument;
+			if (doc && !docs.includes(doc)) {
+				docs.push(doc);
+			}
+		});
+		return docs;
+	}
+
 	onunload(): void {
-		document.body.classList.remove('kambas-hide-labels');
-		document.body.classList.remove('kambas-hide-all-tags');
-		document.body.classList.remove('kambas-tag-position-inside');
+		this.getAllObsidianDocuments().forEach((doc) => {
+			doc.body.classList.remove('kambas-hide-labels');
+			doc.body.classList.remove('kambas-hide-all-tags');
+			doc.body.classList.remove('kambas-tag-position-inside');
+		});
 		if (this.canvasImageHandler) {
 			this.canvasImageHandler.unregisterEvents();
 		}
@@ -412,7 +581,8 @@ export default class KambasPlugin extends Plugin {
 					...DEFAULT_SETTINGS.keyboardPan.keys,
 					...(data?.keyboardPan?.keys || {}),
 				},
-				maxSpeed: data?.keyboardPan?.maxSpeed ?? DEFAULT_SETTINGS.keyboardPan.maxSpeed,
+				maxSpeed:
+					data?.keyboardPan?.maxSpeed ?? DEFAULT_SETTINGS.keyboardPan.maxSpeed,
 			},
 		};
 	}
@@ -422,16 +592,19 @@ export default class KambasPlugin extends Plugin {
 	}
 
 	applySettingsCss(): void {
-		if (this.settings.hideImageLabel) {
-			document.body.classList.add('kambas-hide-labels');
-		} else {
-			document.body.classList.remove('kambas-hide-labels');
-		}
+		const updateDoc = (doc: Document): void => {
+			if (this.settings.hideImageLabel) {
+				doc.body.classList.add('kambas-hide-labels');
+			} else {
+				doc.body.classList.remove('kambas-hide-labels');
+			}
 
-		if (this.settings.tagBadgePosition === 'inside') {
-			document.body.classList.add('kambas-tag-position-inside');
-		} else {
-			document.body.classList.remove('kambas-tag-position-inside');
-		}
+			if (this.settings.tagBadgePosition === 'inside') {
+				doc.body.classList.add('kambas-tag-position-inside');
+			} else {
+				doc.body.classList.remove('kambas-tag-position-inside');
+			}
+		};
+		this.getAllObsidianDocuments().forEach(updateDoc);
 	}
 }

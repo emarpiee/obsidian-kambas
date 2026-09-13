@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+
 import { getText } from '../i18n';
 
 export type StorageChoice = 'vault' | 'embed' | 'cancel';

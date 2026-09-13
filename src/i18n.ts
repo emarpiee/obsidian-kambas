@@ -178,9 +178,11 @@ export interface TranslationSchema {
 const en: TranslationSchema = {
 	settingsHeading: 'Display & canvas',
 	hideImageLabelName: 'Hide media label',
-	hideImageLabelDesc: 'Hide the base64 URL / data label header displayed above embedded canvas media cards.',
+	hideImageLabelDesc:
+		'Hide the base64 URL / data label header displayed above embedded canvas media cards.',
 	paletteSwatchCountName: 'Color palette swatches',
-	paletteSwatchCountDesc: 'Number of dominant colors to display when the color palette is enabled on an image (3–10).',
+	paletteSwatchCountDesc:
+		'Number of dominant colors to display when the color palette is enabled on an image (3–10).',
 	keyboardPanHeading: 'Canvas keyboard pan controls',
 	panControlsName: 'Pan controls',
 	panControlsDesc: 'Which set of keys pan the canvas.',
@@ -194,17 +196,21 @@ const en: TranslationSchema = {
 	updateZoomControlsButton: 'Update zoom controls',
 	zoomSpeedName: 'Zoom speed',
 	zoomSpeedDesc: 'Rate of zoom change per frame',
-	duplicateKeyNotice: 'Duplicate key bindings are not allowed. Please choose unique keys for each action.',
+	duplicateKeyNotice:
+		'Duplicate key bindings are not allowed. Please choose unique keys for each action.',
 
 	modalTitle: 'Add media to canvas file',
-	modalDescription: (filename: string) => `How would you like to store "${filename}"?`,
+	modalDescription: (filename: string) =>
+		`How would you like to store "${filename}"?`,
 	applyRemaining: (count: number) => `Apply choice to remaining ${count} media`,
 	saveToVault: 'Save to vault',
 	embedInCanvas: 'Embed in canvas file',
 
 	convertModalTitle: 'Embed media in canvas file',
-	convertModalDesc: (filename: string) => `Embedding "${filename}" directly into the canvas file. What would you like to do with the original vault file?`,
-	applyRemainingConvert: (count: number) => `Apply choice to remaining ${count} media files`,
+	convertModalDesc: (filename: string) =>
+		`Embedding "${filename}" directly into the canvas file. What would you like to do with the original vault file?`,
+	applyRemainingConvert: (count: number) =>
+		`Apply choice to remaining ${count} media files`,
 	deleteOriginalFile: 'Delete original file',
 	keepOriginalFile: 'Keep original file',
 
@@ -244,7 +250,8 @@ const en: TranslationSchema = {
 	tagClearFilter: 'Clear filter',
 	tagNodesCount: (count: number) => `${count} node${count === 1 ? '' : 's'}`,
 	tagPublishToVault: 'Sync tags to vault',
-	tagPublishToVaultDesc: 'When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian\'s tag pane and search.',
+	tagPublishToVaultDesc:
+		"When enabled, all canvas tags are written as frontmatter tags on this canvas file, making them visible in Obsidian's tag pane and search.",
 	// Color filter
 	colorFilterTab: 'Colors',
 	colorFilterPanel: 'Filter by color',
@@ -255,7 +262,8 @@ const en: TranslationSchema = {
 	colorNodesCount: (count: number) => `${count} image${count === 1 ? '' : 's'}`,
 	colorSettingHeader: 'Color Extraction',
 	colorSettingName: 'Auto Color Extraction',
-	colorSettingDesc: 'Automatically extract dominant colors from images when canvas opens. Set to Manual or Disabled to improve performance on large canvases.',
+	colorSettingDesc:
+		'Automatically extract dominant colors from images when canvas opens. Set to Manual or Disabled to improve performance on large canvases.',
 	colorModeAuto: 'Auto (extract on canvas open)',
 	colorModeManual: 'Manual (extract on button click)',
 	colorModeDisabled: 'Disabled',
@@ -275,60 +283,77 @@ const en: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `Copied ${hex} to clipboard!`,
-	copyAllColorsNotice: (count: number) => `Copied ${count} color${count === 1 ? '' : 's'} to clipboard!`,
+	copyAllColorsNotice: (count: number) =>
+		`Copied ${count} color${count === 1 ? '' : 's'} to clipboard!`,
 	copyAllColorsTooltip: 'Copy all palette colors',
 	tagBadgePositionName: 'Tag badge position',
-	tagBadgePositionDesc: 'Choose whether node tag badges are rendered outside below the element or inside at the bottom-left.',
+	tagBadgePositionDesc:
+		'Choose whether node tag badges are rendered outside below the element or inside at the bottom-left.',
 	tagBadgePositionOutside: 'Outside (below element)',
 	tagBadgePositionInside: 'Inside (bottom-left)',
 	tagZoomOnSelectName: 'Auto-zoom on tag selection',
-	tagZoomOnSelectDesc: 'Automatically zoom and fit visible elements when selecting or clearing tag filters in the panel.',
+	tagZoomOnSelectDesc:
+		'Automatically zoom and fit visible elements when selecting or clearing tag filters in the panel.',
 	paletteCopySeparatorName: 'Color palette copy separator',
-	paletteCopySeparatorDesc: 'Delimiter used when clicking the copy button on a color palette to copy all hex values to clipboard.',
+	paletteCopySeparatorDesc:
+		'Delimiter used when clicking the copy button on a color palette to copy all hex values to clipboard.',
 	colorExtractModeName: 'Color extraction mode',
-	colorExtractModeDesc: 'Controls when dominant colors are extracted from canvas images for the color filter panel.',
+	colorExtractModeDesc:
+		'Controls when dominant colors are extracted from canvas images for the color filter panel.',
 	noImageInClipboardNotice: 'No image found in clipboard',
 	unableAccessClipboardNotice: 'Unable to access clipboard',
 
 	base64Heading: 'Base64 image optimization',
 	autoOptimizeBase64Name: 'Auto-optimize Base64 on paste / drop',
-	autoOptimizeBase64Desc: 'Automatically compress pasted or dropped Base64 images to WebP format (Default: Disabled).',
+	autoOptimizeBase64Desc:
+		'Automatically compress pasted or dropped Base64 images to WebP format (Default: Disabled).',
 	base64MaxDimensionName: 'Maximum image dimension (px)',
-	base64MaxDimensionDesc: 'Resize images exceeding this width/height before embedding in canvas (Default: 2048px).',
-	optimizedNotice: (count: number, kbSaved: number) => `Optimized ${count} embedded image(s), saved ~${kbSaved} KB!`,
+	base64MaxDimensionDesc:
+		'Resize images exceeding this width/height before embedding in canvas (Default: 2048px).',
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`Optimized ${count} embedded image(s), saved ~${kbSaved} KB!`,
 	noCompressibleNotice: 'No compressible base64 images selected.',
 
 	loupeHeading: 'Visual inspection (Loupe Tool)',
 	loupeHotkeyName: 'Loupe activation hotkey',
-	loupeHotkeyDesc: 'Hold down this key while hovering over an image node to inspect details (Default: Q).',
+	loupeHotkeyDesc:
+		'Hold down this key while hovering over an image node to inspect details (Default: Q).',
 	loupeZoomLevelName: 'Loupe magnification level',
-	loupeZoomLevelDesc: 'Zoom multiplier for the loupe lens from 1.5x to 10.0x (Default: 3.0x).',
+	loupeZoomLevelDesc:
+		'Zoom multiplier for the loupe lens from 1.5x to 10.0x (Default: 3.0x).',
 	loupeSizeName: 'Loupe lens diameter (px)',
-	loupeSizeDesc: 'Size of the loupe lens in pixels from 100px to 600px (Default: 260px).',
+	loupeSizeDesc:
+		'Size of the loupe lens in pixels from 100px to 600px (Default: 260px).',
 	loupeShapeName: 'Loupe lens shape',
-	loupeShapeDesc: 'Visual shape of the magnifying lens frame (Default: Circle).',
+	loupeShapeDesc:
+		'Visual shape of the magnifying lens frame (Default: Circle).',
 	loupeShapeCircle: 'Circle',
 	loupeShapeRounded: 'Rounded rectangle',
 	loupeShapeSquare: 'Square',
 	loupeSmoothingName: 'Loupe motion smoothing / dampening',
-	loupeSmoothingDesc: 'Smooths out mouse jitter when panning across images (Lower = smoother & less sensitive, Higher = faster tracking. Default: 0.50).',
+	loupeSmoothingDesc:
+		'Smooths out mouse jitter when panning across images (Lower = smoother & less sensitive, Higher = faster tracking. Default: 0.50).',
 
 	selectionZoomHotkeyName: 'Zoom to fit selection hotkey',
-	selectionZoomHotkeyDesc: 'Press this hotkey when elements are selected to zoom to fit them. Press again to zoom back out (Default: Space).',
+	selectionZoomHotkeyDesc:
+		'Press this hotkey when elements are selected to zoom to fit them. Press again to zoom back out (Default: Space).',
 
 	namingModalTitleCopy: 'Copy Media to Vault',
 	namingModalTitleMove: 'Move Media to Vault',
 	namingModalVaultRoot: '/ (Vault root)',
 	destinationFolderNotice: 'Destination Folder: ',
-	chooseNamingStrategy: 'Choose how the media file should be named in your vault:',
+	chooseNamingStrategy:
+		'Choose how the media file should be named in your vault:',
 	defaultFilenameOptTitle: 'Default Filename',
 	tagFilenameOptTitle: 'Tag Filename',
 	noTagsFallbackNotice: '(No tags on current media - will fallback to default)',
 	customFilenameOptTitle: 'Custom Filename',
 	customFilenamePlaceholder: 'e.g. my-image',
 	numberingFormatName: 'Numbering format',
-	numberingFormatDesc: 'Format used for incremental counters (e.g., when duplicate names exist or in batch exports).',
-	applyToAllRemaining: (count: number) => `Apply to all ${count} remaining items`,
+	numberingFormatDesc:
+		'Format used for incremental counters (e.g., when duplicate names exist or in batch exports).',
+	applyToAllRemaining: (count: number) =>
+		`Apply to all ${count} remaining items`,
 	numberFormatPadded2: '01, 02, 03... (2 Digits)',
 	numberFormatPadded3: '001, 002, 003... (3 Digits)',
 	numberFormatSimple: '1, 2, 3... (Unpadded)',
@@ -341,7 +366,8 @@ const en: TranslationSchema = {
 const zh: TranslationSchema = {
 	settingsHeading: '显示与画布',
 	hideImageLabelName: '隐藏媒体标签',
-	hideImageLabelDesc: '隐藏嵌入式画布媒体卡片上方显示的 base64 URL / 数据标签标头。',
+	hideImageLabelDesc:
+		'隐藏嵌入式画布媒体卡片上方显示的 base64 URL / 数据标签标头。',
 	keyboardPanHeading: '画布键盘平移控制',
 	panControlsName: '平移控制',
 	panControlsDesc: '用于平移画布按键组合。',
@@ -364,8 +390,10 @@ const zh: TranslationSchema = {
 	embedInCanvas: '嵌入到画布文件',
 
 	convertModalTitle: '在画布文件中嵌入媒体',
-	convertModalDesc: (filename: string) => `将 "${filename}" 直接嵌入画布文件。您希望如何处理原始宝库文件？`,
-	applyRemainingConvert: (count: number) => `将选择应用到剩余的 ${count} 个媒体文件`,
+	convertModalDesc: (filename: string) =>
+		`将 "${filename}" 直接嵌入画布文件。您希望如何处理原始宝库文件？`,
+	applyRemainingConvert: (count: number) =>
+		`将选择应用到剩余的 ${count} 个媒体文件`,
 	deleteOriginalFile: '删除原始文件',
 	keepOriginalFile: '保留原始文件',
 
@@ -405,7 +433,8 @@ const zh: TranslationSchema = {
 	tagClearFilter: '清除筛选',
 	tagNodesCount: (count: number) => `${count} 个元素`,
 	tagPublishToVault: '同步标签至笔记宝库',
-	tagPublishToVaultDesc: '启用后，画布中的所有标签都将作为 frontmatter 标签写入该画布文件，使其在 Obsidian 的标签面板和搜索中可见。',
+	tagPublishToVaultDesc:
+		'启用后，画布中的所有标签都将作为 frontmatter 标签写入该画布文件，使其在 Obsidian 的标签面板和搜索中可见。',
 	colorFilterTab: '颜色',
 	colorFilterPanel: '按颜色筛选',
 	colorExtractBtn: '扫描画布颜色',
@@ -415,7 +444,8 @@ const zh: TranslationSchema = {
 	colorNodesCount: (count: number) => `${count} 个元素`,
 	colorSettingHeader: '颜色提取',
 	colorSettingName: '自动提取颜色',
-	colorSettingDesc: '打开画布时自动提取图片的代表颜色。在大型画布上可设为手动或禁用以提升性能。',
+	colorSettingDesc:
+		'打开画布时自动提取图片的代表颜色。在大型画布上可设为手动或禁用以提升性能。',
 	colorModeAuto: '自动（打开画布时提取）',
 	colorModeManual: '手动（点击按钮时提取）',
 	colorModeDisabled: '禁用',
@@ -438,13 +468,15 @@ const zh: TranslationSchema = {
 	copyAllColorsNotice: (count: number) => `已复制 ${count} 个颜色到剪贴板！`,
 	copyAllColorsTooltip: '复制调色板的所有颜色',
 	tagBadgePositionName: '标签徽章位置',
-	tagBadgePositionDesc: '选择元素标签徽章是渲染在元素下方（外侧）还是左下角（内侧）。',
+	tagBadgePositionDesc:
+		'选择元素标签徽章是渲染在元素下方（外侧）还是左下角（内侧）。',
 	tagBadgePositionOutside: '外侧（元素下方）',
 	tagBadgePositionInside: '内侧（左下角）',
 	tagZoomOnSelectName: '选择标签时自动缩放',
 	tagZoomOnSelectDesc: '在面板中选择或清除标签筛选时，自动缩放并适应可见元素。',
 	paletteCopySeparatorName: '调色板复制分隔符',
-	paletteCopySeparatorDesc: '点击调色板复制按钮将所有十六进制颜色复制到剪贴板时使用的分隔符。',
+	paletteCopySeparatorDesc:
+		'点击调色板复制按钮将所有十六进制颜色复制到剪贴板时使用的分隔符。',
 	colorExtractModeName: '颜色提取模式',
 	colorExtractModeDesc: '控制何时从画布图片中提取代表颜色以用于颜色筛选面板。',
 	noImageInClipboardNotice: '剪贴板中未找到图片',
@@ -454,7 +486,8 @@ const zh: TranslationSchema = {
 const zhTW: TranslationSchema = {
 	settingsHeading: '顯示與畫布',
 	hideImageLabelName: '隱藏媒體標籤',
-	hideImageLabelDesc: '隱藏嵌入式畫布媒體卡片上方顯示的 base64 URL / 資料標籤標頭。',
+	hideImageLabelDesc:
+		'隱藏嵌入式畫布媒體卡片上方顯示的 base64 URL / 資料標籤標頭。',
 	keyboardPanHeading: '畫布鍵盤平移控制',
 	panControlsName: '平移控制',
 	panControlsDesc: '用於平移畫布按鍵組合。',
@@ -477,8 +510,10 @@ const zhTW: TranslationSchema = {
 	embedInCanvas: '嵌入至畫布檔案',
 
 	convertModalTitle: '在畫布檔案中嵌入媒體',
-	convertModalDesc: (filename: string) => `將 "${filename}" 直接嵌入畫布檔案。您希望如何處理原始寶庫檔案？`,
-	applyRemainingConvert: (count: number) => `將選擇套用至剩餘的 ${count} 個媒體檔案`,
+	convertModalDesc: (filename: string) =>
+		`將 "${filename}" 直接嵌入畫布檔案。您希望如何處理原始寶庫檔案？`,
+	applyRemainingConvert: (count: number) =>
+		`將選擇套用至剩餘的 ${count} 個媒體檔案`,
 	deleteOriginalFile: '刪除原始檔案',
 	keepOriginalFile: '保留原始檔案',
 
@@ -518,7 +553,8 @@ const zhTW: TranslationSchema = {
 	tagClearFilter: '清除篩選',
 	tagNodesCount: (count: number) => `${count} 個元素`,
 	tagPublishToVault: '同步標籤至筆記寶庫',
-	tagPublishToVaultDesc: '啟用後，畫布中的所有標籤都將作為 frontmatter 標籤寫入該畫布檔案，使其在 Obsidian 的標籤面板和搜尋中可見。',
+	tagPublishToVaultDesc:
+		'啟用後，畫布中的所有標籤都將作為 frontmatter 標籤寫入該畫布檔案，使其在 Obsidian 的標籤面板和搜尋中可見。',
 	colorFilterTab: '顏色',
 	colorFilterPanel: '按顏色篩選',
 	colorExtractBtn: '掃描畫布顏色',
@@ -528,7 +564,8 @@ const zhTW: TranslationSchema = {
 	colorNodesCount: (count: number) => `${count} 個元素`,
 	colorSettingHeader: '顏色擷取',
 	colorSettingName: '自動擷取顏色',
-	colorSettingDesc: '開啟畫布時自動擷取圖片的代表顏色。在大型畫布上可設為手動或停用以提升效能。',
+	colorSettingDesc:
+		'開啟畫布時自動擷取圖片的代表顏色。在大型畫布上可設為手動或停用以提升效能。',
 	colorModeAuto: '自動（開啟畫布時擷取）',
 	colorModeManual: '手動（點擊按鈕時擷取）',
 	colorModeDisabled: '停用',
@@ -551,13 +588,15 @@ const zhTW: TranslationSchema = {
 	copyAllColorsNotice: (count: number) => `已複製 ${count} 個顏色至剪貼簿！`,
 	copyAllColorsTooltip: '複製調色板的所有顏色',
 	tagBadgePositionName: '標籤徽章位置',
-	tagBadgePositionDesc: '選擇元素標籤徽章是渲染在元素下方（外側）還是左下角（內側）。',
+	tagBadgePositionDesc:
+		'選擇元素標籤徽章是渲染在元素下方（外側）還是左下角（內側）。',
 	tagBadgePositionOutside: '外側（元素下方）',
 	tagBadgePositionInside: '內側（左下角）',
 	tagZoomOnSelectName: '選擇標籤時自動縮放',
 	tagZoomOnSelectDesc: '在面板中選擇或清除標籤篩選時，自動縮放並適應可見元素。',
 	paletteCopySeparatorName: '調色板複製分隔符',
-	paletteCopySeparatorDesc: '點擊調色板複製按鈕將所有十六進位顏色複製至剪貼簿時使用的分隔符。',
+	paletteCopySeparatorDesc:
+		'點擊調色板複製按鈕將所有十六進位顏色複製至剪貼簿時使用的分隔符。',
 	colorExtractModeName: '顏色擷取模式',
 	colorExtractModeDesc: '控制何時從畫布圖片中擷取代表顏色以用於顏色篩選面板。',
 	noImageInClipboardNotice: '剪貼簿中未找到圖片',
@@ -567,7 +606,8 @@ const zhTW: TranslationSchema = {
 const es: TranslationSchema = {
 	settingsHeading: 'Visualización y lienzo',
 	hideImageLabelName: 'Ocultar etiqueta de medios',
-	hideImageLabelDesc: 'Oculta la cabecera de la etiqueta base64 URL / datos que se muestra sobre las tarjetas de medios insertadas.',
+	hideImageLabelDesc:
+		'Oculta la cabecera de la etiqueta base64 URL / datos que se muestra sobre las tarjetas de medios insertadas.',
 	keyboardPanHeading: 'Controles de desplazamiento del lienzo por teclado',
 	panControlsName: 'Controles de desplazamiento',
 	panControlsDesc: 'Conjunto de teclas para desplazar el lienzo.',
@@ -581,17 +621,21 @@ const es: TranslationSchema = {
 	updateZoomControlsButton: 'Actualizar controles de zoom',
 	zoomSpeedName: 'Velocidad de zoom',
 	zoomSpeedDesc: 'Tasa de cambio de zoom por fotograma',
-	duplicateKeyNotice: 'No se permiten asignaciones de teclas duplicadas. Por favor, elija teclas únicas para cada acción.',
+	duplicateKeyNotice:
+		'No se permiten asignaciones de teclas duplicadas. Por favor, elija teclas únicas para cada acción.',
 
 	modalTitle: 'Añadir medios al archivo de lienzo',
 	modalDescription: (filename: string) => `¿Cómo desea guardar "${filename}"?`,
-	applyRemaining: (count: number) => `Aplicar opción a los ${count} medios restantes`,
+	applyRemaining: (count: number) =>
+		`Aplicar opción a los ${count} medios restantes`,
 	saveToVault: 'Guardar en la bóveda',
 	embedInCanvas: 'Incrustar en el archivo de lienzo',
 
 	convertModalTitle: 'Incrustar medios en el archivo de lienzo',
-	convertModalDesc: (filename: string) => `Incrustando "${filename}" directamente en el archivo de lienzo. ¿Qué desea hacer con el archivo original de la bóveda?`,
-	applyRemainingConvert: (count: number) => `Aplicar opción a los ${count} archivos de medios restantes`,
+	convertModalDesc: (filename: string) =>
+		`Incrustando "${filename}" directamente en el archivo de lienzo. ¿Qué desea hacer con el archivo original de la bóveda?`,
+	applyRemainingConvert: (count: number) =>
+		`Aplicar opción a los ${count} archivos de medios restantes`,
 	deleteOriginalFile: 'Eliminar archivo original',
 	keepOriginalFile: 'Conservar archivo original',
 
@@ -629,19 +673,24 @@ const es: TranslationSchema = {
 	tagPlaceholder: '#etiqueta, presione Enter para añadir',
 	tagFilterPanel: 'Filtrar por etiqueta',
 	tagClearFilter: 'Borrar filtro',
-	tagNodesCount: (count: number) => `${count} elemento${count === 1 ? '' : 's'}`,
+	tagNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 's'}`,
 	tagPublishToVault: 'Sincronizar etiquetas con la bóveda',
-	tagPublishToVaultDesc: 'Al activarlo, todas las etiquetas del lienzo se escribirán como etiquetas de frontmatter en este archivo de lienzo, haciéndolas visibles en el panel de etiquetas y la búsqueda de Obsidian.',
+	tagPublishToVaultDesc:
+		'Al activarlo, todas las etiquetas del lienzo se escribirán como etiquetas de frontmatter en este archivo de lienzo, haciéndolas visibles en el panel de etiquetas y la búsqueda de Obsidian.',
 	colorFilterTab: 'Color',
 	colorFilterPanel: 'Filtrar por color',
 	colorExtractBtn: 'Escanear colores del lienzo',
 	colorExtracting: 'Extrayendo colores…',
-	colorNoImages: 'No se encontraron imágenes con colores detectados en este lienzo.',
+	colorNoImages:
+		'No se encontraron imágenes con colores detectados en este lienzo.',
 	colorClearFilter: 'Borrar filtro de color',
-	colorNodesCount: (count: number) => `${count} elemento${count === 1 ? '' : 's'}`,
+	colorNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 's'}`,
 	colorSettingHeader: 'Extracción de color',
 	colorSettingName: 'Extracción automática de color',
-	colorSettingDesc: 'Extrae automáticamente los colores dominantes de las imágenes al abrir el lienzo. Establézcalo en Manual o Desactivado para mejorar el rendimiento en lienzos grandes.',
+	colorSettingDesc:
+		'Extrae automáticamente los colores dominantes de las imágenes al abrir el lienzo. Establézcalo en Manual o Desactivado para mejorar el rendimiento en lienzos grandes.',
 	colorModeAuto: 'Automático (extraer al abrir lienzo)',
 	colorModeManual: 'Manual (extraer al hacer clic)',
 	colorModeDisabled: 'Desactivado',
@@ -661,18 +710,23 @@ const es: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `¡Copiado ${hex} al portapapeles!`,
-	copyAllColorsNotice: (count: number) => `¡Copiados ${count} color${count === 1 ? '' : 'es'} al portapapeles!`,
+	copyAllColorsNotice: (count: number) =>
+		`¡Copiados ${count} color${count === 1 ? '' : 'es'} al portapapeles!`,
 	copyAllColorsTooltip: 'Copiar todos los colores de la paleta',
 	tagBadgePositionName: 'Posición de la insignia de etiqueta',
-	tagBadgePositionDesc: 'Elija si las insignias de etiqueta se muestran fuera (debajo del elemento) o dentro (abajo a la izquierda).',
+	tagBadgePositionDesc:
+		'Elija si las insignias de etiqueta se muestran fuera (debajo del elemento) o dentro (abajo a la izquierda).',
 	tagBadgePositionOutside: 'Fuera (debajo del elemento)',
 	tagBadgePositionInside: 'Dentro (abajo a la izquierda)',
 	tagZoomOnSelectName: 'Zoom automático al seleccionar etiqueta',
-	tagZoomOnSelectDesc: 'Ajusta y hace zoom automáticamente en los elementos visibles al seleccionar o limpiar filtros de etiquetas.',
+	tagZoomOnSelectDesc:
+		'Ajusta y hace zoom automáticamente en los elementos visibles al seleccionar o limpiar filtros de etiquetas.',
 	paletteCopySeparatorName: 'Separador al copiar paleta de colores',
-	paletteCopySeparatorDesc: 'Delimitador usado al hacer clic en el botón de copiar paleta para copiar todos los valores hex al portapapeles.',
+	paletteCopySeparatorDesc:
+		'Delimitador usado al hacer clic en el botón de copiar paleta para copiar todos los valores hex al portapapeles.',
 	colorExtractModeName: 'Modo de extracción de color',
-	colorExtractModeDesc: 'Controla cuándo se extraen los colores dominantes de las imágenes del lienzo para el panel de filtro de color.',
+	colorExtractModeDesc:
+		'Controla cuándo se extraen los colores dominantes de las imágenes del lienzo para el panel de filtro de color.',
 	noImageInClipboardNotice: 'No se encontró ninguna imagen en el portapapeles',
 	unableAccessClipboardNotice: 'No se puede acceder al portapapeles',
 };
@@ -680,7 +734,8 @@ const es: TranslationSchema = {
 const fr: TranslationSchema = {
 	settingsHeading: 'Affichage et canevas',
 	hideImageLabelName: 'Masquer l’étiquette des médias',
-	hideImageLabelDesc: 'Masquer l’en-tête de l’étiquette URL / données base64 affiché au-dessus des cartes de médias intégrées.',
+	hideImageLabelDesc:
+		'Masquer l’en-tête de l’étiquette URL / données base64 affiché au-dessus des cartes de médias intégrées.',
 	keyboardPanHeading: 'Commandes de panoramique du canevas au clavier',
 	panControlsName: 'Commandes de panoramique',
 	panControlsDesc: 'Ensemble de touches pour faire défiler le canevas.',
@@ -690,21 +745,27 @@ const fr: TranslationSchema = {
 	maxPanSpeedDesc: 'Unités de canevas pour le défilement',
 	keyboardZoomHeading: 'Commandes de zoom du canevas au clavier',
 	zoomControlsName: 'Commandes de zoom',
-	zoomControlsDesc: 'Ensemble de touches pour zoomer et dézoomer sur le canevas.',
+	zoomControlsDesc:
+		'Ensemble de touches pour zoomer et dézoomer sur le canevas.',
 	updateZoomControlsButton: 'Mettre à jour les commandes de zoom',
 	zoomSpeedName: 'Vitesse de zoom',
 	zoomSpeedDesc: 'Taux de modification du zoom par image',
-	duplicateKeyNotice: 'Les raccourcis clavier en double ne sont pas autorisés. Veuillez choisir des touches uniques pour chaque action.',
+	duplicateKeyNotice:
+		'Les raccourcis clavier en double ne sont pas autorisés. Veuillez choisir des touches uniques pour chaque action.',
 
 	modalTitle: 'Ajouter un média au fichier de canevas',
-	modalDescription: (filename: string) => `Comment souhaitez-vous stocker « ${filename} » ?`,
-	applyRemaining: (count: number) => `Appliquer le choix aux ${count} médias restants`,
+	modalDescription: (filename: string) =>
+		`Comment souhaitez-vous stocker « ${filename} » ?`,
+	applyRemaining: (count: number) =>
+		`Appliquer le choix aux ${count} médias restants`,
 	saveToVault: 'Enregistrer dans le coffre',
 	embedInCanvas: 'Intégrer dans le fichier de canevas',
 
 	convertModalTitle: 'Intégrer le média dans le fichier de canevas',
-	convertModalDesc: (filename: string) => `Intégration directe de « ${filename} » dans le fichier de canevas. Que souhaitez-vous faire du fichier d’origine dans le coffre ?`,
-	applyRemainingConvert: (count: number) => `Appliquer le choix aux ${count} fichiers médias restants`,
+	convertModalDesc: (filename: string) =>
+		`Intégration directe de « ${filename} » dans le fichier de canevas. Que souhaitez-vous faire du fichier d’origine dans le coffre ?`,
+	applyRemainingConvert: (count: number) =>
+		`Appliquer le choix aux ${count} fichiers médias restants`,
 	deleteOriginalFile: 'Supprimer le fichier d’origine',
 	keepOriginalFile: 'Conserver le fichier d’origine',
 
@@ -744,17 +805,20 @@ const fr: TranslationSchema = {
 	tagClearFilter: 'Effacer le filtre',
 	tagNodesCount: (count: number) => `${count} élément${count === 1 ? '' : 's'}`,
 	tagPublishToVault: 'Synchroniser les étiquettes avec le coffre',
-	tagPublishToVaultDesc: 'Lorsqu’elle est activée, toutes les étiquettes du canevas sont inscrites en tant qu’étiquettes frontmatter sur ce fichier de canevas, les rendant visibles dans le panneau d’étiquettes et la recherche d’Obsidian.',
+	tagPublishToVaultDesc:
+		'Lorsqu’elle est activée, toutes les étiquettes du canevas sont inscrites en tant qu’étiquettes frontmatter sur ce fichier de canevas, les rendant visibles dans le panneau d’étiquettes et la recherche d’Obsidian.',
 	colorFilterTab: 'Couleur',
 	colorFilterPanel: 'Filtrer par couleur',
 	colorExtractBtn: 'Analyser les couleurs du canevas',
 	colorExtracting: 'Extraction des couleurs…',
 	colorNoImages: 'Aucune image avec des couleurs détectées sur ce canevas.',
 	colorClearFilter: 'Effacer le filtre de couleur',
-	colorNodesCount: (count: number) => `${count} élément${count === 1 ? '' : 's'}`,
+	colorNodesCount: (count: number) =>
+		`${count} élément${count === 1 ? '' : 's'}`,
 	colorSettingHeader: 'Extraction de couleur',
 	colorSettingName: 'Extraction automatique des couleurs',
-	colorSettingDesc: 'Extrait automatiquement les couleurs dominantes des images à l’ouverture du canevas. Réglez sur Manuel ou Désactivé pour améliorer les performances sur les grands canevas.',
+	colorSettingDesc:
+		'Extrait automatiquement les couleurs dominantes des images à l’ouverture du canevas. Réglez sur Manuel ou Désactivé pour améliorer les performances sur les grands canevas.',
 	colorModeAuto: 'Automatique (extraire à l’ouverture)',
 	colorModeManual: 'Manuel (extraire sur clic)',
 	colorModeDisabled: 'Désactivé',
@@ -774,18 +838,23 @@ const fr: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `${hex} copié dans le presse-papiers !`,
-	copyAllColorsNotice: (count: number) => `${count} couleur${count === 1 ? '' : 's'} copiée${count === 1 ? '' : 's'} dans le presse-papiers !`,
+	copyAllColorsNotice: (count: number) =>
+		`${count} couleur${count === 1 ? '' : 's'} copiée${count === 1 ? '' : 's'} dans le presse-papiers !`,
 	copyAllColorsTooltip: 'Copier toutes les couleurs de la palette',
 	tagBadgePositionName: 'Position du badge d’étiquette',
-	tagBadgePositionDesc: 'Choisissez si les badges d’étiquette sont affichés à l’extérieur (sous l’élément) ou à l’intérieur (en bas à gauche).',
+	tagBadgePositionDesc:
+		'Choisissez si les badges d’étiquette sont affichés à l’extérieur (sous l’élément) ou à l’intérieur (en bas à gauche).',
 	tagBadgePositionOutside: 'Extérieur (sous l’élément)',
 	tagBadgePositionInside: 'Intérieur (en bas à gauche)',
 	tagZoomOnSelectName: 'Zoom automatique lors de la sélection d’étiquette',
-	tagZoomOnSelectDesc: 'Zoome et ajuste automatiquement les éléments visibles lors de la sélection ou de l’effacement des filtres d’étiquettes.',
+	tagZoomOnSelectDesc:
+		'Zoome et ajuste automatiquement les éléments visibles lors de la sélection ou de l’effacement des filtres d’étiquettes.',
 	paletteCopySeparatorName: 'Séparateur de copie de la palette de couleurs',
-	paletteCopySeparatorDesc: 'Délimiteur utilisé lors du clic sur le bouton de copie de la palette pour copier toutes les valeurs hexadécimales dans le presse-papiers.',
+	paletteCopySeparatorDesc:
+		'Délimiteur utilisé lors du clic sur le bouton de copie de la palette pour copier toutes les valeurs hexadécimales dans le presse-papiers.',
 	colorExtractModeName: 'Mode d’extraction de couleur',
-	colorExtractModeDesc: 'Contrôle le moment où les couleurs dominantes sont extraites des images du canevas pour le panneau de filtre de couleur.',
+	colorExtractModeDesc:
+		'Contrôle le moment où les couleurs dominantes sont extraites des images du canevas pour le panneau de filtre de couleur.',
 	noImageInClipboardNotice: 'Aucune image trouvée dans le presse-papiers',
 	unableAccessClipboardNotice: 'Impossible d’accéder au presse-papiers',
 };
@@ -793,7 +862,8 @@ const fr: TranslationSchema = {
 const de: TranslationSchema = {
 	settingsHeading: 'Anzeige & Canvas',
 	hideImageLabelName: 'Medienbeschriftung ausblenden',
-	hideImageLabelDesc: 'Blendet die Base64-URL-/-Datenbeschriftung aus, die über eingebetteten Medienkarten angezeigt wird.',
+	hideImageLabelDesc:
+		'Blendet die Base64-URL-/-Datenbeschriftung aus, die über eingebetteten Medienkarten angezeigt wird.',
 	keyboardPanHeading: 'Canvas Tastatur-Schwenksteuerung',
 	panControlsName: 'Schwenksteuerung',
 	panControlsDesc: 'Tastenkombination zum Schwenken des Canvas.',
@@ -803,21 +873,27 @@ const de: TranslationSchema = {
 	maxPanSpeedDesc: 'Zu schwenkende Canvas-Einheiten',
 	keyboardZoomHeading: 'Canvas Tastatur-Zoomsteuerung',
 	zoomControlsName: 'Zoomsteuerung',
-	zoomControlsDesc: 'Tastenkombination zum Vergrößern und Verkleinern des Canvas.',
+	zoomControlsDesc:
+		'Tastenkombination zum Vergrößern und Verkleinern des Canvas.',
 	updateZoomControlsButton: 'Zoomsteuerung aktualisieren',
 	zoomSpeedName: 'Zoomgeschwindigkeit',
 	zoomSpeedDesc: 'Rate der Zoomänderung pro Frame',
-	duplicateKeyNotice: 'Doppelte Tastenbelegungen sind nicht erlaubt. Bitte wählen Sie eindeutige Tasten für jede Aktion.',
+	duplicateKeyNotice:
+		'Doppelte Tastenbelegungen sind nicht erlaubt. Bitte wählen Sie eindeutige Tasten für jede Aktion.',
 
 	modalTitle: 'Medien zur Canvas-Datei hinzufügen',
-	modalDescription: (filename: string) => `Wie möchten Sie „${filename}“ speichern?`,
-	applyRemaining: (count: number) => `Auswahl auf die verbleibenden ${count} Medien anwenden`,
+	modalDescription: (filename: string) =>
+		`Wie möchten Sie „${filename}“ speichern?`,
+	applyRemaining: (count: number) =>
+		`Auswahl auf die verbleibenden ${count} Medien anwenden`,
 	saveToVault: 'Im Tresor speichern',
 	embedInCanvas: 'In Canvas-Datei einbetten',
 
 	convertModalTitle: 'Medien in Canvas-Datei einbetten',
-	convertModalDesc: (filename: string) => `„${filename}“ wird direkt in die Canvas-Datei eingebettet. Was möchten Sie mit der ursprünglichen Tresordatei tun?`,
-	applyRemainingConvert: (count: number) => `Auswahl auf die verbleibenden ${count} Mediendateien anwenden`,
+	convertModalDesc: (filename: string) =>
+		`„${filename}“ wird direkt in die Canvas-Datei eingebettet. Was möchten Sie mit der ursprünglichen Tresordatei tun?`,
+	applyRemainingConvert: (count: number) =>
+		`Auswahl auf die verbleibenden ${count} Mediendateien anwenden`,
 	deleteOriginalFile: 'Originaldatei löschen',
 	keepOriginalFile: 'Originaldatei behalten',
 
@@ -857,17 +933,21 @@ const de: TranslationSchema = {
 	tagClearFilter: 'Filter zurücksetzen',
 	tagNodesCount: (count: number) => `${count} Element${count === 1 ? '' : 'e'}`,
 	tagPublishToVault: 'Tags mit Tresor synchronisieren',
-	tagPublishToVaultDesc: 'Wenn aktiviert, werden alle Canvas-Tags als Frontmatter-Tags in diese Canvas-Datei geschrieben, sodass sie in der Tag-Leiste und Suche von Obsidian sichtbar sind.',
+	tagPublishToVaultDesc:
+		'Wenn aktiviert, werden alle Canvas-Tags als Frontmatter-Tags in diese Canvas-Datei geschrieben, sodass sie in der Tag-Leiste und Suche von Obsidian sichtbar sind.',
 	colorFilterTab: 'Farbe',
 	colorFilterPanel: 'Nach Farbe filtern',
 	colorExtractBtn: 'Canvas-Farben scannen',
 	colorExtracting: 'Farben werden extrahiert…',
-	colorNoImages: 'Keine Bilder mit erkannten Farben auf diesem Canvas vorhanden.',
+	colorNoImages:
+		'Keine Bilder mit erkannten Farben auf diesem Canvas vorhanden.',
 	colorClearFilter: 'Farbfilter zurücksetzen',
-	colorNodesCount: (count: number) => `${count} Element${count === 1 ? '' : 'e'}`,
+	colorNodesCount: (count: number) =>
+		`${count} Element${count === 1 ? '' : 'e'}`,
 	colorSettingHeader: 'Farbenextraktion',
 	colorSettingName: 'Automatische Farbenextraktion',
-	colorSettingDesc: 'Extrahiert beim Öffnen des Canvas automatisch dominante Farben aus Bildern. Auf Manuell oder Deaktiviert stellen, um die Leistung bei großen Canvas-Dateien zu verbessern.',
+	colorSettingDesc:
+		'Extrahiert beim Öffnen des Canvas automatisch dominante Farben aus Bildern. Auf Manuell oder Deaktiviert stellen, um die Leistung bei großen Canvas-Dateien zu verbessern.',
 	colorModeAuto: 'Automatisch (beim Öffnen des Canvas extrahieren)',
 	colorModeManual: 'Manuell (per Schaltfläche extrahieren)',
 	colorModeDisabled: 'Deaktiviert',
@@ -887,18 +967,23 @@ const de: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `${hex} in die Zwischenablage kopiert!`,
-	copyAllColorsNotice: (count: number) => `${count} Farbe${count === 1 ? '' : 'n'} in die Zwischenablage kopiert!`,
+	copyAllColorsNotice: (count: number) =>
+		`${count} Farbe${count === 1 ? '' : 'n'} in die Zwischenablage kopiert!`,
 	copyAllColorsTooltip: 'Alle Farben der Palette kopieren',
 	tagBadgePositionName: 'Position des Tag-Badges',
-	tagBadgePositionDesc: 'Wählen Sie, ob Tag-Badges von Elementen außerhalb (unterhalb des Elements) oder innerhalb (unten links) gerendert werden.',
+	tagBadgePositionDesc:
+		'Wählen Sie, ob Tag-Badges von Elementen außerhalb (unterhalb des Elements) oder innerhalb (unten links) gerendert werden.',
 	tagBadgePositionOutside: 'Außerhalb (unterhalb des Elements)',
 	tagBadgePositionInside: 'Innerhalb (unten links)',
 	tagZoomOnSelectName: 'Automatischer Zoom bei Tag-Auswahl',
-	tagZoomOnSelectDesc: 'Zoomt und passt sichtbare Elemente automatisch an, wenn Tag-Filter im Panel ausgewählt oder zurückgesetzt werden.',
+	tagZoomOnSelectDesc:
+		'Zoomt und passt sichtbare Elemente automatisch an, wenn Tag-Filter im Panel ausgewählt oder zurückgesetzt werden.',
 	paletteCopySeparatorName: 'Trennzeichen für Farbpaletten-Kopie',
-	paletteCopySeparatorDesc: 'Trennzeichen beim Klicken auf die Paletten-Kopierschaltfläche zum Kopieren aller Hex-Werte in die Zwischenablage.',
+	paletteCopySeparatorDesc:
+		'Trennzeichen beim Klicken auf die Paletten-Kopierschaltfläche zum Kopieren aller Hex-Werte in die Zwischenablage.',
 	colorExtractModeName: 'Farbenextraktionsmodus',
-	colorExtractModeDesc: 'Steuert, wann dominante Farben aus Canvas-Bildern für das Farbfilter-Panel extrahiert werden.',
+	colorExtractModeDesc:
+		'Steuert, wann dominante Farben aus Canvas-Bildern für das Farbfilter-Panel extrahiert werden.',
 	noImageInClipboardNotice: 'Kein Bild in der Zwischenablage gefunden',
 	unableAccessClipboardNotice: 'Zugriff auf die Zwischenablage nicht möglich',
 };
@@ -906,7 +991,8 @@ const de: TranslationSchema = {
 const ja: TranslationSchema = {
 	settingsHeading: '表示とキャンバス',
 	hideImageLabelName: 'メディアラベルを非表示',
-	hideImageLabelDesc: '埋め込まれたキャンバスメディアカードの上に表示されるbase64 URL / データラベルヘッダーを非表示にします。',
+	hideImageLabelDesc:
+		'埋め込まれたキャンバスメディアカードの上に表示されるbase64 URL / データラベルヘッダーを非表示にします。',
 	keyboardPanHeading: 'キャンバスキーボードパン操作',
 	panControlsName: 'パン操作',
 	panControlsDesc: 'キャンバスをパン移動するキーのセット。',
@@ -920,17 +1006,22 @@ const ja: TranslationSchema = {
 	updateZoomControlsButton: 'ズーム操作を更新',
 	zoomSpeedName: 'ズーム速度',
 	zoomSpeedDesc: 'フレームあたりのズーム変化率',
-	duplicateKeyNotice: '重複したキー割り当ては許可されていません。各操作に一意のキーを選択してください。',
+	duplicateKeyNotice:
+		'重複したキー割り当ては許可されていません。各操作に一意のキーを選択してください。',
 
 	modalTitle: 'キャンバスファイルにメディアを追加',
-	modalDescription: (filename: string) => `「${filename}」をどのように保存しますか？`,
-	applyRemaining: (count: number) => `残りの${count}件のメディアにこの選択を適用`,
+	modalDescription: (filename: string) =>
+		`「${filename}」をどのように保存しますか？`,
+	applyRemaining: (count: number) =>
+		`残りの${count}件のメディアにこの選択を適用`,
 	saveToVault: '保管庫に保存',
 	embedInCanvas: 'キャンバスファイルに埋め込む',
 
 	convertModalTitle: 'キャンバスファイルにメディアを埋め込む',
-	convertModalDesc: (filename: string) => `「${filename}」をキャンバスファイルに直接埋め込みます。元の保管庫ファイルはどうしますか？`,
-	applyRemainingConvert: (count: number) => `残りの${count}件のメディアファイルにこの選択を適用`,
+	convertModalDesc: (filename: string) =>
+		`「${filename}」をキャンバスファイルに直接埋め込みます。元の保管庫ファイルはどうしますか？`,
+	applyRemainingConvert: (count: number) =>
+		`残りの${count}件のメディアファイルにこの選択を適用`,
 	deleteOriginalFile: '元のファイルを削除',
 	keepOriginalFile: '元のファイルを保持',
 
@@ -970,7 +1061,8 @@ const ja: TranslationSchema = {
 	tagClearFilter: 'フィルターを解除',
 	tagNodesCount: (count: number) => `${count} 個の要素`,
 	tagPublishToVault: 'タグをVaultと同期',
-	tagPublishToVaultDesc: '有効にすると、キャンバス内のすべてのタグがキャンバスファイルのフロントマタータグとして書き込まれ、Obsidianのタグペインや検索で利用可能になります。',
+	tagPublishToVaultDesc:
+		'有効にすると、キャンバス内のすべてのタグがキャンバスファイルのフロントマタータグとして書き込まれ、Obsidianのタグペインや検索で利用可能になります。',
 	colorFilterTab: 'カラー',
 	colorFilterPanel: 'カラーで絞り込み',
 	colorExtractBtn: 'キャンバスの色をスキャン',
@@ -980,7 +1072,8 @@ const ja: TranslationSchema = {
 	colorNodesCount: (count: number) => `${count} 個の要素`,
 	colorSettingHeader: '色抽出',
 	colorSettingName: '自動色抽出',
-	colorSettingDesc: 'キャンバスを開いたときに画像から主要な色を自動的に抽出します。大規模なキャンバスのパフォーマンスを向上させるには「手動」または「無効」に設定してください。',
+	colorSettingDesc:
+		'キャンバスを開いたときに画像から主要な色を自動的に抽出します。大規模なキャンバスのパフォーマンスを向上させるには「手動」または「無効」に設定してください。',
 	colorModeAuto: '自動 (キャンバス起動時に抽出)',
 	colorModeManual: '手動 (ボタンクリックで抽出)',
 	colorModeDisabled: '無効',
@@ -1000,18 +1093,23 @@ const ja: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `${hex} をクリップボードにコピーしました！`,
-	copyAllColorsNotice: (count: number) => `${count} 個の色をクリップボードにコピーしました！`,
+	copyAllColorsNotice: (count: number) =>
+		`${count} 個の色をクリップボードにコピーしました！`,
 	copyAllColorsTooltip: 'すべてのパレットの色をコピー',
 	tagBadgePositionName: 'タグバッジの表示位置',
-	tagBadgePositionDesc: '要素のタグバッジを要素下部（外側）に表示するか、左下（内側）に表示するかを選択します。',
+	tagBadgePositionDesc:
+		'要素のタグバッジを要素下部（外側）に表示するか、左下（内側）に表示するかを選択します。',
 	tagBadgePositionOutside: '外側 (要素の下)',
 	tagBadgePositionInside: '内側 (左下)',
 	tagZoomOnSelectName: 'タグ選択時の自動ズーム',
-	tagZoomOnSelectDesc: 'パネルでタグフィルターを選択または解除したときに、表示要素に合わせて自動的にズーム・フィットさせます。',
+	tagZoomOnSelectDesc:
+		'パネルでタグフィルターを選択または解除したときに、表示要素に合わせて自動的にズーム・フィットさせます。',
 	paletteCopySeparatorName: 'カラーパレットコピーの区切り文字',
-	paletteCopySeparatorDesc: 'カラーパレットのコピーボタンを押してすべてのHEX値をクリップボードにコピーする際の区切り文字。',
+	paletteCopySeparatorDesc:
+		'カラーパレットのコピーボタンを押してすべてのHEX値をクリップボードにコピーする際の区切り文字。',
 	colorExtractModeName: '色抽出モード',
-	colorExtractModeDesc: 'カラーフィルターパネル用にキャンバス画像から主要な色を抽出するタイミングを制御します。',
+	colorExtractModeDesc:
+		'カラーフィルターパネル用にキャンバス画像から主要な色を抽出するタイミングを制御します。',
 	noImageInClipboardNotice: 'クリップボードに画像が見つかりません',
 	unableAccessClipboardNotice: 'クリップボードにアクセスできません',
 };
@@ -1019,7 +1117,8 @@ const ja: TranslationSchema = {
 const ko: TranslationSchema = {
 	settingsHeading: '표시 및 캔버스',
 	hideImageLabelName: '미디어 레이블 숨기기',
-	hideImageLabelDesc: '임베디드 캔버스 미디어 카드 위에 표시되는 base64 URL / 데이터 레이블 헤더를 숨깁니다.',
+	hideImageLabelDesc:
+		'임베디드 캔버스 미디어 카드 위에 표시되는 base64 URL / 데이터 레이블 헤더를 숨깁니다.',
 	keyboardPanHeading: '캔버스 키보드 이동 조작',
 	panControlsName: '이동 조작',
 	panControlsDesc: '캔버스를 이동할 키 설정입니다.',
@@ -1033,17 +1132,21 @@ const ko: TranslationSchema = {
 	updateZoomControlsButton: '확대/축소 조작 업데이트',
 	zoomSpeedName: '확대/축소 속도',
 	zoomSpeedDesc: '프레임당 확대/축소 변화율',
-	duplicateKeyNotice: '중복된 키 바인딩은 허용되지 않습니다. 각 작업에 고유한 키를 선택하세요.',
+	duplicateKeyNotice:
+		'중복된 키 바인딩은 허용되지 않습니다. 각 작업에 고유한 키를 선택하세요.',
 
 	modalTitle: '캔버스 파일에 미디어 추가',
-	modalDescription: (filename: string) => `"${filename}"을(를) 어떻게 저장하시겠습니까?`,
+	modalDescription: (filename: string) =>
+		`"${filename}"을(를) 어떻게 저장하시겠습니까?`,
 	applyRemaining: (count: number) => `남은 미디어 ${count}개에 선택 적용`,
 	saveToVault: '보관함에 저장',
 	embedInCanvas: '캔버스 파일에 임베드',
 
 	convertModalTitle: '캔버스 파일에 미디어 임베드',
-	convertModalDesc: (filename: string) => `"${filename}"을(를) 캔버스 파일에 직접 임베드합니다. 원본 보관함 파일을 어떻게 하시겠습니까?`,
-	applyRemainingConvert: (count: number) => `남은 미디어 파일 ${count}개에 선택 적용`,
+	convertModalDesc: (filename: string) =>
+		`"${filename}"을(를) 캔버스 파일에 직접 임베드합니다. 원본 보관함 파일을 어떻게 하시겠습니까?`,
+	applyRemainingConvert: (count: number) =>
+		`남은 미디어 파일 ${count}개에 선택 적용`,
 	deleteOriginalFile: '원본 파일 삭제',
 	keepOriginalFile: '원본 파일 유지',
 
@@ -1083,7 +1186,8 @@ const ko: TranslationSchema = {
 	tagClearFilter: '필터 해제',
 	tagNodesCount: (count: number) => `${count}개 요소`,
 	tagPublishToVault: '태그를 보관함에 동기화',
-	tagPublishToVaultDesc: '활성화하면 캔버스 내 모든 태그가 캔버스 파일의 프론트매터 태그로 기록되어 Obsidian 태그 패널 및 검색에 표시됩니다.',
+	tagPublishToVaultDesc:
+		'활성화하면 캔버스 내 모든 태그가 캔버스 파일의 프론트매터 태그로 기록되어 Obsidian 태그 패널 및 검색에 표시됩니다.',
 	colorFilterTab: '색상',
 	colorFilterPanel: '색상으로 필터링',
 	colorExtractBtn: '캔버스 색상 스캔',
@@ -1093,7 +1197,8 @@ const ko: TranslationSchema = {
 	colorNodesCount: (count: number) => `${count}개 요소`,
 	colorSettingHeader: '색상 추출',
 	colorSettingName: '자동 색상 추출',
-	colorSettingDesc: '캔버스를 열 때 이미지에서 대표 색상을 자동으로 추출합니다. 대형 캔버스의 성능을 향상시키려면 수동 또는 비활성화로 설정하세요.',
+	colorSettingDesc:
+		'캔버스를 열 때 이미지에서 대표 색상을 자동으로 추출합니다. 대형 캔버스의 성능을 향상시키려면 수동 또는 비활성화로 설정하세요.',
 	colorModeAuto: '자동 (캔버스 열 때 추출)',
 	colorModeManual: '수동 (버튼 클릭 시 추출)',
 	colorModeDisabled: '비활성화',
@@ -1113,18 +1218,23 @@ const ko: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `${hex} 코드가 클립보드에 복사되었습니다!`,
-	copyAllColorsNotice: (count: number) => `${count}개 색상이 클립보드에 복사되었습니다!`,
+	copyAllColorsNotice: (count: number) =>
+		`${count}개 색상이 클립보드에 복사되었습니다!`,
 	copyAllColorsTooltip: '모든 팔레트 색상 복사',
 	tagBadgePositionName: '태그 배지 위치',
-	tagBadgePositionDesc: '요소 태그 배지를 요소 하단(외부)에 표시할지, 좌측 하단(내부)에 표시할지 선택합니다.',
+	tagBadgePositionDesc:
+		'요소 태그 배지를 요소 하단(외부)에 표시할지, 좌측 하단(내부)에 표시할지 선택합니다.',
 	tagBadgePositionOutside: '외부 (요소 아래)',
 	tagBadgePositionInside: '내부 (좌측 하단)',
 	tagZoomOnSelectName: '태그 선택 시 자동 확대/축소',
-	tagZoomOnSelectDesc: '패널에서 태그 필터를 선택하거나 해제할 때 표시되는 요소에 맞춰 자동으로 확대/축소합니다.',
+	tagZoomOnSelectDesc:
+		'패널에서 태그 필터를 선택하거나 해제할 때 표시되는 요소에 맞춰 자동으로 확대/축소합니다.',
 	paletteCopySeparatorName: '색상 팔레트 복사 구분자',
-	paletteCopySeparatorDesc: '색상 팔레트 복사 버튼을 눌러 모든 HEX 값을 클립보드에 복사할 때 사용할 구분자입니다.',
+	paletteCopySeparatorDesc:
+		'색상 팔레트 복사 버튼을 눌러 모든 HEX 값을 클립보드에 복사할 때 사용할 구분자입니다.',
 	colorExtractModeName: '색상 추출 모드',
-	colorExtractModeDesc: '색상 필터 패널용으로 캔버스 이미지에서 대표 색상을 추출할 시점을 제어합니다.',
+	colorExtractModeDesc:
+		'색상 필터 패널용으로 캔버스 이미지에서 대표 색상을 추출할 시점을 제어합니다.',
 	noImageInClipboardNotice: '클립보드에서 이미지를 찾을 수 없습니다',
 	unableAccessClipboardNotice: '클립보드에 접근할 수 없습니다',
 };
@@ -1132,7 +1242,8 @@ const ko: TranslationSchema = {
 const ru: TranslationSchema = {
 	settingsHeading: 'Отображение и холст',
 	hideImageLabelName: 'Скрыть метку медиа',
-	hideImageLabelDesc: 'Скрыть заголовок метки base64 URL / данных над встроенными карточками медиа.',
+	hideImageLabelDesc:
+		'Скрыть заголовок метки base64 URL / данных над встроенными карточками медиа.',
 	keyboardPanHeading: 'Управление панорамированием холста с клавиатуры',
 	panControlsName: 'Управление панорамированием',
 	panControlsDesc: 'Клавиши для перемещения по холсту.',
@@ -1146,17 +1257,22 @@ const ru: TranslationSchema = {
 	updateZoomControlsButton: 'Обновить управление масштабированием',
 	zoomSpeedName: 'Скорость масштабирования',
 	zoomSpeedDesc: 'Скорость изменения масштаба за кадр',
-	duplicateKeyNotice: 'Дублирование привязок клавиш не допускается. Пожалуйста, выберите уникальные клавиши для каждого действия.',
+	duplicateKeyNotice:
+		'Дублирование привязок клавиш не допускается. Пожалуйста, выберите уникальные клавиши для каждого действия.',
 
 	modalTitle: 'Добавить медиа в файл холста',
-	modalDescription: (filename: string) => `Как вы хотите сохранить «${filename}»?`,
-	applyRemaining: (count: number) => `Применить выбор к оставшимся ${count} медиа`,
+	modalDescription: (filename: string) =>
+		`Как вы хотите сохранить «${filename}»?`,
+	applyRemaining: (count: number) =>
+		`Применить выбор к оставшимся ${count} медиа`,
 	saveToVault: 'Сохранить в хранилище',
 	embedInCanvas: 'Встроить в файл холста',
 
 	convertModalTitle: 'Встроить медиа в файл холста',
-	convertModalDesc: (filename: string) => `Встраивание «${filename}» непосредственно в файл холста. Что вы хотите сделать с исходным файлом хранилища?`,
-	applyRemainingConvert: (count: number) => `Применить выбор к оставшимся ${count} медиафайлам`,
+	convertModalDesc: (filename: string) =>
+		`Встраивание «${filename}» непосредственно в файл холста. Что вы хотите сделать с исходным файлом хранилища?`,
+	applyRemainingConvert: (count: number) =>
+		`Применить выбор к оставшимся ${count} медиафайлам`,
 	deleteOriginalFile: 'Удалить исходный файл',
 	keepOriginalFile: 'Сохранить исходный файл',
 
@@ -1196,17 +1312,20 @@ const ru: TranslationSchema = {
 	tagClearFilter: 'Сбросить фильтр',
 	tagNodesCount: (count: number) => `${count} элем.`,
 	tagPublishToVault: 'Синхронизировать теги с хранилищем',
-	tagPublishToVaultDesc: 'При включении все теги холста записываются как теги frontmatter в этот файл холста, делая их видимыми на панели тегов и в поиске Obsidian.',
+	tagPublishToVaultDesc:
+		'При включении все теги холста записываются как теги frontmatter в этот файл холста, делая их видимыми на панели тегов и в поиске Obsidian.',
 	colorFilterTab: 'Цвет',
 	colorFilterPanel: 'Фильтр по цвету',
 	colorExtractBtn: 'Сканировать цвета холста',
 	colorExtracting: 'Извлечение цветов…',
-	colorNoImages: 'На этом холсте не найдено изображений с распознанными цветами.',
+	colorNoImages:
+		'На этом холсте не найдено изображений с распознанными цветами.',
 	colorClearFilter: 'Сбросить фильтр цвета',
 	colorNodesCount: (count: number) => `${count} элем.`,
 	colorSettingHeader: 'Извлечение цвета',
 	colorSettingName: 'Автоматическое извлечение цвета',
-	colorSettingDesc: 'Автоматически извлекать преобладающие цвета из изображений при открытии холста. Установите значение «Вручную» или «Отключено» для повышения производительности на больших холстах.',
+	colorSettingDesc:
+		'Автоматически извлекать преобладающие цвета из изображений при открытии холста. Установите значение «Вручную» или «Отключено» для повышения производительности на больших холстах.',
 	colorModeAuto: 'Автоматически (при открытии холста)',
 	colorModeManual: 'Вручную (по нажатию кнопки)',
 	colorModeDisabled: 'Отключено',
@@ -1226,18 +1345,23 @@ const ru: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `${hex} скопирован в буфер обмена!`,
-	copyAllColorsNotice: (count: number) => `Скопировано цветов: ${count} в буфер обмена!`,
+	copyAllColorsNotice: (count: number) =>
+		`Скопировано цветов: ${count} в буфер обмена!`,
 	copyAllColorsTooltip: 'Скопировать все цвета палитры',
 	tagBadgePositionName: 'Расположение значка тега',
-	tagBadgePositionDesc: 'Выберите, отображаются ли значки тегов элементов снаружи (под элементом) или внутри (снизу слева).',
+	tagBadgePositionDesc:
+		'Выберите, отображаются ли значки тегов элементов снаружи (под элементом) или внутри (снизу слева).',
 	tagBadgePositionOutside: 'Снаружи (под элементом)',
 	tagBadgePositionInside: 'Внутри (снизу слева)',
 	tagZoomOnSelectName: 'Автомасштабирование при выборе тега',
-	tagZoomOnSelectDesc: 'Автоматически приближает и подгоняет видимые элементы при выборе или сбросе фильтров тегов.',
+	tagZoomOnSelectDesc:
+		'Автоматически приближает и подгоняет видимые элементы при выборе или сбросе фильтров тегов.',
 	paletteCopySeparatorName: 'Разделитель копирования цветовой палитры',
-	paletteCopySeparatorDesc: 'Разделитель, используемый при нажатии кнопки копирования палитры для копирования всех HEX-значений в буфер обмена.',
+	paletteCopySeparatorDesc:
+		'Разделитель, используемый при нажатии кнопки копирования палитры для копирования всех HEX-значений в буфер обмена.',
 	colorExtractModeName: 'Режим извлечения цвета',
-	colorExtractModeDesc: 'Управляет тем, когда преобладающие цвета извлекаются из изображений холста для панели фильтрации цветов.',
+	colorExtractModeDesc:
+		'Управляет тем, когда преобладающие цвета извлекаются из изображений холста для панели фильтрации цветов.',
 	noImageInClipboardNotice: 'Изображение в буфере обмена не найдено',
 	unableAccessClipboardNotice: 'Не удалось получить доступ к буферу обмена',
 };
@@ -1245,7 +1369,8 @@ const ru: TranslationSchema = {
 const pt: TranslationSchema = {
 	settingsHeading: 'Exibição e tela',
 	hideImageLabelName: 'Ocultar rótulo de mídia',
-	hideImageLabelDesc: 'Ocultar o cabeçalho do rótulo de dados / URL base64 exibido acima dos cartões de mídia incorporados.',
+	hideImageLabelDesc:
+		'Ocultar o cabeçalho do rótulo de dados / URL base64 exibido acima dos cartões de mídia incorporados.',
 	keyboardPanHeading: 'Controles de navegação na tela por teclado',
 	panControlsName: 'Controles de navegação',
 	panControlsDesc: 'Conjunto de teclas para navegar pela tela.',
@@ -1259,17 +1384,22 @@ const pt: TranslationSchema = {
 	updateZoomControlsButton: 'Atualizar controles de zoom',
 	zoomSpeedName: 'Velocidade do zoom',
 	zoomSpeedDesc: 'Taxa de alteração do zoom por quadro',
-	duplicateKeyNotice: 'Teclas duplicadas não são permitidas. Por favor, escolha teclas únicas para cada ação.',
+	duplicateKeyNotice:
+		'Teclas duplicadas não são permitidas. Por favor, escolha teclas únicas para cada ação.',
 
 	modalTitle: 'Adicionar mídia ao arquivo de tela',
-	modalDescription: (filename: string) => `Como você gostaria de armazenar "${filename}"?`,
-	applyRemaining: (count: number) => `Aplicar escolha às ${count} mídias restantes`,
+	modalDescription: (filename: string) =>
+		`Como você gostaria de armazenar "${filename}"?`,
+	applyRemaining: (count: number) =>
+		`Aplicar escolha às ${count} mídias restantes`,
 	saveToVault: 'Salvar no cofre',
 	embedInCanvas: 'Incorporar no arquivo de tela',
 
 	convertModalTitle: 'Incorporar mídia no arquivo de tela',
-	convertModalDesc: (filename: string) => `Incorporando "${filename}" diretamente no arquivo de tela. O que você deseja fazer com o arquivo original do cofre?`,
-	applyRemainingConvert: (count: number) => `Aplicar escolha aos ${count} arquivos de mídia restantes`,
+	convertModalDesc: (filename: string) =>
+		`Incorporando "${filename}" diretamente no arquivo de tela. O que você deseja fazer com o arquivo original do cofre?`,
+	applyRemainingConvert: (count: number) =>
+		`Aplicar escolha aos ${count} arquivos de mídia restantes`,
 	deleteOriginalFile: 'Excluir arquivo original',
 	keepOriginalFile: 'Manter arquivo original',
 
@@ -1307,19 +1437,23 @@ const pt: TranslationSchema = {
 	tagPlaceholder: '#tag, pressione Enter para adicionar',
 	tagFilterPanel: 'Filtrar por tag',
 	tagClearFilter: 'Limpar filtro',
-	tagNodesCount: (count: number) => `${count} elemento${count === 1 ? '' : 's'}`,
+	tagNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 's'}`,
 	tagPublishToVault: 'Sincronizar tags com o cofre',
-	tagPublishToVaultDesc: 'Quando ativado, todas as tags da tela são gravadas como tags frontmatter neste arquivo de tela, tornando-as visíveis no painel de tags e na pesquisa do Obsidian.',
+	tagPublishToVaultDesc:
+		'Quando ativado, todas as tags da tela são gravadas como tags frontmatter neste arquivo de tela, tornando-as visíveis no painel de tags e na pesquisa do Obsidian.',
 	colorFilterTab: 'Cor',
 	colorFilterPanel: 'Filtrar por cor',
 	colorExtractBtn: 'Escanear cores da tela',
 	colorExtracting: 'Extraindo cores…',
 	colorNoImages: 'Nenhuma imagem com cores detectadas nesta tela.',
 	colorClearFilter: 'Limpar filtro de cor',
-	colorNodesCount: (count: number) => `${count} elemento${count === 1 ? '' : 's'}`,
+	colorNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 's'}`,
 	colorSettingHeader: 'Extração de cor',
 	colorSettingName: 'Extração automática de cor',
-	colorSettingDesc: 'Extrai automaticamente as cores dominantes das imagens ao abrir a tela. Defina como Manual ou Desativado para melhorar o desempenho em telas grandes.',
+	colorSettingDesc:
+		'Extrai automaticamente as cores dominantes das imagens ao abrir a tela. Defina como Manual ou Desativado para melhorar o desempenho em telas grandes.',
 	colorModeAuto: 'Automático (extrair ao abrir a tela)',
 	colorModeManual: 'Manual (extrair ao clicar no botão)',
 	colorModeDisabled: 'Desativado',
@@ -1338,27 +1472,36 @@ const pt: TranslationSchema = {
 	colorPink: 'Rosa',
 
 	// Palette & Settings translations
-	copyHexNotice: (hex: string) => `Copiado ${hex} para a área de transferência!`,
-	copyAllColorsNotice: (count: number) => `Copiadas ${count} cor${count === 1 ? '' : 'es'} para a área de transferência!`,
+	copyHexNotice: (hex: string) =>
+		`Copiado ${hex} para a área de transferência!`,
+	copyAllColorsNotice: (count: number) =>
+		`Copiadas ${count} cor${count === 1 ? '' : 'es'} para a área de transferência!`,
 	copyAllColorsTooltip: 'Copiar todas as cores da paleta',
 	tagBadgePositionName: 'Posição do selo de tag',
-	tagBadgePositionDesc: 'Escolha se os selos de tag são renderizados fora (abaixo do elemento) ou dentro (inferior esquerdo).',
+	tagBadgePositionDesc:
+		'Escolha se os selos de tag são renderizados fora (abaixo do elemento) ou dentro (inferior esquerdo).',
 	tagBadgePositionOutside: 'Fora (abaixo do elemento)',
 	tagBadgePositionInside: 'Dentro (inferior esquerdo)',
 	tagZoomOnSelectName: 'Zoom automático ao selecionar tag',
-	tagZoomOnSelectDesc: 'Aproxima e ajusta automaticamente os elementos visíveis ao selecionar ou limpar filtros de tag.',
+	tagZoomOnSelectDesc:
+		'Aproxima e ajusta automaticamente os elementos visíveis ao selecionar ou limpar filtros de tag.',
 	paletteCopySeparatorName: 'Separador de cópia da paleta de cores',
-	paletteCopySeparatorDesc: 'Delimitador usado ao clicar no botão de copiar da paleta para copiar todos os valores hexadecimais para a área de transferência.',
+	paletteCopySeparatorDesc:
+		'Delimitador usado ao clicar no botão de copiar da paleta para copiar todos os valores hexadecimais para a área de transferência.',
 	colorExtractModeName: 'Modo de extração de cor',
-	colorExtractModeDesc: 'Controla quando as cores dominantes são extraídas das imagens da tela para o painel de filtro de cor.',
-	noImageInClipboardNotice: 'Nenhuma imagem encontrada na área de transferência',
-	unableAccessClipboardNotice: 'Não foi possível acessar a área de transferência',
+	colorExtractModeDesc:
+		'Controla quando as cores dominantes são extraídas das imagens da tela para o painel de filtro de cor.',
+	noImageInClipboardNotice:
+		'Nenhuma imagem encontrada na área de transferência',
+	unableAccessClipboardNotice:
+		'Não foi possível acessar a área de transferência',
 };
 
 const it: TranslationSchema = {
 	settingsHeading: 'Visualizzazione e tela',
 	hideImageLabelName: 'Nascondi etichetta media',
-	hideImageLabelDesc: 'Nasconde l’intestazione dell’etichetta dati / URL base64 visualizzata sopra le schede media incorporate.',
+	hideImageLabelDesc:
+		'Nasconde l’intestazione dell’etichetta dati / URL base64 visualizzata sopra le schede media incorporate.',
 	keyboardPanHeading: 'Controlli di panoramica della tela da tastiera',
 	panControlsName: 'Controlli di panoramica',
 	panControlsDesc: 'Insieme di tasti per spostare la tela.',
@@ -1372,17 +1515,22 @@ const it: TranslationSchema = {
 	updateZoomControlsButton: 'Aggiorna controlli di zoom',
 	zoomSpeedName: 'Velocità di zoom',
 	zoomSpeedDesc: 'Tasso di modifica dello zoom per fotogramma',
-	duplicateKeyNotice: 'Le scorciatoie da tastiera duplicate non sono consentite. Scegli tasti univoci per ogni azione.',
+	duplicateKeyNotice:
+		'Le scorciatoie da tastiera duplicate non sono consentite. Scegli tasti univoci per ogni azione.',
 
 	modalTitle: 'Aggiungi media al file della tela',
-	modalDescription: (filename: string) => `Come desideri memorizzare "${filename}"?`,
-	applyRemaining: (count: number) => `Applica scelta ai restanti ${count} media`,
+	modalDescription: (filename: string) =>
+		`Come desideri memorizzare "${filename}"?`,
+	applyRemaining: (count: number) =>
+		`Applica scelta ai restanti ${count} media`,
 	saveToVault: 'Salva nella cassaforte',
 	embedInCanvas: 'Incorpora nel file della tela',
 
 	convertModalTitle: 'Incorpora media nel file della tela',
-	convertModalDesc: (filename: string) => `Incorporamento di "${filename}" direttamente nel file della tela. Cosa desideri fare con il file originale della cassaforte?`,
-	applyRemainingConvert: (count: number) => `Applica scelta ai restanti ${count} file media`,
+	convertModalDesc: (filename: string) =>
+		`Incorporamento di "${filename}" direttamente nel file della tela. Cosa desideri fare con il file originale della cassaforte?`,
+	applyRemainingConvert: (count: number) =>
+		`Applica scelta ai restanti ${count} file media`,
 	deleteOriginalFile: 'Elimina file originale',
 	keepOriginalFile: 'Conserva file originale',
 
@@ -1420,19 +1568,23 @@ const it: TranslationSchema = {
 	tagPlaceholder: '#tag, premi Invio per aggiungere',
 	tagFilterPanel: 'Filtra per tag',
 	tagClearFilter: 'Rimuovi filtro',
-	tagNodesCount: (count: number) => `${count} elemento${count === 1 ? '' : 'i'}`,
+	tagNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 'i'}`,
 	tagPublishToVault: 'Sincronizza tag nella cassaforte',
-	tagPublishToVaultDesc: 'Se abilitato, tutti i tag della tela vengono scritti come tag frontmatter in questo file della tela, rendendoli visibili nel pannello tag e nella ricerca di Obsidian.',
+	tagPublishToVaultDesc:
+		'Se abilitato, tutti i tag della tela vengono scritti come tag frontmatter in questo file della tela, rendendoli visibili nel pannello tag e nella ricerca di Obsidian.',
 	colorFilterTab: 'Colore',
 	colorFilterPanel: 'Filtra per colore',
 	colorExtractBtn: 'Scansiona colori della tela',
 	colorExtracting: 'Estrazione colori…',
 	colorNoImages: 'Nessuna immagine con colori rilevati in questa tela.',
 	colorClearFilter: 'Rimuovi filtro colore',
-	colorNodesCount: (count: number) => `${count} elemento${count === 1 ? '' : 'i'}`,
+	colorNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 'i'}`,
 	colorSettingHeader: 'Estrazione colore',
 	colorSettingName: 'Estrazione automatica colore',
-	colorSettingDesc: 'Estrae automaticamente i colori dominanti dalle immagini all’apertura della tela. Imposta su Manuale o Disattivato per migliorare le prestazioni su tele di grandi dimensioni.',
+	colorSettingDesc:
+		'Estrae automaticamente i colori dominanti dalle immagini all’apertura della tela. Imposta su Manuale o Disattivato per migliorare le prestazioni su tele di grandi dimensioni.',
 	colorModeAuto: 'Automatico (estrai all’apertura)',
 	colorModeManual: 'Manuale (estrai su clic del pulsante)',
 	colorModeDisabled: 'Disattivato',
@@ -1452,18 +1604,23 @@ const it: TranslationSchema = {
 
 	// Palette & Settings translations
 	copyHexNotice: (hex: string) => `Copiato ${hex} negli appunti!`,
-	copyAllColorsNotice: (count: number) => `Copiati ${count} color${count === 1 ? 'e' : 'i'} negli appunti!`,
+	copyAllColorsNotice: (count: number) =>
+		`Copiati ${count} color${count === 1 ? 'e' : 'i'} negli appunti!`,
 	copyAllColorsTooltip: 'Copia tutti i colori della tavolozza',
 	tagBadgePositionName: 'Posizione del badge tag',
-	tagBadgePositionDesc: 'Scegli se i badge tag vengono mostrati all’esterno (sotto l’elemento) o all’interno (in basso a sinistra).',
+	tagBadgePositionDesc:
+		'Scegli se i badge tag vengono mostrati all’esterno (sotto l’elemento) o all’interno (in basso a sinistra).',
 	tagBadgePositionOutside: 'Esterno (sotto l’elemento)',
 	tagBadgePositionInside: 'Interno (in basso a sinistra)',
 	tagZoomOnSelectName: 'Zoom automatico alla selezione tag',
-	tagZoomOnSelectDesc: 'Ingrandisce e adatta automaticamente gli elementi visibili quando si selezionano o rimuovono i filtri tag.',
+	tagZoomOnSelectDesc:
+		'Ingrandisce e adatta automaticamente gli elementi visibili quando si selezionano o rimuovono i filtri tag.',
 	paletteCopySeparatorName: 'Separatore di copia tavolozza colori',
-	paletteCopySeparatorDesc: 'Delimitatore utilizzato quando si fa clic sul pulsante di copia della tavolozza per copiare tutti i valori esadecimali negli appunti.',
+	paletteCopySeparatorDesc:
+		'Delimitatore utilizzato quando si fa clic sul pulsante di copia della tavolozza per copiare tutti i valori esadecimali negli appunti.',
 	colorExtractModeName: 'Modalità estrazione colore',
-	colorExtractModeDesc: 'Controlla quando i colori dominanti vengono estratti dalle immagini della tela per il pannello di filtraggio colore.',
+	colorExtractModeDesc:
+		'Controlla quando i colori dominanti vengono estratti dalle immagini della tela per il pannello di filtraggio colore.',
 	noImageInClipboardNotice: 'Nessuna immagine trovata negli appunti',
 	unableAccessClipboardNotice: 'Impossibile accedere agli appunti',
 };
@@ -1471,7 +1628,8 @@ const it: TranslationSchema = {
 const ar: TranslationSchema = {
 	settingsHeading: 'العرض واللوحة',
 	hideImageLabelName: 'إخفاء تسمية الوسائط',
-	hideImageLabelDesc: 'إخفاء رأس تسمية عنوان URL / البيانات base64 المعروض فوق بطاقات وسائط اللوحة المضمنة.',
+	hideImageLabelDesc:
+		'إخفاء رأس تسمية عنوان URL / البيانات base64 المعروض فوق بطاقات وسائط اللوحة المضمنة.',
 	keyboardPanHeading: 'عناصر التحكم في التمرير بلوحة المفاتيح',
 	panControlsName: 'عناصر تحكم التمرير',
 	panControlsDesc: 'مجموعة المفاتيح المستخدمة لتمرير اللوحة.',
@@ -1485,17 +1643,21 @@ const ar: TranslationSchema = {
 	updateZoomControlsButton: 'تحديث عناصر تحكم التكبير/التصغير',
 	zoomSpeedName: 'سرعة التكبير/التصغير',
 	zoomSpeedDesc: 'معدل تغيير التكبير/التصغير لكل إطار',
-	duplicateKeyNotice: 'غير مسموح بتكرار تعيين المفاتيح. يرجى اختيار مفاتيح فريدة لكل إجراء.',
+	duplicateKeyNotice:
+		'غير مسموح بتكرار تعيين المفاتيح. يرجى اختيار مفاتيح فريدة لكل إجراء.',
 
 	modalTitle: 'إضافة وسائط إلى ملف اللوحة',
 	modalDescription: (filename: string) => `كيف ترغب في تخزين "${filename}"؟`,
-	applyRemaining: (count: number) => `تطبيق الخيار على الوسائط المتبقية وعددها ${count}`,
+	applyRemaining: (count: number) =>
+		`تطبيق الخيار على الوسائط المتبقية وعددها ${count}`,
 	saveToVault: 'حفظ في الخزنة',
 	embedInCanvas: 'تضمين في ملف اللوحة',
 
 	convertModalTitle: 'تضمين الوسائط في ملف اللوحة',
-	convertModalDesc: (filename: string) => `تضمين "${filename}" مباشرة في ملف اللوحة. ماذا تريد أن تفعل بملف الخزنة الأصلي؟`,
-	applyRemainingConvert: (count: number) => `تطبيق الخيار على ملفات الوسائط المتبقية وعددها ${count}`,
+	convertModalDesc: (filename: string) =>
+		`تضمين "${filename}" مباشرة في ملف اللوحة. ماذا تريد أن تفعل بملف الخزنة الأصلي؟`,
+	applyRemainingConvert: (count: number) =>
+		`تطبيق الخيار على ملفات الوسائط المتبقية وعددها ${count}`,
 	deleteOriginalFile: 'حذف الملف الأصلي',
 	keepOriginalFile: 'الاحتفاظ بالملف الأصلي',
 
@@ -1535,7 +1697,8 @@ const ar: TranslationSchema = {
 	tagClearFilter: 'مسح التصفية',
 	tagNodesCount: (count: number) => `${count} عنصر`,
 	tagPublishToVault: 'مزامنة الوسوم مع الخزنة',
-	tagPublishToVaultDesc: 'عند التمكين، يتم كتابة جميع وسوم اللوحة كوسوم frontmatter على ملف اللوحة هذا، مما يجعلها مرئية في جزء الوسوم والبحث في Obsidian.',
+	tagPublishToVaultDesc:
+		'عند التمكين، يتم كتابة جميع وسوم اللوحة كوسوم frontmatter على ملف اللوحة هذا، مما يجعلها مرئية في جزء الوسوم والبحث في Obsidian.',
 	colorFilterTab: 'اللون',
 	colorFilterPanel: 'تصفية حسب اللون',
 	colorExtractBtn: 'مسح ألوان اللوحة',
@@ -1545,7 +1708,8 @@ const ar: TranslationSchema = {
 	colorNodesCount: (count: number) => `${count} عنصر`,
 	colorSettingHeader: 'استخراج الألوان',
 	colorSettingName: 'استخراج الألوان التلقائي',
-	colorSettingDesc: 'استخراج الألوان السائدة تلقائيًا من الصور عند فتح اللوحة. اضبط على يدوي أو معطل لتحسين الأداء في اللوحات الكبيرة.',
+	colorSettingDesc:
+		'استخراج الألوان السائدة تلقائيًا من الصور عند فتح اللوحة. اضبط على يدوي أو معطل لتحسين الأداء في اللوحات الكبيرة.',
 	colorModeAuto: 'تلقائي (استخراج عند فتح اللوحة)',
 	colorModeManual: 'يدوي (استخراج عند النقر)',
 	colorModeDisabled: 'معطل',
@@ -1568,15 +1732,19 @@ const ar: TranslationSchema = {
 	copyAllColorsNotice: (count: number) => `تم نسخ ${count} ألوان إلى الحافظة!`,
 	copyAllColorsTooltip: 'نسخ جميع ألوان اللوحة',
 	tagBadgePositionName: 'موقع شارة الوسم',
-	tagBadgePositionDesc: 'اختر ما إذا كانت شارات الوسم تعرض بالخارج (أسفل العنصر) أم بالداخل (أسفل اليسار).',
+	tagBadgePositionDesc:
+		'اختر ما إذا كانت شارات الوسم تعرض بالخارج (أسفل العنصر) أم بالداخل (أسفل اليسار).',
 	tagBadgePositionOutside: 'بالخارج (أسفل العنصر)',
 	tagBadgePositionInside: 'بالداخل (أسفل اليسار)',
 	tagZoomOnSelectName: 'التكبير التلقائي عند تحديد الوسم',
-	tagZoomOnSelectDesc: 'تكبير وملاءمة العناصر المرئية تلقائيًا عند تحديد تصفية الوسوم أو مسحها.',
+	tagZoomOnSelectDesc:
+		'تكبير وملاءمة العناصر المرئية تلقائيًا عند تحديد تصفية الوسوم أو مسحها.',
 	paletteCopySeparatorName: 'فاصل نسخ لوحة الألوان',
-	paletteCopySeparatorDesc: 'الفاصل المستخدم عند النقر فوق زر نسخ لوحة الألوان لنسخ جميع قيم hex إلى الحافظة.',
+	paletteCopySeparatorDesc:
+		'الفاصل المستخدم عند النقر فوق زر نسخ لوحة الألوان لنسخ جميع قيم hex إلى الحافظة.',
 	colorExtractModeName: 'وضع استخراج الألوان',
-	colorExtractModeDesc: 'يتحكم في وقت استخراج الألوان السائدة من صور اللوحة للوحة تصفية الألوان.',
+	colorExtractModeDesc:
+		'يتحكم في وقت استخراج الألوان السائدة من صور اللوحة للوحة تصفية الألوان.',
 	noImageInClipboardNotice: 'لم يتم العثور على صورة في الحافظة',
 	unableAccessClipboardNotice: 'تعذر الوصول إلى الحافظة',
 };
@@ -1584,7 +1752,8 @@ const ar: TranslationSchema = {
 const he: TranslationSchema = {
 	settingsHeading: 'תצוגה וקנבס',
 	hideImageLabelName: 'הסתר תווית מדיה',
-	hideImageLabelDesc: 'הסתר את כותרת התווית של base64 URL / נתונים המוצגת מעל כרטיסי המדיה המוטמעים בקנבס.',
+	hideImageLabelDesc:
+		'הסתר את כותרת התווית של base64 URL / נתונים המוצגת מעל כרטיסי המדיה המוטמעים בקנבס.',
 	keyboardPanHeading: 'פקדי הזזת קנבס באמצעות המקלדת',
 	panControlsName: 'פקדי הזזה',
 	panControlsDesc: 'אילו מקשים מזיזים את הקנבס.',
@@ -1602,13 +1771,16 @@ const he: TranslationSchema = {
 
 	modalTitle: 'הוספת מדיה לקובץ הקנבס',
 	modalDescription: (filename: string) => `כיצד ברצונך לאחסן את "${filename}"?`,
-	applyRemaining: (count: number) => `החל בחירה על ${count} פריטי המדיה הנותרים`,
+	applyRemaining: (count: number) =>
+		`החל בחירה על ${count} פריטי המדיה הנותרים`,
 	saveToVault: 'שמור בכספת',
 	embedInCanvas: 'הטמע בקובץ הקנבס',
 
 	convertModalTitle: 'הטמעת מדיה בקובץ הקנבס',
-	convertModalDesc: (filename: string) => `מטמיע את "${filename}" ישירות בקובץ הקנבס. מה ברצונך לעשות עם קובץ הכספת המקורי?`,
-	applyRemainingConvert: (count: number) => `החל בחירה على ${count} קובצי המדיה הנותרים`,
+	convertModalDesc: (filename: string) =>
+		`מטמיע את "${filename}" ישירות בקובץ הקנבס. מה ברצונך לעשות עם קובץ הכספת המקורי?`,
+	applyRemainingConvert: (count: number) =>
+		`החל בחירה على ${count} קובצי המדיה הנותרים`,
 	deleteOriginalFile: 'מחק קובץ מקורי',
 	keepOriginalFile: 'שמור קובץ מקורי',
 
@@ -1648,7 +1820,8 @@ const he: TranslationSchema = {
 	tagClearFilter: 'נקה מסנן',
 	tagNodesCount: (count: number) => `${count} רכיבים`,
 	tagPublishToVault: 'סנכרן תגיות לכספת',
-	tagPublishToVaultDesc: 'כאשר מופעל, כל תגיות הקנבס ייכתבו כתגיות frontmatter בקובץ קנבס זה, ויגרמו להן להיות גלויות בחלונית התגיות ובחיפוש של Obsidian.',
+	tagPublishToVaultDesc:
+		'כאשר מופעל, כל תגיות הקנבס ייכתבו כתגיות frontmatter בקובץ קנבס זה, ויגרמו להן להיות גלויות בחלונית התגיות ובחיפוש של Obsidian.',
 	colorFilterTab: 'צבע',
 	colorFilterPanel: 'סינון לפי צבע',
 	colorExtractBtn: 'סרוק צבעי קנבס',
@@ -1658,7 +1831,8 @@ const he: TranslationSchema = {
 	colorNodesCount: (count: number) => `${count} רכיבים`,
 	colorSettingHeader: 'חילוץ צבעים',
 	colorSettingName: 'חילוץ צבעים אוטומטי',
-	colorSettingDesc: 'מחלץ אוטומטית צבעים שולטים מתמונות בעת פתיחת הקנבס. הגדר לידני או למופעל כדי לשפר ביצועים בקנבסים גדולים.',
+	colorSettingDesc:
+		'מחלץ אוטומטית צבעים שולטים מתמונות בעת פתיחת הקנבס. הגדר לידני או למופעל כדי לשפר ביצועים בקנבסים גדולים.',
 	colorModeAuto: 'אוטומטי (חילוץ בעת פתיחת הקנבס)',
 	colorModeManual: 'ידני (חילוץ בלחיצה על כפתור)',
 	colorModeDisabled: 'מופעל',
@@ -1681,15 +1855,19 @@ const he: TranslationSchema = {
 	copyAllColorsNotice: (count: number) => `${count} צבעים הועתקו ללוח הגזירים!`,
 	copyAllColorsTooltip: 'העתק את כל צבעי הפלטה',
 	tagBadgePositionName: 'מיקום תגית התג',
-	tagBadgePositionDesc: 'בחר אם תגיות התגית יוצגו מחוץ לרכיב (מתחת לרכיב) או בתוכו (למטה משמאל).',
+	tagBadgePositionDesc:
+		'בחר אם תגיות התגית יוצגו מחוץ לרכיב (מתחת לרכיב) או בתוכו (למטה משמאל).',
 	tagBadgePositionOutside: 'מחוץ (מתחת לרכיב)',
 	tagBadgePositionInside: 'בתוך (למטה משמאל)',
 	tagZoomOnSelectName: 'תקריב אוטומטי בעת בחירת תגית',
-	tagZoomOnSelectDesc: 'מבצע תקריב ומתאים אוטומטית רכיבים גלויים בעת בחירה או ניקוי מסנני תגיות.',
+	tagZoomOnSelectDesc:
+		'מבצע תקריב ומתאים אוטומטית רכיבים גלויים בעת בחירה או ניקוי מסנני תגיות.',
 	paletteCopySeparatorName: 'מפריד העתקת פלטת צבעים',
-	paletteCopySeparatorDesc: 'המפריד המשמש בעת לחיצה על כפתור העתקת הפלטה להעתקת כל ערכי ה-HEX ללוח הגזירים.',
+	paletteCopySeparatorDesc:
+		'המפריד המשמש בעת לחיצה על כפתור העתקת הפלטה להעתקת כל ערכי ה-HEX ללוח הגזירים.',
 	colorExtractModeName: 'מצב חילוץ צבעים',
-	colorExtractModeDesc: 'שולט מתי צבעים שולטים מחולצים מתמונות הקנבס עבור חלונית מסנן הצבעים.',
+	colorExtractModeDesc:
+		'שולט מתי צבעים שולטים מחולצים מתמונות הקנבס עבור חלונית מסנן הצבעים.',
 	noImageInClipboardNotice: 'לא נמצאה תמונה בלוח הגזירים',
 	unableAccessClipboardNotice: 'לא ניתן לגשת ללוח הגזירים',
 };
@@ -1715,9 +1893,8 @@ const localeMap: Record<string, TranslationSchema> = {
 export function getText(): TranslationSchema {
 	const lang = getLanguage() || moment.locale() || 'en';
 	const normalizedLang = lang.toLowerCase();
-	const locale = localeMap[normalizedLang] || localeMap[normalizedLang.split('-')[0]];
+	const locale =
+		localeMap[normalizedLang] || localeMap[normalizedLang.split('-')[0]];
 	// Merge with English so any missing keys fall back to English
 	return locale ? { ...en, ...locale } : en;
 }
-
-

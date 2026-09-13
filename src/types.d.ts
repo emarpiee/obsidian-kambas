@@ -8,9 +8,3 @@ declare global {
 		update(): void;
 	}
 }
-
-
-
-
-
-

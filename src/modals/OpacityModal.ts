@@ -1,11 +1,16 @@
 import { App, Modal, Setting } from 'obsidian';
+
 import { getText } from '../i18n';
 
 export class OpacityModal extends Modal {
 	private currentOpacity: number;
 	private onApply: (opacity: number) => void;
 
-	constructor(app: App, currentOpacity: number, onApply: (opacity: number) => void) {
+	constructor(
+		app: App,
+		currentOpacity: number,
+		onApply: (opacity: number) => void
+	) {
 		super(app);
 		this.currentOpacity = currentOpacity;
 		this.onApply = onApply;
@@ -20,16 +25,15 @@ export class OpacityModal extends Modal {
 
 		let selectedOpacity = this.currentOpacity;
 
-		new Setting(contentEl)
-			.addSlider((slider) => {
-				slider
-					.setLimits(0, 100, 1)
-					.setValue(Math.round(this.currentOpacity * 100))
-					.setDynamicTooltip()
-					.onChange((value) => {
-						selectedOpacity = value / 100;
-					});
-			});
+		new Setting(contentEl).addSlider((slider) => {
+			slider
+				.setLimits(0, 100, 1)
+				.setValue(Math.round(this.currentOpacity * 100))
+				.setDynamicTooltip()
+				.onChange((value) => {
+					selectedOpacity = value / 100;
+				});
+		});
 
 		// Buttons
 		const btnRow = contentEl.createDiv({ cls: 'kambas-opacity-buttons' });

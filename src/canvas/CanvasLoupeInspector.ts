@@ -1,12 +1,17 @@
+import { ItemView } from 'obsidian';
+
 import type KambasPlugin from '../main';
+import { CanvasItemView } from './CanvasTypes';
 
 export class CanvasLoupeInspector {
 	private plugin: KambasPlugin;
 	private loupeEl: HTMLElement | null = null;
+	private activeDoc: Document | null = null;
 	private isKeyDown = false;
 	private rafId: number | null = null;
 	private lastMousePos: { x: number; y: number } | null = null;
 	private currentPos: { x: number; y: number } | null = null;
+	private activeView: CanvasItemView | null = null;
 
 	private keydownHandler: (evt: KeyboardEvent) => void;
 	private keyupHandler: (evt: KeyboardEvent) => void;
@@ -19,27 +24,71 @@ export class CanvasLoupeInspector {
 		this.keyupHandler = this.onKeyUp.bind(this);
 		this.mousemoveHandler = this.onMouseMove.bind(this);
 
-		window.addEventListener('keydown', this.keydownHandler, true);
-		window.addEventListener('keyup', this.keyupHandler, true);
-		window.addEventListener('mousemove', this.mousemoveHandler, true);
+		this.plugin.registerDomEvent(window, 'keydown', this.keydownHandler, true);
+		this.plugin.registerDomEvent(window, 'keyup', this.keyupHandler, true);
+		this.plugin.registerDomEvent(
+			window,
+			'mousemove',
+			this.mousemoveHandler,
+			true
+		);
 	}
 
 	public destroy(): void {
-		window.removeEventListener('keydown', this.keydownHandler, true);
-		window.removeEventListener('keyup', this.keyupHandler, true);
-		window.removeEventListener('mousemove', this.mousemoveHandler, true);
 		this.stopLoop();
 		this.removeLoupe();
 	}
 
+	private getCanvasViewForEvent(evt: Event): CanvasItemView | null {
+		const target = evt.target as HTMLElement | null;
+		const doc = target?.ownerDocument ?? document;
+		const activeLeaf = this.plugin.app.workspace.getActiveViewOfType(ItemView);
+		if (
+			activeLeaf &&
+			activeLeaf.getViewType() === 'canvas' &&
+			activeLeaf.containerEl.ownerDocument === doc
+		) {
+			return activeLeaf;
+		}
+		let foundView: CanvasItemView | null = null;
+		this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+			if (foundView) return;
+			if (
+				leaf.view?.getViewType() === 'canvas' &&
+				leaf.view.containerEl.ownerDocument === doc
+			) {
+				foundView = leaf.view;
+			}
+		});
+		return (
+			foundView ??
+			(activeLeaf?.getViewType() === 'canvas'
+				? (activeLeaf)
+				: null)
+		);
+	}
+
 	private onKeyDown(evt: KeyboardEvent): void {
-		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
+		const configuredKey = (
+			this.plugin.settings.loupeHotkey || 'q'
+		).toLowerCase();
 		if (evt.key.toLowerCase() === configuredKey && !evt.repeat) {
-			const activeTag = (document.activeElement?.tagName || '').toLowerCase();
-			const isEditable = (document.activeElement as HTMLElement | null)?.isContentEditable;
+			const targetView = this.getCanvasViewForEvent(evt);
+			if (!targetView || targetView.getViewType() !== 'canvas') return;
+
+			const ownerDoc =
+				(evt.target as HTMLElement)?.ownerDocument ??
+				targetView.containerEl.ownerDocument ??
+				document;
+			const activeTag = (ownerDoc.activeElement?.tagName || '').toLowerCase();
+			const isEditable = (ownerDoc.activeElement as HTMLElement | null)
+				?.isContentEditable;
 			if (activeTag === 'input' || activeTag === 'textarea' || isEditable) {
 				return;
 			}
+
+			this.activeView = targetView;
+			this.activeDoc = ownerDoc;
 			this.isKeyDown = true;
 			if (this.lastMousePos) {
 				this.currentPos = { ...this.lastMousePos };
@@ -49,7 +98,9 @@ export class CanvasLoupeInspector {
 	}
 
 	private onKeyUp(evt: KeyboardEvent): void {
-		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
+		const configuredKey = (
+			this.plugin.settings.loupeHotkey || 'q'
+		).toLowerCase();
 		if (evt.key.toLowerCase() === configuredKey) {
 			this.isKeyDown = false;
 			this.stopLoop();
@@ -59,6 +110,14 @@ export class CanvasLoupeInspector {
 
 	private onMouseMove(evt: MouseEvent): void {
 		this.lastMousePos = { x: evt.clientX, y: evt.clientY };
+		const targetView = this.getCanvasViewForEvent(evt);
+		if (targetView) {
+			this.activeView = targetView;
+			this.activeDoc =
+				(evt.target as HTMLElement)?.ownerDocument ??
+				targetView.containerEl.ownerDocument ??
+				document;
+		}
 		if (!this.isKeyDown) return;
 		if (!this.currentPos) {
 			this.currentPos = { x: evt.clientX, y: evt.clientY };
@@ -68,6 +127,7 @@ export class CanvasLoupeInspector {
 
 	private startLoop(): void {
 		if (this.rafId !== null) return;
+		const win = this.activeDoc?.defaultView || window;
 		const loop = (): void => {
 			if (!this.isKeyDown || !this.lastMousePos) {
 				this.stopLoop();
@@ -92,22 +152,35 @@ export class CanvasLoupeInspector {
 			}
 
 			this.updateLoupeAtPosition(this.currentPos.x, this.currentPos.y);
-			this.rafId = window.requestAnimationFrame(loop);
+			this.rafId = win.requestAnimationFrame(loop);
 		};
-		this.rafId = window.requestAnimationFrame(loop);
+		this.rafId = win.requestAnimationFrame(loop);
 	}
 
 	private stopLoop(): void {
 		if (this.rafId !== null) {
-			window.cancelAnimationFrame(this.rafId);
+			const win = this.activeDoc?.defaultView || window;
+			win.cancelAnimationFrame(this.rafId);
 			this.rafId = null;
 		}
 	}
 
 	private updateLoupeAtPosition(clientX: number, clientY: number): void {
 		// Verify mouse cursor is within active canvas container
-		const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
-		const canvasEl = activeLeaf?.querySelector('.canvas-wrapper') || activeLeaf?.querySelector('.canvas');
+		const activeView =
+			this.activeView ??
+			(this.plugin.app.workspace.getActiveViewOfType(
+				ItemView
+			));
+
+		if (!activeView || activeView.getViewType() !== 'canvas') {
+			this.removeLoupe();
+			return;
+		}
+
+		const canvasEl =
+			activeView.containerEl.querySelector('.canvas-wrapper') ||
+			activeView.containerEl.querySelector('.canvas');
 		if (!canvasEl) {
 			this.removeLoupe();
 			return;
@@ -129,8 +202,11 @@ export class CanvasLoupeInspector {
 		const zoomLevel = this.plugin.settings.loupeZoomLevel || 3.0;
 		const shape = this.plugin.settings.loupeShape || 'circle';
 
-		if (!this.loupeEl) {
-			this.createLoupe();
+		const targetDoc = activeView.containerEl.ownerDocument;
+
+		if (!this.loupeEl || this.loupeEl.ownerDocument !== targetDoc) {
+			this.removeLoupe();
+			this.createLoupe(targetDoc);
 		}
 
 		if (this.loupeEl) {
@@ -142,11 +218,17 @@ export class CanvasLoupeInspector {
 				'--kambas-loupe-top': `${clientY - halfSize}px`,
 			});
 
-			const innerContent = (canvasEl.querySelector('.canvas-content') || canvasEl.querySelector('.canvas-nodes') || canvasEl);
+			const innerContent =
+				canvasEl.querySelector('.canvas-content') ||
+				canvasEl.querySelector('.canvas-nodes') ||
+				canvasEl;
 
-			let innerWrapper = this.loupeEl.querySelector<HTMLElement>('.kambas-loupe-inner');
+			let innerWrapper = this.loupeEl.querySelector<HTMLElement>(
+				'.kambas-loupe-inner'
+			);
 			if (!innerWrapper) {
-				innerWrapper = createDiv({ cls: 'kambas-loupe-inner' });
+				const win = targetDoc.defaultView || window;
+				innerWrapper = win.createDiv({ cls: 'kambas-loupe-inner' });
 				this.loupeEl.appendChild(innerWrapper);
 				const clone = innerContent.cloneNode(true) as HTMLElement;
 				innerWrapper.appendChild(clone);
@@ -167,10 +249,11 @@ export class CanvasLoupeInspector {
 		}
 	}
 
-	private createLoupe(): void {
+	private createLoupe(targetDoc: Document): void {
 		if (this.loupeEl) return;
-		this.loupeEl = createDiv({ cls: 'kambas-loupe-inspector' });
-		document.body.appendChild(this.loupeEl);
+		const win = targetDoc.defaultView || window;
+		this.loupeEl = win.createDiv({ cls: 'kambas-loupe-inspector' });
+		targetDoc.body.appendChild(this.loupeEl);
 	}
 
 	private removeLoupe(): void {

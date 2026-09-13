@@ -1,4 +1,5 @@
 import { App, Modal, setIcon } from 'obsidian';
+
 import { getText } from '../i18n';
 
 export class TagModal extends Modal {
@@ -10,7 +11,10 @@ export class TagModal extends Modal {
 	private tagCounts: Map<string, number>;
 	// Tracks whether each tag applies to all nodes ('full') or only some nodes ('mixed')
 	private tagStates: Map<string, 'full' | 'mixed'> = new Map();
-	private onSubmit: (tags: string[], tagStates: Map<string, 'full' | 'mixed'>) => void;
+	private onSubmit: (
+		tags: string[],
+		tagStates: Map<string, 'full' | 'mixed'>
+	) => void;
 
 	// DOM refs
 	private chipRow!: HTMLElement;
@@ -22,7 +26,10 @@ export class TagModal extends Modal {
 		app: App,
 		initialTags: string[],
 		suggestions: string[],
-		onSubmit: (tags: string[], tagStates: Map<string, 'full' | 'mixed'>) => void,
+		onSubmit: (
+			tags: string[],
+			tagStates: Map<string, 'full' | 'mixed'>
+		) => void,
 		options?: {
 			selectedCount?: number;
 			presetTags?: string[];
@@ -33,7 +40,9 @@ export class TagModal extends Modal {
 		this.initialTags = [...initialTags];
 		this.tags = [...initialTags];
 		this.suggestions = suggestions.filter((s) => s.trim().length > 0);
-		this.presetTags = options?.presetTags?.filter((s) => s.trim().length > 0) ?? this.suggestions.slice(0, 10);
+		this.presetTags =
+			options?.presetTags?.filter((s) => s.trim().length > 0) ??
+			this.suggestions.slice(0, 10);
 		this.selectedCount = options?.selectedCount ?? 1;
 		this.tagCounts = options?.tagCounts ?? new Map<string, number>();
 		this.onSubmit = onSubmit;
@@ -52,10 +61,11 @@ export class TagModal extends Modal {
 	onOpen(): void {
 		const t = getText();
 		this.modalEl.addClass('kambas-tag-modal');
-		
-		const titleText = this.selectedCount > 1
-			? `${t.tagModalTitle ?? 'Tags'} (${this.selectedCount} items selected)`
-			: (t.tagModalTitle ?? 'Tags');
+
+		const titleText =
+			this.selectedCount > 1
+				? `${t.tagModalTitle ?? 'Tags'} (${this.selectedCount} items selected)`
+				: (t.tagModalTitle ?? 'Tags');
 		this.titleEl.setText(titleText);
 
 		const { contentEl } = this;
@@ -63,7 +73,7 @@ export class TagModal extends Modal {
 
 		// ── Chip input wrapper ────────────────────────────────────────────────
 		const chipWrap = contentEl.createDiv({ cls: 'kambas-tag-chip-wrap' });
-		
+
 		// Applied tag chips on top
 		this.chipRow = chipWrap.createDiv({ cls: 'kambas-tag-chip-row' });
 
@@ -75,7 +85,9 @@ export class TagModal extends Modal {
 		});
 
 		// Suggestion dropdown
-		this.dropdownEl = contentEl.createDiv({ cls: 'kambas-tag-dropdown is-hidden' });
+		this.dropdownEl = contentEl.createDiv({
+			cls: 'kambas-tag-dropdown is-hidden',
+		});
 
 		// Preset / Recent tags bar
 		this.presetRow = contentEl.createDiv({ cls: 'kambas-tag-preset-row' });
@@ -89,7 +101,11 @@ export class TagModal extends Modal {
 			if ((e.key === 'Enter' || e.key === ',') && this.input.value.trim()) {
 				e.preventDefault();
 				this.commitInputValue();
-			} else if (e.key === 'Backspace' && !this.input.value && this.tags.length > 0) {
+			} else if (
+				e.key === 'Backspace' &&
+				!this.input.value &&
+				this.tags.length > 0
+			) {
 				this.removeTag(this.tags[this.tags.length - 1]);
 			} else if (e.key === 'Escape') {
 				if (!this.dropdownEl.hasClass('is-hidden')) {
@@ -98,7 +114,9 @@ export class TagModal extends Modal {
 				}
 			} else if (e.key === 'ArrowDown') {
 				e.preventDefault();
-				const first = this.dropdownEl.querySelector<HTMLElement>('.kambas-tag-suggest-item');
+				const first = this.dropdownEl.querySelector<HTMLElement>(
+					'.kambas-tag-suggest-item'
+				);
 				first?.focus();
 			}
 		});
@@ -245,8 +263,13 @@ export class TagModal extends Modal {
 
 		if (availablePresets.length === 0) return;
 
-		this.presetRow.createDiv({ cls: 'kambas-tag-preset-header', text: 'Quick Tags:' });
-		const container = this.presetRow.createDiv({ cls: 'kambas-tag-preset-container' });
+		this.presetRow.createDiv({
+			cls: 'kambas-tag-preset-header',
+			text: 'Quick Tags:',
+		});
+		const container = this.presetRow.createDiv({
+			cls: 'kambas-tag-preset-container',
+		});
 
 		for (const pTag of availablePresets.slice(0, 10)) {
 			const normalized = this.normalizeTag(pTag);
@@ -262,7 +285,11 @@ export class TagModal extends Modal {
 		}
 	}
 
-	private formatTagLabel(container: HTMLElement, tag: string, count?: number): void {
+	private formatTagLabel(
+		container: HTMLElement,
+		tag: string,
+		count?: number
+	): void {
 		const parts = tag.split('/');
 		if (parts.length > 1) {
 			const ns = parts.slice(0, -1).join('/') + '/';
@@ -273,7 +300,10 @@ export class TagModal extends Modal {
 			container.createSpan({ cls: 'kambas-tag-name', text: `#${tag}` });
 		}
 		if (count !== undefined && this.selectedCount > 1) {
-			container.createSpan({ cls: 'kambas-tag-count-badge', text: ` (${count}/${this.selectedCount})` });
+			container.createSpan({
+				cls: 'kambas-tag-count-badge',
+				text: ` (${count}/${this.selectedCount})`,
+			});
 		}
 	}
 
@@ -288,7 +318,9 @@ export class TagModal extends Modal {
 
 		// Filter suggestions: allow if not in tags OR if tag is currently mixed (to upgrade it)
 		const filtered = this.suggestions.filter(
-			(s) => s.includes(normalized) && (!this.tags.includes(s) || this.tagStates.get(s) === 'mixed')
+			(s) =>
+				s.includes(normalized) &&
+				(!this.tags.includes(s) || this.tagStates.get(s) === 'mixed')
 		);
 
 		if (filtered.length === 0) {
@@ -301,12 +333,18 @@ export class TagModal extends Modal {
 
 		for (const s of filtered.slice(0, 10)) {
 			const isMixed = this.tagStates.get(s) === 'mixed';
-			const item = this.dropdownEl.createDiv({ cls: 'kambas-tag-suggest-item', attr: { tabindex: '0' } });
-			
+			const item = this.dropdownEl.createDiv({
+				cls: 'kambas-tag-suggest-item',
+				attr: { tabindex: '0' },
+			});
+
 			const label = item.createSpan({ cls: 'kambas-tag-suggest-label' });
 			this.formatTagLabel(label, s);
 			if (isMixed) {
-				item.createSpan({ cls: 'kambas-tag-suggest-badge', text: 'Apply to all' });
+				item.createSpan({
+					cls: 'kambas-tag-suggest-badge',
+					text: 'Apply to all',
+				});
 			}
 
 			const onSelect = (): void => this.addTagFromSuggestion(s);
@@ -315,7 +353,10 @@ export class TagModal extends Modal {
 				onSelect();
 			});
 			item.addEventListener('keydown', (e: KeyboardEvent) => {
-				if (e.key === 'Enter') { e.preventDefault(); onSelect(); }
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					onSelect();
+				}
 				if (e.key === 'ArrowDown') {
 					e.preventDefault();
 					(item.nextElementSibling as HTMLElement | null)?.focus();

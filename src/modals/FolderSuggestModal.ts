@@ -1,4 +1,5 @@
 import { App, FuzzySuggestModal, TFolder } from 'obsidian';
+
 import { getText } from '../i18n';
 
 export class FolderSuggestModal extends FuzzySuggestModal<TFolder> {

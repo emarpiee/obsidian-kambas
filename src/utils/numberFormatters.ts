@@ -55,7 +55,10 @@ export function toAlpha(num: number): string {
 /**
  * Formats a 1-indexed counter number according to the chosen style.
  */
-export function formatIncrementalNumber(num: number, style: NumberFormatStyle = 'padded_2'): string {
+export function formatIncrementalNumber(
+	num: number,
+	style: NumberFormatStyle = 'padded_2'
+): string {
 	const val = Math.max(1, Math.floor(num));
 	switch (style) {
 		case 'padded_3':

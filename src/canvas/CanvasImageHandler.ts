@@ -1,10 +1,37 @@
-import { App, ItemView, Notice, SliderComponent, TFile, TFolder, setIcon } from 'obsidian';
-import { ConvertEmbedChoiceResult, ConvertToEmbedModal, VaultFileAction } from '../modals/ConvertToEmbedModal';
-import { ImageIngestionModal, StorageChoice } from '../modals/ImageIngestionModal';
-import { ImageSwapModal } from '../modals/ImageSwapModal';
-import { MediaFilenameModal, MediaFilenameResult, NamingStrategyOption } from '../modals/MediaFilenameModal';
-import { TagModal } from '../modals/TagModal';
+import {
+	App,
+	ItemView,
+	Notice,
+	SliderComponent,
+	TFile,
+	TFolder,
+	setIcon,
+} from 'obsidian';
+
 import { getText } from '../i18n';
+import {
+	CanvasFileData,
+	CanvasItemView,
+	CanvasNodeData,
+	IMAGE_EXTENSIONS,
+} from './CanvasTypes';
+
+import {
+	ConvertEmbedChoiceResult,
+	ConvertToEmbedModal,
+	VaultFileAction,
+} from '../modals/ConvertToEmbedModal';
+import {
+	ImageIngestionModal,
+	StorageChoice,
+} from '../modals/ImageIngestionModal';
+import { ImageSwapModal } from '../modals/ImageSwapModal';
+import {
+	MediaFilenameModal,
+	MediaFilenameResult,
+	NamingStrategyOption,
+} from '../modals/MediaFilenameModal';
+import { TagModal } from '../modals/TagModal';
 import {
 	arrayBufferToBase64DataUrl,
 	blobToBase64,
@@ -15,8 +42,11 @@ import {
 	getNodeDominantColorName,
 	saveFileToVault,
 } from '../utils/imageUtils';
-import { NumberFormatStyle, formatIncrementalNumber } from '../utils/numberFormatters';
-import { CanvasFileData, CanvasItemView, CanvasNodeData, IMAGE_EXTENSIONS } from './CanvasTypes';
+import {
+	NumberFormatStyle,
+	formatIncrementalNumber,
+} from '../utils/numberFormatters';
+
 // CanvasTagSync imports removed (unused after sync-to-vault feature removal)
 
 export interface PendingImage {
@@ -54,26 +84,25 @@ export class CanvasImageHandler {
 	}
 
 	public registerEvents(): void {
-		window.addEventListener('mousemove', this.handleMouseMove, true);
-		window.addEventListener('pointermove', this.handleMouseMove, true);
-		window.addEventListener('paste', this.handlePaste, true);
-		window.addEventListener('drop', this.handleDrop, true);
-		window.addEventListener('dblclick', this.handleDblClick, true);
-		window.addEventListener('keydown', this.handleKeyDown, true);
+		this.plugin.registerDomEvent(
+			window,
+			'mousemove',
+			this.handleMouseMove,
+			true
+		);
+		this.plugin.registerDomEvent(
+			window,
+			'pointermove',
+			this.handleMouseMove,
+			true
+		);
+		this.plugin.registerDomEvent(window, 'paste', this.handlePaste, true);
+		this.plugin.registerDomEvent(window, 'drop', this.handleDrop, true);
+		this.plugin.registerDomEvent(window, 'keydown', this.handleKeyDown, true);
 		this.startEditGuard();
 	}
 
 	public unregisterEvents(): void {
-		window.removeEventListener('mousemove', this.handleMouseMove, true);
-		window.removeEventListener('pointermove', this.handleMouseMove, true);
-		window.removeEventListener('paste', this.handlePaste, true);
-		window.removeEventListener('drop', this.handleDrop, true);
-		window.removeEventListener('dblclick', this.handleDblClick, true);
-		window.removeEventListener('scroll', this.handleScrollOrPan, true);
-		window.removeEventListener('wheel', this.handleScrollOrPan, true);
-		window.removeEventListener('pointerup', this.handleScrollOrPan, true);
-		window.removeEventListener('keyup', this.handleKeyUpCheck, true);
-		window.removeEventListener('mouseup', this.handleMouseUpCheck, true);
 		if (this.editGuardObserver) {
 			this.editGuardObserver.disconnect();
 			this.editGuardObserver = null;
@@ -108,9 +137,20 @@ export class CanvasImageHandler {
 						const added = mutation.addedNodes[i];
 						if (added.nodeType !== Node.ELEMENT_NODE) continue;
 						const el = added as HTMLElement;
-						if (el.closest?.('.kambas-tag-panel') || el.classList?.contains('kambas-tag-panel')) continue;
-						if (el.tagName === 'IMG' || el.classList?.contains('canvas-node') || el.classList?.contains('canvas-node-content') || el.closest?.('.canvas-node')) {
-							const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+						if (
+							el.closest?.('.kambas-tag-panel') ||
+							el.classList?.contains('kambas-tag-panel')
+						)
+							continue;
+						if (
+							el.tagName === 'IMG' ||
+							el.classList?.contains('canvas-node') ||
+							el.classList?.contains('canvas-node-content') ||
+							el.closest?.('.canvas-node')
+						) {
+							const activeView = this.app.workspace.getActiveViewOfType(
+								ItemView
+							) as unknown as CanvasItemView | null;
 							if (activeView?.getViewType() === 'canvas') {
 								this.scheduleRescan(activeView);
 							}
@@ -126,36 +166,86 @@ export class CanvasImageHandler {
 			childList: true,
 		});
 
-		// Listen to viewport scrolling/panning so virtualized nodes coming into view retain transforms
-		window.addEventListener('scroll', this.handleScrollOrPan, true);
-		window.addEventListener('wheel', this.handleScrollOrPan, true);
-		window.addEventListener('pointerup', this.handleScrollOrPan, true);
+		this.plugin.registerDomEvent(
+			window,
+			'scroll',
+			this.handleScrollOrPan,
+			true
+		);
+		this.plugin.registerDomEvent(window, 'wheel', this.handleScrollOrPan, true);
+		this.plugin.registerDomEvent(
+			window,
+			'pointerup',
+			this.handleScrollOrPan,
+			true
+		);
 
 		// Listen to keyup (Ctrl+V) and mouseup (Alt+Drag duplication) to refresh canvas link nodes
-		window.addEventListener('keyup', this.handleKeyUpCheck, true);
-		window.addEventListener('mouseup', this.handleMouseUpCheck, true);
+		this.plugin.registerDomEvent(window, 'keyup', this.handleKeyUpCheck, true);
+		this.plugin.registerDomEvent(
+			window,
+			'mouseup',
+			this.handleMouseUpCheck,
+			true
+		);
+	}
+
+	private getCanvasViewForEvent(evt: Event): CanvasItemView | null {
+		const target = evt.target as HTMLElement | null;
+		const doc = target?.ownerDocument ?? document;
+		const activeLeaf = this.app.workspace.getActiveViewOfType(ItemView);
+		if (
+			activeLeaf &&
+			activeLeaf.getViewType() === 'canvas' &&
+			activeLeaf.containerEl.ownerDocument === doc
+		) {
+			return activeLeaf;
+		}
+		let foundView: CanvasItemView | null = null;
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (foundView) return;
+			if (
+				leaf.view?.getViewType() === 'canvas' &&
+				leaf.view.containerEl.ownerDocument === doc
+			) {
+				foundView = leaf.view;
+			}
+		});
+		return (
+			foundView ??
+			(activeLeaf?.getViewType() === 'canvas'
+				? (activeLeaf)
+				: null)
+		);
 	}
 
 	private handleScrollOrPan = (evt: Event): void => {
 		const target = evt.target as HTMLElement | null;
 		if (target?.closest?.('.kambas-tag-panel')) return;
-		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		const activeView = this.getCanvasViewForEvent(evt);
 		if (activeView?.getViewType() === 'canvas') {
 			this.scheduleRescan(activeView);
 		}
 	};
 
 	private handleKeyUpCheck = (evt: KeyboardEvent): void => {
-		if (evt.key === 'v' || evt.key === 'V' || evt.key === 'z' || evt.key === 'Z' || evt.key === 'y' || evt.key === 'Y') {
-			const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		if (
+			evt.key === 'v' ||
+			evt.key === 'V' ||
+			evt.key === 'z' ||
+			evt.key === 'Z' ||
+			evt.key === 'y' ||
+			evt.key === 'Y'
+		) {
+			const activeView = this.getCanvasViewForEvent(evt);
 			if (activeView?.getViewType() === 'canvas') {
 				this.scheduleRescan(activeView);
 			}
 		}
 	};
 
-	private handleMouseUpCheck = (): void => {
-		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+	private handleMouseUpCheck = (evt: MouseEvent): void => {
+		const activeView = this.getCanvasViewForEvent(evt);
 		if (activeView?.getViewType() === 'canvas') {
 			this.scheduleRescan(activeView);
 		}
@@ -165,70 +255,12 @@ export class CanvasImageHandler {
 	// Event handlers
 	// ──────────────────────────────────────────────────────────────────────────
 
-
-	/** Tracks which node was last zoomed into via double-click (for toggle behaviour). */
-	private focusedZoomNodeEl: Element | null = null;
-
-	private handleDblClick = (evt: MouseEvent): void => {
-		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
-		if (!activeView || activeView.getViewType() !== 'canvas') return;
-
-		const target = evt.target as HTMLElement | null;
-		if (!target) return;
-
-		const nodeEl = target.closest('.canvas-node');
-		if (!nodeEl) return;
-
-		const isKambas = Boolean(nodeEl.querySelector('.kambas-embedded-img'));
-		const hasNativeImg = Boolean(this.getNativeImageElement(nodeEl));
-
-		if (!isKambas && !hasNativeImg) return;
-
-		// Block Obsidian from entering text-edit mode / raw markdown
-		evt.preventDefault();
-		evt.stopPropagation();
-		evt.stopImmediatePropagation();
-
-		const canvas = activeView.canvas;
-		if (!canvas) return;
-
-		// Enable smooth viewport transition class on canvas container
-		const wrapperEl = (canvas as unknown as { wrapperEl?: HTMLElement }).wrapperEl ?? document.querySelector('.workspace-leaf.mod-active .canvas-wrapper');
-		if (wrapperEl) {
-			wrapperEl.classList.add('kambas-smooth-zoom');
-			window.setTimeout(() => wrapperEl.classList.remove('kambas-smooth-zoom'), 350);
-		}
-
-		// If this node is already focused from a previous double-click, unfocus & fit to view
-		if (this.focusedZoomNodeEl === nodeEl) {
-			this.focusedZoomNodeEl = null;
-			if (typeof canvas.zoomToFit === 'function') {
-				try {
-					canvas.zoomToFit();
-					return;
-				} catch {
-					// Fallback
-				}
-			}
-		}
-
-		// First double-click: focus and zoom into image node
-		this.focusedZoomNodeEl = nodeEl;
-		if (typeof canvas.zoomToSelection === 'function') {
-			try {
-				canvas.zoomToSelection();
-			} catch {
-				// Ignore zoom errors
-			}
-		}
-	};
-
-
-
 	/** Returns the native (non-kambas) image element inside a canvas node, if any. */
 	public getNativeImageElement(nodeEl: Element): HTMLImageElement | null {
 		// Look for any img that is not our embedded image and not inside a markdown render
-		const imgs = nodeEl.querySelectorAll<HTMLImageElement>('img:not(.kambas-embedded-img)');
+		const imgs = nodeEl.querySelectorAll<HTMLImageElement>(
+			'img:not(.kambas-embedded-img)'
+		);
 		for (const img of Array.from(imgs)) {
 			// Skip images that are inside a markdown preview (inline content images)
 			if (img.closest('.markdown-preview-view')) continue;
@@ -253,29 +285,52 @@ export class CanvasImageHandler {
 		let canvasNodeObj: unknown = null;
 		let nodeId: string | null = null;
 		canvas.nodes.forEach((node, id) => {
-			if (node.nodeEl && (node.nodeEl === nodeEl || nodeEl.contains(node.nodeEl) || node.nodeEl.contains(nodeEl))) {
+			if (
+				node.nodeEl &&
+				(node.nodeEl === nodeEl ||
+					nodeEl.contains(node.nodeEl) ||
+					node.nodeEl.contains(nodeEl))
+			) {
 				canvasNodeObj = node;
 				nodeId = id;
 			}
 		});
 		if (!nodeId || !canvasNodeObj) return;
 
-		const unknownData = (canvasNodeObj as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } }).unknownData;
+		const unknownData = (
+			canvasNodeObj as {
+				unknownData?: {
+					kambasFlipH?: boolean;
+					kambasFlipV?: boolean;
+					kambasGrayscale?: boolean;
+				};
+			}
+		).unknownData;
 		if (unknownData) {
 			if (key === 'h') unknownData.kambasFlipH = !unknownData.kambasFlipH;
 			if (key === 'v') unknownData.kambasFlipV = !unknownData.kambasFlipV;
-			if (key === 'g') unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
+			if (key === 'g')
+				unknownData.kambasGrayscale = !unknownData.kambasGrayscale;
 		}
 
 		// Apply CSS class immediately for instant feedback.
 		// Flip is set on nodeEl (CSS targets img inside it) so it works even when <img> isn't mounted.
 		if (unknownData) {
-			nodeEl.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
-			nodeEl.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+			nodeEl.classList.toggle(
+				'kambas-img-flip-h',
+				Boolean(unknownData.kambasFlipH)
+			);
+			nodeEl.classList.toggle(
+				'kambas-img-flip-v',
+				Boolean(unknownData.kambasFlipV)
+			);
 		}
 		const img = this.getNativeImageElement(nodeEl);
 		if (img && unknownData) {
-			img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
+			img.classList.toggle(
+				'kambas-img-grayscale',
+				Boolean(unknownData.kambasGrayscale)
+			);
 		}
 
 		if (typeof canvas.requestSave === 'function') {
@@ -309,13 +364,30 @@ export class CanvasImageHandler {
 			if (!nodeEl) return;
 
 			// Extract link URL or data directly from canvas node object memory (0ms delay)
-			const unknownData = (canvasNode as unknown as { unknownData?: { type?: string; url?: string; kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number; kambasTags?: string[] } }).unknownData;
+			const unknownData = (
+				canvasNode as unknown as {
+					unknownData?: {
+						type?: string;
+						url?: string;
+						kambasFlipH?: boolean;
+						kambasFlipV?: boolean;
+						kambasGrayscale?: boolean;
+						kambasPalette?: boolean;
+						kambasOpacity?: number;
+						kambasTags?: string[];
+					};
+				}
+			).unknownData;
 			const nodeUrl = unknownData?.url;
-			const isLinkDataImg = unknownData?.type === 'link' && nodeUrl?.startsWith('data:image/');
+			const isLinkDataImg =
+				unknownData?.type === 'link' && nodeUrl?.startsWith('data:image/');
 
 			if (isLinkDataImg && nodeUrl) {
-				const container = nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
-				let existingImg = container.querySelector<HTMLImageElement>('img.kambas-embedded-img');
+				const container =
+					nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
+				let existingImg = container.querySelector<HTMLImageElement>(
+					'img.kambas-embedded-img'
+				);
 				if (!existingImg) {
 					container.empty();
 					existingImg = container.createEl('img', {
@@ -323,49 +395,81 @@ export class CanvasImageHandler {
 						attr: {
 							src: nodeUrl,
 							draggable: 'false',
-							style: 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;display:block;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;',
+							style:
+								'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;display:block;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;',
 						},
 					});
 				}
 
 				// Lock parent node aspect ratio to natural image dimensions
-				const rawNode = canvasNode as unknown as { aspectRatio?: number; isAspectPreserved?: boolean; width?: number; height?: number };
-				if (existingImg.complete && existingImg.naturalWidth && existingImg.naturalHeight) {
-					rawNode.aspectRatio = existingImg.naturalWidth / existingImg.naturalHeight;
+				const rawNode = canvasNode as unknown as {
+					aspectRatio?: number;
+					isAspectPreserved?: boolean;
+					width?: number;
+					height?: number;
+				};
+				if (
+					existingImg.complete &&
+					existingImg.naturalWidth &&
+					existingImg.naturalHeight
+				) {
+					rawNode.aspectRatio =
+						existingImg.naturalWidth / existingImg.naturalHeight;
 					rawNode.isAspectPreserved = true;
 				} else {
-					existingImg.addEventListener('load', () => {
-						if (existingImg?.naturalWidth && existingImg?.naturalHeight) {
-							rawNode.aspectRatio = existingImg.naturalWidth / existingImg.naturalHeight;
-							rawNode.isAspectPreserved = true;
-						}
-					}, { once: true });
+					existingImg.addEventListener(
+						'load',
+						() => {
+							if (existingImg?.naturalWidth && existingImg?.naturalHeight) {
+								rawNode.aspectRatio =
+									existingImg.naturalWidth / existingImg.naturalHeight;
+								rawNode.isAspectPreserved = true;
+							}
+						},
+						{ once: true }
+					);
 				}
 			}
 
 			// Apply stored transforms & opacity
 			if (unknownData) {
-				nodeEl.classList.toggle('kambas-node-grayscale', Boolean(unknownData.kambasGrayscale));
+				nodeEl.classList.toggle(
+					'kambas-node-grayscale',
+					Boolean(unknownData.kambasGrayscale)
+				);
 			}
 
 			// Flip is set on nodeEl; CSS descendant selector targets img inside it.
 			if (unknownData) {
-				nodeEl.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
-				nodeEl.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+				nodeEl.classList.toggle(
+					'kambas-img-flip-h',
+					Boolean(unknownData.kambasFlipH)
+				);
+				nodeEl.classList.toggle(
+					'kambas-img-flip-v',
+					Boolean(unknownData.kambasFlipV)
+				);
 			}
-			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+			const img =
+				this.getNativeImageElement(nodeEl) ??
+				nodeEl.querySelector<HTMLImageElement>('img');
 			if (img && unknownData) {
-				img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
+				img.classList.toggle(
+					'kambas-img-grayscale',
+					Boolean(unknownData.kambasGrayscale)
+				);
 
 				// Handle palette overlay
-				let paletteEl = nodeEl.querySelector<HTMLElement>('.kambas-palette-bar');
+				let paletteEl = nodeEl.querySelector<HTMLElement>(
+					'.kambas-palette-bar'
+				);
 				if (unknownData.kambasPalette) {
 					const count = this.plugin?.settings?.paletteSwatchCount ?? 5;
 					if (!paletteEl || paletteEl.dataset.count !== String(count)) {
 						if (paletteEl) paletteEl.remove();
 						paletteEl = nodeEl.createDiv({ cls: 'kambas-palette-bar' });
 						paletteEl.dataset.count = String(count);
-						
+
 						const targetPaletteEl = paletteEl;
 						const loadAndRenderPalette = (src: string): void => {
 							void extractImagePalette(src, count).then((swatches) => {
@@ -373,7 +477,9 @@ export class CanvasImageHandler {
 								targetPaletteEl.empty();
 
 								for (const hex of swatches) {
-									const swatch = targetPaletteEl.createDiv({ cls: 'kambas-palette-swatch' });
+									const swatch = targetPaletteEl.createDiv({
+										cls: 'kambas-palette-swatch',
+									});
 									swatch.style.backgroundColor = hex;
 									swatch.setAttribute('aria-label', `${hex} (Click to copy)`);
 									swatch.addEventListener('click', (e) => {
@@ -381,7 +487,11 @@ export class CanvasImageHandler {
 										e.preventDefault();
 										void navigator.clipboard.writeText(hex);
 										const t = getText();
-										new Notice(t.copyHexNotice ? t.copyHexNotice(hex) : `Copied ${hex} to clipboard!`);
+										new Notice(
+											t.copyHexNotice
+												? t.copyHexNotice(hex)
+												: `Copied ${hex} to clipboard!`
+										);
 									});
 								}
 
@@ -390,17 +500,25 @@ export class CanvasImageHandler {
 									const t = getText();
 									const copyBtn = targetPaletteEl.createDiv({
 										cls: 'kambas-palette-copy-btn',
-										attr: { 'aria-label': t.copyAllColorsTooltip ?? 'Copy all palette colors' },
+										attr: {
+											'aria-label':
+												t.copyAllColorsTooltip ?? 'Copy all palette colors',
+										},
 									});
 									setIcon(copyBtn, 'copy');
 									copyBtn.addEventListener('click', (e) => {
 										e.stopPropagation();
 										e.preventDefault();
-										const sep = this.plugin?.settings?.paletteCopySeparator ?? ', ';
+										const sep =
+											this.plugin?.settings?.paletteCopySeparator ?? ', ';
 										const textToCopy = swatches.join(sep);
 										void navigator.clipboard.writeText(textToCopy);
 										const currentT = getText();
-										new Notice(currentT.copyAllColorsNotice ? currentT.copyAllColorsNotice(swatches.length) : `Copied ${swatches.length} colors to clipboard!`);
+										new Notice(
+											currentT.copyAllColorsNotice
+												? currentT.copyAllColorsNotice(swatches.length)
+												: `Copied ${swatches.length} colors to clipboard!`
+										);
 									});
 								}
 							});
@@ -410,12 +528,19 @@ export class CanvasImageHandler {
 							loadAndRenderPalette(img.src);
 						} else {
 							// Image is still loading in browser — extract once image finishes loading
-							img.addEventListener('load', () => {
-								if (img.src) loadAndRenderPalette(img.src);
-							}, { once: true });
+							img.addEventListener(
+								'load',
+								() => {
+									if (img.src) loadAndRenderPalette(img.src);
+								},
+								{ once: true }
+							);
 						}
 					}
-					paletteEl.classList.toggle('kambas-palette-grayscale', Boolean(unknownData.kambasGrayscale));
+					paletteEl.classList.toggle(
+						'kambas-palette-grayscale',
+						Boolean(unknownData.kambasGrayscale)
+					);
 				} else if (paletteEl) {
 					paletteEl.remove();
 				}
@@ -439,22 +564,29 @@ export class CanvasImageHandler {
 				const uData = edge.unknownData;
 				const op = uData?.kambasOpacity;
 				if (op !== undefined) {
-					if (edge.lineGroupEl) edge.lineGroupEl.setCssProps({ opacity: String(op) });
-					else if (edge.lineElement) edge.lineElement.setCssProps({ opacity: String(op) });
-					if (edge.lineEndGroupEl) edge.lineEndGroupEl.setCssProps({ opacity: String(op) });
+					if (edge.lineGroupEl)
+						edge.lineGroupEl.setCssProps({ opacity: String(op) });
+					else if (edge.lineElement)
+						edge.lineElement.setCssProps({ opacity: String(op) });
+					if (edge.lineEndGroupEl)
+						edge.lineEndGroupEl.setCssProps({ opacity: String(op) });
 				}
 			});
 		}
 
 		// Check if canvas wrapper/edges should be restored or hidden
-		const canvasEl = (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl ?? document.querySelector('.canvas-wrapper');
+		const canvasEl =
+			(activeView.canvas as unknown as { wrapperEl?: HTMLElement })
+				?.wrapperEl ?? activeView.containerEl.querySelector('.canvas-wrapper');
 		if (canvasEl) {
 			const edgesEl = canvasEl.querySelector<HTMLElement>('.canvas-edges');
 			if (edgesEl) {
 				// If all nodes are at opacity 0, keep edges hidden
 				let allNodesZero = canvas.nodes.size > 0;
 				canvas.nodes.forEach((node) => {
-					const uData = (node as unknown as { unknownData?: { kambasOpacity?: number } }).unknownData;
+					const uData = (
+						node as unknown as { unknownData?: { kambasOpacity?: number } }
+					).unknownData;
 					if (uData?.kambasOpacity !== 0) {
 						allNodesZero = false;
 					}
@@ -488,12 +620,17 @@ export class CanvasImageHandler {
 				if ((this.plugin.settings.colorExtractMode ?? 'auto') === 'auto') {
 					void this.extractAllNodeColors(activeView);
 				}
-			} else if (this.activeTagFilters.size > 0 || this.activeColorFilters.size > 0) {
+			} else if (
+				this.activeTagFilters.size > 0 ||
+				this.activeColorFilters.size > 0
+			) {
 				// Same file, active filters — re-apply (e.g. after badge re-render)
 				this.applyTagFilters(activeView);
 			} else {
 				// Same file, NO active filters — ensure all nodes are visible and interactive!
-				canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
+				canvas.nodes.forEach((node) =>
+					node.nodeEl?.classList.remove('kambas-tag-hidden')
+				);
 				this.removeSelectionGuard();
 			}
 		}
@@ -517,7 +654,9 @@ export class CanvasImageHandler {
 		// Determine if currently in Away Mode (i.e. all nodes are opacity 0)
 		let currentlyAway = canvas.nodes.size > 0;
 		canvas.nodes.forEach((node) => {
-			const uData = (node as unknown as { unknownData?: { kambasOpacity?: number } }).unknownData;
+			const uData = (
+				node as unknown as { unknownData?: { kambasOpacity?: number } }
+			).unknownData;
 			if (uData?.kambasOpacity !== 0) {
 				currentlyAway = false;
 			}
@@ -529,7 +668,9 @@ export class CanvasImageHandler {
 
 		canvas.nodes.forEach((canvasNode, id) => {
 			selectedNodeIds.push(id);
-			const rawNode = canvasNode as unknown as { unknownData?: { kambasOpacity?: number } };
+			const rawNode = canvasNode as unknown as {
+				unknownData?: { kambasOpacity?: number };
+			};
 			if (!rawNode.unknownData) rawNode.unknownData = {};
 			rawNode.unknownData.kambasOpacity = targetOpacity;
 
@@ -545,17 +686,25 @@ export class CanvasImageHandler {
 				canvasEdge.unknownData.kambasOpacity = targetOpacity;
 
 				if (canvasEdge.lineGroupEl) {
-					canvasEdge.lineGroupEl.setCssProps({ opacity: String(targetOpacity) });
+					canvasEdge.lineGroupEl.setCssProps({
+						opacity: String(targetOpacity),
+					});
 				} else if (canvasEdge.lineElement) {
-					canvasEdge.lineElement.setCssProps({ opacity: String(targetOpacity) });
+					canvasEdge.lineElement.setCssProps({
+						opacity: String(targetOpacity),
+					});
 				}
 				if (canvasEdge.lineEndGroupEl) {
-					canvasEdge.lineEndGroupEl.setCssProps({ opacity: String(targetOpacity) });
+					canvasEdge.lineEndGroupEl.setCssProps({
+						opacity: String(targetOpacity),
+					});
 				}
 			});
 		}
 
-		const canvasEl = (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl ?? document.querySelector('.canvas-wrapper');
+		const canvasEl =
+			(activeView.canvas as unknown as { wrapperEl?: HTMLElement })
+				?.wrapperEl ?? activeView.containerEl.querySelector('.canvas-wrapper');
 		if (canvasEl) {
 			const edgesEl = canvasEl.querySelector<HTMLElement>('.canvas-edges');
 			if (edgesEl) {
@@ -598,13 +747,17 @@ export class CanvasImageHandler {
 			const nodeEl = canvasNode.nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
 
 			if (isExplicitlySelected || isTargetNode) {
 				selectedNodeIds.push(id);
 
-				const rawNode = canvasNode as unknown as { unknownData?: { kambasOpacity?: number } };
+				const rawNode = canvasNode as unknown as {
+					unknownData?: { kambasOpacity?: number };
+				};
 				if (!rawNode.unknownData) rawNode.unknownData = {};
 				rawNode.unknownData.kambasOpacity = opacity;
 
@@ -613,13 +766,17 @@ export class CanvasImageHandler {
 		});
 
 		// Check if any edge needs opacity restored
-		const canvasEl = (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl ?? document.querySelector('.canvas-wrapper');
+		const canvasEl =
+			(activeView.canvas as unknown as { wrapperEl?: HTMLElement })
+				?.wrapperEl ?? activeView.containerEl.querySelector('.canvas-wrapper');
 		if (canvasEl) {
 			const edgesEl = canvasEl.querySelector<HTMLElement>('.canvas-edges');
 			if (edgesEl) {
 				let allNodesZero = canvas.nodes.size > 0;
 				canvas.nodes.forEach((node) => {
-					const uData = (node as unknown as { unknownData?: { kambasOpacity?: number } }).unknownData;
+					const uData = (
+						node as unknown as { unknownData?: { kambasOpacity?: number } }
+					).unknownData;
 					if (uData?.kambasOpacity !== 0) {
 						allNodesZero = false;
 					}
@@ -659,7 +816,13 @@ export class CanvasImageHandler {
 		const selectedEdgeIds: string[] = [];
 
 		if (targetEdgeObj) {
-			const edgeObj = targetEdgeObj as { id?: string; unknownData?: { kambasOpacity?: number }; lineGroupEl?: HTMLElement; lineElement?: HTMLElement; lineEndGroupEl?: HTMLElement };
+			const edgeObj = targetEdgeObj as {
+				id?: string;
+				unknownData?: { kambasOpacity?: number };
+				lineGroupEl?: HTMLElement;
+				lineElement?: HTMLElement;
+				lineEndGroupEl?: HTMLElement;
+			};
 			if (!edgeObj.unknownData) edgeObj.unknownData = {};
 			edgeObj.unknownData.kambasOpacity = opacity;
 
@@ -680,8 +843,15 @@ export class CanvasImageHandler {
 		if (edges) {
 			edges.forEach((canvasEdge, id) => {
 				const edgeContainer = canvasEdge.lineGroupEl ?? canvasEdge.lineElement;
-				const isTargetEdge = (targetEdgeEl && edgeContainer && (edgeContainer === targetEdgeEl || edgeContainer.contains(targetEdgeEl) || targetEdgeEl.contains(edgeContainer))) || (targetEdgeObj && canvasEdge === targetEdgeObj);
-				const isExplicitlySelected = edgeContainer?.classList.contains('is-selected');
+				const isTargetEdge =
+					(targetEdgeEl &&
+						edgeContainer &&
+						(edgeContainer === targetEdgeEl ||
+							edgeContainer.contains(targetEdgeEl) ||
+							targetEdgeEl.contains(edgeContainer))) ||
+					(targetEdgeObj && canvasEdge === targetEdgeObj);
+				const isExplicitlySelected =
+					edgeContainer?.classList.contains('is-selected');
 
 				if (isExplicitlySelected || isTargetEdge) {
 					if (!selectedEdgeIds.includes(id)) selectedEdgeIds.push(id);
@@ -702,7 +872,8 @@ export class CanvasImageHandler {
 
 		// Also check DOM elements if edges map is unavailable or target specified
 		if (targetEdgeEl) {
-			const edgeGroup = (targetEdgeEl as HTMLElement).closest('.canvas-edge') ?? (targetEdgeEl);
+			const edgeGroup =
+				(targetEdgeEl as HTMLElement).closest('.canvas-edge') ?? targetEdgeEl;
 			(edgeGroup as HTMLElement).setCssProps?.({ opacity: String(opacity) });
 		}
 
@@ -710,14 +881,20 @@ export class CanvasImageHandler {
 			try {
 				canvas.requestSave();
 			} catch {
-				if (selectedEdgeIds.length > 0) void this.persistEdgeOpacity(file, selectedEdgeIds, opacity);
+				if (selectedEdgeIds.length > 0)
+					void this.persistEdgeOpacity(file, selectedEdgeIds, opacity);
 			}
 		} else {
-			if (selectedEdgeIds.length > 0) void this.persistEdgeOpacity(file, selectedEdgeIds, opacity);
+			if (selectedEdgeIds.length > 0)
+				void this.persistEdgeOpacity(file, selectedEdgeIds, opacity);
 		}
 	}
 
-	private async persistEdgeOpacity(file: TFile, selectedEdgeIds: string[], opacity: number): Promise<void> {
+	private async persistEdgeOpacity(
+		file: TFile,
+		selectedEdgeIds: string[],
+		opacity: number
+	): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
 		try {
@@ -736,7 +913,11 @@ export class CanvasImageHandler {
 		if (modified) this.scheduleVaultModify(file, data);
 	}
 
-	private async persistOpacity(file: TFile, selectedNodeIds: string[], opacity: number): Promise<void> {
+	private async persistOpacity(
+		file: TFile,
+		selectedNodeIds: string[],
+		opacity: number
+	): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
 		try {
@@ -760,10 +941,18 @@ export class CanvasImageHandler {
 		const target = evt.target as HTMLElement | null;
 		if (target) {
 			const tag = target.tagName.toLowerCase();
-			if (tag === 'input' || tag === 'textarea' || target.isContentEditable || target.closest('.cm-editor')) return;
+			if (
+				tag === 'input' ||
+				tag === 'textarea' ||
+				target.isContentEditable ||
+				target.closest('.cm-editor')
+			)
+				return;
 		}
 
-		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		const activeView = this.app.workspace.getActiveViewOfType(
+			ItemView
+		) as unknown as CanvasItemView | null;
 		if (!activeView || activeView.getViewType() !== 'canvas') return;
 
 		const lowerKey = evt.key.toLowerCase();
@@ -794,7 +983,9 @@ export class CanvasImageHandler {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
 
 			if (!(isExplicitlySelected || isTargetNode)) return;
@@ -808,12 +999,20 @@ export class CanvasImageHandler {
 				file?: import('obsidian').TFile;
 				unknownData?: { url?: string; file?: string };
 			};
-			const isVaultImg = rawNodeObj.file instanceof TFile &&
+			const isVaultImg =
+				rawNodeObj.file instanceof TFile &&
 				IMAGE_EXTENSIONS.has((rawNodeObj.file.extension ?? '').toLowerCase());
-			const isDataImg = Boolean(rawNodeObj.unknownData?.url?.startsWith('data:image/'));
+			const isDataImg = Boolean(
+				rawNodeObj.unknownData?.url?.startsWith('data:image/')
+			);
 			// Also fall back to DOM check for any node already rendered (e.g. kambas-embedded-img)
-			const hasDomImg = !isVaultImg && !isDataImg &&
-				Boolean(nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl));
+			const hasDomImg =
+				!isVaultImg &&
+				!isDataImg &&
+				Boolean(
+					nodeEl.querySelector('.kambas-embedded-img') ||
+					this.getNativeImageElement(nodeEl)
+				);
 
 			if (isVaultImg || isDataImg || hasDomImg) {
 				selectedNodeEls.push(nodeEl);
@@ -825,7 +1024,10 @@ export class CanvasImageHandler {
 		if (selectedNodeIds.length === 0 && targetNodeEl) {
 			canvas.nodes.forEach((node, id) => {
 				const nodeEl = node.nodeEl;
-				if (nodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))) {
+				if (
+					nodeEl &&
+					(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
+				) {
 					selectedNodeIds.push(id);
 				}
 			});
@@ -838,7 +1040,15 @@ export class CanvasImageHandler {
 		for (const id of selectedNodeIds) {
 			const canvasNode = canvas.nodes.get(id);
 			if (!canvasNode) continue;
-			const uData = (canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean } }).unknownData;
+			const uData = (
+				canvasNode as unknown as {
+					unknownData?: {
+						kambasFlipH?: boolean;
+						kambasFlipV?: boolean;
+						kambasGrayscale?: boolean;
+					};
+				}
+			).unknownData;
 			let isCurrentActive = false;
 			if (key === 'h') isCurrentActive = Boolean(uData?.kambasFlipH);
 			if (key === 'v') isCurrentActive = Boolean(uData?.kambasFlipV);
@@ -854,7 +1064,14 @@ export class CanvasImageHandler {
 		canvas.nodes.forEach((canvasNode, id) => {
 			if (!selectedNodeIds.includes(id)) return;
 
-			const rawNode = canvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean } };
+			const rawNode = canvasNode as unknown as {
+				unknownData?: {
+					kambasFlipH?: boolean;
+					kambasFlipV?: boolean;
+					kambasGrayscale?: boolean;
+					kambasPalette?: boolean;
+				};
+			};
 			if (!rawNode.unknownData) {
 				rawNode.unknownData = {};
 			}
@@ -866,18 +1083,37 @@ export class CanvasImageHandler {
 
 			const nodeEl = canvasNode.nodeEl;
 			if (nodeEl) {
-				nodeEl.classList.toggle('kambas-node-grayscale', Boolean(unknownData.kambasGrayscale));
+				nodeEl.classList.toggle(
+					'kambas-node-grayscale',
+					Boolean(unknownData.kambasGrayscale)
+				);
 				// Flip on nodeEl; CSS descendant selector targets img inside it.
-				nodeEl.classList.toggle('kambas-img-flip-h', Boolean(unknownData.kambasFlipH));
-				nodeEl.classList.toggle('kambas-img-flip-v', Boolean(unknownData.kambasFlipV));
+				nodeEl.classList.toggle(
+					'kambas-img-flip-h',
+					Boolean(unknownData.kambasFlipH)
+				);
+				nodeEl.classList.toggle(
+					'kambas-img-flip-v',
+					Boolean(unknownData.kambasFlipV)
+				);
 
-				const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+				const img =
+					this.getNativeImageElement(nodeEl) ??
+					nodeEl.querySelector<HTMLImageElement>('img');
 				if (img) {
-					img.classList.toggle('kambas-img-grayscale', Boolean(unknownData.kambasGrayscale));
+					img.classList.toggle(
+						'kambas-img-grayscale',
+						Boolean(unknownData.kambasGrayscale)
+					);
 				}
-				const paletteEl = nodeEl.querySelector<HTMLElement>('.kambas-palette-bar');
+				const paletteEl = nodeEl.querySelector<HTMLElement>(
+					'.kambas-palette-bar'
+				);
 				if (paletteEl) {
-					paletteEl.classList.toggle('kambas-palette-grayscale', Boolean(unknownData.kambasGrayscale));
+					paletteEl.classList.toggle(
+						'kambas-palette-grayscale',
+						Boolean(unknownData.kambasGrayscale)
+					);
 				}
 			}
 		});
@@ -887,7 +1123,12 @@ export class CanvasImageHandler {
 			try {
 				canvas.requestSave();
 			} catch {
-				void this.persistImageTransform(file, selectedNodeIds, key, targetValue);
+				void this.persistImageTransform(
+					file,
+					selectedNodeIds,
+					key,
+					targetValue
+				);
 			}
 		} else {
 			void this.persistImageTransform(file, selectedNodeIds, key, targetValue);
@@ -911,9 +1152,13 @@ export class CanvasImageHandler {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
-			const hasImg = nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl);
+			const hasImg =
+				nodeEl.querySelector('.kambas-embedded-img') ||
+				this.getNativeImageElement(nodeEl);
 
 			if ((isExplicitlySelected || isTargetNode) && hasImg) {
 				selectedNodeEls.push(nodeEl);
@@ -924,7 +1169,10 @@ export class CanvasImageHandler {
 		if (selectedNodeIds.length === 0 && targetNodeEl) {
 			canvas.nodes.forEach((node, id) => {
 				const nodeEl = node.nodeEl;
-				if (nodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))) {
+				if (
+					nodeEl &&
+					(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
+				) {
 					selectedNodeIds.push(id);
 				}
 			});
@@ -937,7 +1185,9 @@ export class CanvasImageHandler {
 		for (const id of selectedNodeIds) {
 			const canvasNode = canvas.nodes.get(id);
 			if (!canvasNode) continue;
-			const uData = (canvasNode as unknown as { unknownData?: { kambasPalette?: boolean } }).unknownData;
+			const uData = (
+				canvasNode as unknown as { unknownData?: { kambasPalette?: boolean } }
+			).unknownData;
 			if (!uData?.kambasPalette) {
 				targetValue = true;
 				break;
@@ -946,7 +1196,9 @@ export class CanvasImageHandler {
 
 		canvas.nodes.forEach((canvasNode, id) => {
 			if (!selectedNodeIds.includes(id)) return;
-			const rawNode = canvasNode as unknown as { unknownData?: { kambasPalette?: boolean } };
+			const rawNode = canvasNode as unknown as {
+				unknownData?: { kambasPalette?: boolean };
+			};
 			if (!rawNode.unknownData) rawNode.unknownData = {};
 			rawNode.unknownData.kambasPalette = targetValue;
 		});
@@ -958,10 +1210,22 @@ export class CanvasImageHandler {
 			try {
 				canvas.requestSave();
 			} catch {
-				if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette', targetValue);
+				if (file)
+					void this.persistImageTransform(
+						file,
+						selectedNodeIds,
+						'palette',
+						targetValue
+					);
 			}
 		} else {
-			if (file) void this.persistImageTransform(file, selectedNodeIds, 'palette', targetValue);
+			if (file)
+				void this.persistImageTransform(
+					file,
+					selectedNodeIds,
+					'palette',
+					targetValue
+				);
 		}
 	}
 
@@ -976,14 +1240,21 @@ export class CanvasImageHandler {
 			const nodeEl = nodeObj.nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
 
 			if (isExplicitlySelected || isTargetNode) {
 				const rawNode = nodeObj as unknown as {
 					width: number;
 					height: number;
-					unknownData?: { width?: number; height?: number; originalWidth?: number; originalHeight?: number };
+					unknownData?: {
+						width?: number;
+						height?: number;
+						originalWidth?: number;
+						originalHeight?: number;
+					};
 					resize?: (size: { width: number; height: number }) => void;
 				};
 
@@ -1028,17 +1299,28 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas || !canvas.nodes) return;
 
-		const targetNodes: Array<{ nodeEl: HTMLElement; rawNode: { file?: TFile | string; unknownData?: { file?: string } } }> = [];
+		const targetNodes: Array<{
+			nodeEl: HTMLElement;
+			rawNode: { file?: TFile | string; unknownData?: { file?: string } };
+		}> = [];
 
 		canvas.nodes.forEach((nodeObj) => {
 			const nodeEl = nodeObj.nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
 
 			if (isExplicitlySelected || isTargetNode) {
-				targetNodes.push({ nodeEl, rawNode: nodeObj as { file?: TFile | string; unknownData?: { file?: string } } });
+				targetNodes.push({
+					nodeEl,
+					rawNode: nodeObj as {
+						file?: TFile | string;
+						unknownData?: { file?: string };
+					},
+				});
 			}
 		});
 
@@ -1049,7 +1331,9 @@ export class CanvasImageHandler {
 				let pngBlob: Blob | null = null;
 
 				// Path A: Check if node is a vault TFile or path
-				const filePath = (rawNode.file instanceof TFile ? rawNode.file.path : rawNode.file) || rawNode.unknownData?.file;
+				const filePath =
+					(rawNode.file instanceof TFile ? rawNode.file.path : rawNode.file) ||
+					rawNode.unknownData?.file;
 				if (filePath) {
 					const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
 					if (abstractFile instanceof TFile) {
@@ -1066,14 +1350,19 @@ export class CanvasImageHandler {
 							canvasEl.height = bitmap.height;
 							const ctx = canvasEl.getContext('2d');
 							ctx?.drawImage(bitmap, 0, 0);
-							pngBlob = await new Promise<Blob>((resolve) => canvasEl.toBlob((b) => resolve(b || rawBlob), 'image/png'));
+							pngBlob = await new Promise<Blob>((resolve) =>
+								canvasEl.toBlob((b) => resolve(b || rawBlob), 'image/png')
+							);
 						}
 					}
 				}
 
 				// Path B: Fallback to HTMLImageElement rendering (embedded base64 or rendered <img> element)
 				if (!pngBlob) {
-					const img = nodeEl.querySelector<HTMLImageElement>('.kambas-embedded-img') ?? this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+					const img =
+						nodeEl.querySelector<HTMLImageElement>('.kambas-embedded-img') ??
+						this.getNativeImageElement(nodeEl) ??
+						nodeEl.querySelector<HTMLImageElement>('img');
 					if (img) {
 						const src = img.src;
 						if (src.startsWith('data:')) {
@@ -1095,7 +1384,9 @@ export class CanvasImageHandler {
 								canvasEl.height = bitmap.height;
 								const ctx = canvasEl.getContext('2d');
 								ctx?.drawImage(bitmap, 0, 0);
-								pngBlob = await new Promise<Blob>((resolve) => canvasEl.toBlob((b) => resolve(b || rawBlob), 'image/png'));
+								pngBlob = await new Promise<Blob>((resolve) =>
+									canvasEl.toBlob((b) => resolve(b || rawBlob), 'image/png')
+								);
 							}
 						} else {
 							// Draw rendered image onto HTML5 canvas
@@ -1105,7 +1396,9 @@ export class CanvasImageHandler {
 							const ctx = canvasEl.getContext('2d');
 							if (ctx) {
 								ctx.drawImage(img, 0, 0);
-								pngBlob = await new Promise<Blob | null>((resolve) => canvasEl.toBlob((b) => resolve(b), 'image/png'));
+								pngBlob = await new Promise<Blob | null>((resolve) =>
+									canvasEl.toBlob((b) => resolve(b), 'image/png')
+								);
 							}
 						}
 					}
@@ -1139,7 +1432,9 @@ export class CanvasImageHandler {
 			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
 
 			if (isExplicitlySelected || isTargetNode) {
@@ -1180,7 +1475,9 @@ export class CanvasImageHandler {
 
 			// Case 1: Native vault media file node (type === 'file')
 			if (canvasNodeData.type === 'file' && canvasNodeData.file) {
-				const abstractFile = this.app.vault.getAbstractFileByPath(canvasNodeData.file);
+				const abstractFile = this.app.vault.getAbstractFileByPath(
+					canvasNodeData.file
+				);
 				if (abstractFile instanceof TFile) {
 					const defaultName = abstractFile.name;
 					const tags = canvasNodeData.kambasTags || [];
@@ -1215,31 +1512,56 @@ export class CanvasImageHandler {
 
 					let targetName = defaultName;
 					if (currentNamingStrategy === 'custom' && currentCustomName) {
-						const cleanCustom = currentCustomName.replace(/[/\\?%*:|"<>]/g, '-');
+						const cleanCustom = currentCustomName.replace(
+							/[/\\?%*:|"<>]/g,
+							'-'
+						);
 						let counter = 1;
 						targetName = `${cleanCustom}-${formatIncrementalNumber(counter, currentNumberFormat)}${ext}`;
-						let checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						let checkPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
 						while (this.app.vault.getAbstractFileByPath(checkPath)) {
 							counter++;
 							targetName = `${cleanCustom}-${formatIncrementalNumber(counter, currentNumberFormat)}${ext}`;
-							checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							checkPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 						}
 					} else if (currentNamingStrategy === 'tag') {
-						const cleanedTags = tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
+						const cleanedTags = tags
+							.map((t) =>
+								t
+									.replace(/^#+/, '')
+									.trim()
+									.replace(/[/\\?%*:|"<>]/g, '-')
+							)
+							.filter(Boolean);
 						if (cleanedTags.length > 0) {
 							const baseTagStr = cleanedTags.join('-');
 							let counter = 1;
 							targetName = `${baseTagStr}-${formatIncrementalNumber(counter, currentNumberFormat)}${ext}`;
-							let checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							let checkPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 							while (this.app.vault.getAbstractFileByPath(checkPath)) {
 								counter++;
 								targetName = `${baseTagStr}-${formatIncrementalNumber(counter, currentNumberFormat)}${ext}`;
-								checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+								checkPath =
+									targetFolder.path === '/'
+										? targetName
+										: `${targetFolder.path}/${targetName}`;
 							}
 						}
 					}
 
-					const newPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					const newPath =
+						targetFolder.path === '/'
+							? targetName
+							: `${targetFolder.path}/${targetName}`;
 					if (abstractFile.path !== newPath) {
 						await this.app.fileManager.renameFile(abstractFile, newPath);
 						canvasNodeData.file = newPath;
@@ -1249,7 +1571,10 @@ export class CanvasImageHandler {
 				}
 			}
 			// Case 2: Embedded base64 image link node (type === 'link' with data:image/...)
-			else if (canvasNodeData.type === 'link' && canvasNodeData.url?.startsWith('data:image/')) {
+			else if (
+				canvasNodeData.type === 'link' &&
+				canvasNodeData.url?.startsWith('data:image/')
+			) {
 				const dataUrl = canvasNodeData.url;
 				const parts = dataUrl.split(',');
 				const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
@@ -1294,34 +1619,64 @@ export class CanvasImageHandler {
 					const cleanCustom = currentCustomName.replace(/[/\\?%*:|"<>]/g, '-');
 					let counter = 1;
 					targetFilename = `${cleanCustom}-${formatIncrementalNumber(counter, currentNumberFormat)}.${ext}`;
-					let checkPath = targetFolder.path === '/' ? targetFilename : `${targetFolder.path}/${targetFilename}`;
+					let checkPath =
+						targetFolder.path === '/'
+							? targetFilename
+							: `${targetFolder.path}/${targetFilename}`;
 					while (this.app.vault.getAbstractFileByPath(checkPath)) {
 						counter++;
 						targetFilename = `${cleanCustom}-${formatIncrementalNumber(counter, currentNumberFormat)}.${ext}`;
-						checkPath = targetFolder.path === '/' ? targetFilename : `${targetFolder.path}/${targetFilename}`;
+						checkPath =
+							targetFolder.path === '/'
+								? targetFilename
+								: `${targetFolder.path}/${targetFilename}`;
 					}
 				} else if (currentNamingStrategy === 'tag') {
-					const cleanedTags = tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
+					const cleanedTags = tags
+						.map((t) =>
+							t
+								.replace(/^#+/, '')
+								.trim()
+								.replace(/[/\\?%*:|"<>]/g, '-')
+						)
+						.filter(Boolean);
 					if (cleanedTags.length > 0) {
 						const baseTagStr = cleanedTags.join('-');
 						let counter = 1;
 						targetFilename = `${baseTagStr}-${formatIncrementalNumber(counter, currentNumberFormat)}.${ext}`;
-						let checkPath = targetFolder.path === '/' ? targetFilename : `${targetFolder.path}/${targetFilename}`;
+						let checkPath =
+							targetFolder.path === '/'
+								? targetFilename
+								: `${targetFolder.path}/${targetFilename}`;
 						while (this.app.vault.getAbstractFileByPath(checkPath)) {
 							counter++;
 							targetFilename = `${baseTagStr}-${formatIncrementalNumber(counter, currentNumberFormat)}.${ext}`;
-							checkPath = targetFolder.path === '/' ? targetFilename : `${targetFolder.path}/${targetFilename}`;
+							checkPath =
+								targetFolder.path === '/'
+									? targetFilename
+									: `${targetFolder.path}/${targetFilename}`;
 						}
 					}
 				}
 
-				const savedPath = await saveFileToVault(this.app, targetFolder.path, targetFilename, u8arr.buffer);
+				const savedPath = await saveFileToVault(
+					this.app,
+					targetFolder.path,
+					targetFilename,
+					u8arr.buffer
+				);
 
 				const savedFile = this.app.vault.getAbstractFileByPath(savedPath);
-				if (savedFile instanceof TFile && typeof canvas.createFileNode === 'function') {
+				if (
+					savedFile instanceof TFile &&
+					typeof canvas.createFileNode === 'function'
+				) {
 					// 1. Preserve position, size, transform & tag data
 					const pos = { x: canvasNodeData.x, y: canvasNodeData.y };
-					const size = { width: canvasNodeData.width, height: canvasNodeData.height };
+					const size = {
+						width: canvasNodeData.width,
+						height: canvasNodeData.height,
+					};
 					const flipH = canvasNodeData.kambasFlipH;
 					const flipV = canvasNodeData.kambasFlipV;
 					const grayscale = canvasNodeData.kambasGrayscale;
@@ -1329,7 +1684,9 @@ export class CanvasImageHandler {
 					const tags = canvasNodeData.kambasTags;
 
 					// 2. Remove old link node from canvas
-					const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
+					const rawCanvas = canvas as unknown as {
+						removeNode?: (node: unknown) => void;
+					};
 					if (typeof rawCanvas.removeNode === 'function') {
 						try {
 							rawCanvas.removeNode(nodeObj);
@@ -1347,19 +1704,37 @@ export class CanvasImageHandler {
 					});
 
 					// 4. Find newly created file node and apply preserved transform & tag properties
-					const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
-						const rawN = n as unknown as { file?: TFile | string; unknownData?: { file?: string } };
-						return rawN.file === savedFile || rawN.file === savedPath || rawN.unknownData?.file === savedPath;
-					});
+					const newCanvasNode = Array.from(canvas.nodes?.values() || []).find(
+						(n) => {
+							const rawN = n as unknown as {
+								file?: TFile | string;
+								unknownData?: { file?: string };
+							};
+							return (
+								rawN.file === savedFile ||
+								rawN.file === savedPath ||
+								rawN.unknownData?.file === savedPath
+							);
+						}
+					);
 
 					if (newCanvasNode) {
-						const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; kambasTags?: string[] } };
+						const rawN = newCanvasNode as unknown as {
+							unknownData?: {
+								kambasFlipH?: boolean;
+								kambasFlipV?: boolean;
+								kambasGrayscale?: boolean;
+								kambasOpacity?: number;
+								kambasTags?: string[];
+							};
+						};
 						if (!rawN.unknownData) rawN.unknownData = {};
 						if (flipH) rawN.unknownData.kambasFlipH = flipH;
 						if (flipV) rawN.unknownData.kambasFlipV = flipV;
 						if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 						if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
-						if (Array.isArray(tags) && tags.length > 0) rawN.unknownData.kambasTags = [...tags];
+						if (Array.isArray(tags) && tags.length > 0)
+							rawN.unknownData.kambasTags = [...tags];
 					}
 
 					modified = true;
@@ -1399,7 +1774,9 @@ export class CanvasImageHandler {
 			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
 
 			if (isExplicitlySelected || isTargetNode) {
@@ -1432,7 +1809,9 @@ export class CanvasImageHandler {
 
 			// Case 1: Native vault media file node (type === 'file') -> copy vault file to target directory
 			if (canvasNodeData.type === 'file' && canvasNodeData.file) {
-				const abstractFile = this.app.vault.getAbstractFileByPath(canvasNodeData.file);
+				const abstractFile = this.app.vault.getAbstractFileByPath(
+					canvasNodeData.file
+				);
 				if (abstractFile instanceof TFile) {
 					const defaultName = abstractFile.name;
 					const tags = canvasNodeData.kambasTags || [];
@@ -1463,55 +1842,98 @@ export class CanvasImageHandler {
 					}
 
 					const extIdx = abstractFile.name.lastIndexOf('.');
-					const base = extIdx !== -1 ? abstractFile.name.substring(0, extIdx) : abstractFile.name;
+					const base =
+						extIdx !== -1
+							? abstractFile.name.substring(0, extIdx)
+							: abstractFile.name;
 					const ext = extIdx !== -1 ? abstractFile.name.substring(extIdx) : '';
 
 					let counter = 1;
 					let targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
 
 					if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
-						const cleanCustom = currentCopyCustomName.replace(/[/\\?%*:|"<>]/g, '-');
+						const cleanCustom = currentCopyCustomName.replace(
+							/[/\\?%*:|"<>]/g,
+							'-'
+						);
 						targetName = `${cleanCustom}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
-						let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						let targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
 						while (this.app.vault.getAbstractFileByPath(targetPath)) {
 							counter++;
 							targetName = `${cleanCustom}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
-							targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							targetPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 						}
 					} else if (currentCopyNamingStrategy === 'tag') {
-						const cleanedTags = tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
+						const cleanedTags = tags
+							.map((t) =>
+								t
+									.replace(/^#+/, '')
+									.trim()
+									.replace(/[/\\?%*:|"<>]/g, '-')
+							)
+							.filter(Boolean);
 						if (cleanedTags.length > 0) {
 							const baseTagStr = cleanedTags.join('-');
 							targetName = `${baseTagStr}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
-							let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							let targetPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 							while (this.app.vault.getAbstractFileByPath(targetPath)) {
 								counter++;
 								targetName = `${baseTagStr}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
-								targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+								targetPath =
+									targetFolder.path === '/'
+										? targetName
+										: `${targetFolder.path}/${targetName}`;
 							}
 						} else {
-							let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							let targetPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 							while (this.app.vault.getAbstractFileByPath(targetPath)) {
 								counter++;
 								targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
-								targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+								targetPath =
+									targetFolder.path === '/'
+										? targetName
+										: `${targetFolder.path}/${targetName}`;
 							}
 						}
 					} else {
-						let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						let targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
 						while (this.app.vault.getAbstractFileByPath(targetPath)) {
 							counter++;
 							targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
-							targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							targetPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 						}
 					}
 
-					const finalPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					const finalPath =
+						targetFolder.path === '/'
+							? targetName
+							: `${targetFolder.path}/${targetName}`;
 					await this.app.vault.copy(abstractFile, finalPath);
 				}
 			}
 			// Case 2: Embedded base64 image link node (type === 'link' with data:image/...) -> copy/export base64 to target directory
-			else if (canvasNodeData.type === 'link' && canvasNodeData.url?.startsWith('data:image/')) {
+			else if (
+				canvasNodeData.type === 'link' &&
+				canvasNodeData.url?.startsWith('data:image/')
+			) {
 				const dataUrl = canvasNodeData.url;
 				const parts = dataUrl.split(',');
 				const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
@@ -1556,46 +1978,83 @@ export class CanvasImageHandler {
 				let targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
 
 				if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
-					const cleanCustom = currentCopyCustomName.replace(/[/\\?%*:|"<>]/g, '-');
+					const cleanCustom = currentCopyCustomName.replace(
+						/[/\\?%*:|"<>]/g,
+						'-'
+					);
 					targetName = `${cleanCustom}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
-					let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					let targetPath =
+						targetFolder.path === '/'
+							? targetName
+							: `${targetFolder.path}/${targetName}`;
 					while (this.app.vault.getAbstractFileByPath(targetPath)) {
 						counter++;
 						targetName = `${cleanCustom}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
-						targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
 					}
 				} else if (currentCopyNamingStrategy === 'tag') {
-					const cleanedTags = tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
+					const cleanedTags = tags
+						.map((t) =>
+							t
+								.replace(/^#+/, '')
+								.trim()
+								.replace(/[/\\?%*:|"<>]/g, '-')
+						)
+						.filter(Boolean);
 					if (cleanedTags.length > 0) {
 						const baseTagStr = cleanedTags.join('-');
 						targetName = `${baseTagStr}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
-						let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						let targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
 						while (this.app.vault.getAbstractFileByPath(targetPath)) {
 							counter++;
 							targetName = `${baseTagStr}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
-							targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							targetPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 						}
 					} else {
-						let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						let targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
 						while (this.app.vault.getAbstractFileByPath(targetPath)) {
 							counter++;
 							targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
-							targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							targetPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
 						}
 					}
 				} else {
-					let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					let targetPath =
+						targetFolder.path === '/'
+							? targetName
+							: `${targetFolder.path}/${targetName}`;
 					while (this.app.vault.getAbstractFileByPath(targetPath)) {
 						counter++;
 						targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
-						targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
 					}
 				}
 
-				const finalPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+				const finalPath =
+					targetFolder.path === '/'
+						? targetName
+						: `${targetFolder.path}/${targetName}`;
 				await this.app.vault.createBinary(finalPath, u8arr.buffer);
 			}
-	}
+		}
 	}
 
 	public async convertSelectedVaultImagesToEmbed(
@@ -1609,22 +2068,43 @@ export class CanvasImageHandler {
 		if (!file) return;
 
 		// Collect all selected native file nodes that represent images
-		const targetNodes: Array<{ id: string; nodeObj: unknown; tfile: TFile; filename: string }> = [];
+		const targetNodes: Array<{
+			id: string;
+			nodeObj: unknown;
+			tfile: TFile;
+			filename: string;
+		}> = [];
 
 		canvas.nodes.forEach((nodeObj, id) => {
 			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
 
 			if (isExplicitlySelected || isTargetNode) {
-				const rawNodeObj = nodeObj as { file?: TFile | string; unknownData?: { file?: string } };
-				const filePath = (rawNodeObj.file instanceof TFile ? rawNodeObj.file.path : rawNodeObj.file) || rawNodeObj.unknownData?.file;
+				const rawNodeObj = nodeObj as {
+					file?: TFile | string;
+					unknownData?: { file?: string };
+				};
+				const filePath =
+					(rawNodeObj.file instanceof TFile
+						? rawNodeObj.file.path
+						: rawNodeObj.file) || rawNodeObj.unknownData?.file;
 				if (filePath) {
 					const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
-					if (abstractFile instanceof TFile && IMAGE_EXTENSIONS.has(abstractFile.extension.toLowerCase())) {
-						targetNodes.push({ id, nodeObj, tfile: abstractFile, filename: abstractFile.name });
+					if (
+						abstractFile instanceof TFile &&
+						IMAGE_EXTENSIONS.has(abstractFile.extension.toLowerCase())
+					) {
+						targetNodes.push({
+							id,
+							nodeObj,
+							tfile: abstractFile,
+							filename: abstractFile.name,
+						});
 					}
 				}
 			}
@@ -1680,7 +2160,10 @@ export class CanvasImageHandler {
 
 			// 1. Preserve position, size, transform & tag data
 			const pos = { x: canvasNodeData.x, y: canvasNodeData.y };
-			const size = { width: canvasNodeData.width, height: canvasNodeData.height };
+			const size = {
+				width: canvasNodeData.width,
+				height: canvasNodeData.height,
+			};
 			const flipH = canvasNodeData.kambasFlipH;
 			const flipV = canvasNodeData.kambasFlipV;
 			const grayscale = canvasNodeData.kambasGrayscale;
@@ -1688,7 +2171,9 @@ export class CanvasImageHandler {
 			const tags = canvasNodeData.kambasTags;
 
 			// 2. Remove old native file node from canvas
-			const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
+			const rawCanvas = canvas as unknown as {
+				removeNode?: (node: unknown) => void;
+			};
 			if (typeof rawCanvas.removeNode === 'function') {
 				try {
 					rawCanvas.removeNode(nodeObj);
@@ -1707,19 +2192,33 @@ export class CanvasImageHandler {
 				});
 
 				// 4. Find newly created link node and apply preserved transform & tag properties
-				const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
-					const rawN = n as unknown as { url?: string; unknownData?: { url?: string } };
-					return rawN.url === dataUrl || rawN.unknownData?.url === dataUrl;
-				});
+				const newCanvasNode = Array.from(canvas.nodes?.values() || []).find(
+					(n) => {
+						const rawN = n as unknown as {
+							url?: string;
+							unknownData?: { url?: string };
+						};
+						return rawN.url === dataUrl || rawN.unknownData?.url === dataUrl;
+					}
+				);
 
 				if (newCanvasNode) {
-					const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasOpacity?: number; kambasTags?: string[] } };
+					const rawN = newCanvasNode as unknown as {
+						unknownData?: {
+							kambasFlipH?: boolean;
+							kambasFlipV?: boolean;
+							kambasGrayscale?: boolean;
+							kambasOpacity?: number;
+							kambasTags?: string[];
+						};
+					};
 					if (!rawN.unknownData) rawN.unknownData = {};
 					if (flipH) rawN.unknownData.kambasFlipH = flipH;
 					if (flipV) rawN.unknownData.kambasFlipV = flipV;
 					if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 					if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
-					if (Array.isArray(tags) && tags.length > 0) rawN.unknownData.kambasTags = [...tags];
+					if (Array.isArray(tags) && tags.length > 0)
+						rawN.unknownData.kambasTags = [...tags];
 				}
 
 				modified = true;
@@ -1754,7 +2253,12 @@ export class CanvasImageHandler {
 		}
 	}
 
-	private async persistImageTransform(file: TFile, selectedNodeIds: string[], key: string, targetValue?: boolean): Promise<void> {
+	private async persistImageTransform(
+		file: TFile,
+		selectedNodeIds: string[],
+		key: string,
+		targetValue?: boolean
+	): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
 		try {
@@ -1770,16 +2274,20 @@ export class CanvasImageHandler {
 		data.nodes.forEach((node) => {
 			if (node.id && selectedNodeIds.includes(node.id)) {
 				if (key === 'h') {
-					node.kambasFlipH = targetValue !== undefined ? targetValue : !node.kambasFlipH;
+					node.kambasFlipH =
+						targetValue !== undefined ? targetValue : !node.kambasFlipH;
 					modified = true;
 				} else if (key === 'v') {
-					node.kambasFlipV = targetValue !== undefined ? targetValue : !node.kambasFlipV;
+					node.kambasFlipV =
+						targetValue !== undefined ? targetValue : !node.kambasFlipV;
 					modified = true;
 				} else if (key === 'g') {
-					node.kambasGrayscale = targetValue !== undefined ? targetValue : !node.kambasGrayscale;
+					node.kambasGrayscale =
+						targetValue !== undefined ? targetValue : !node.kambasGrayscale;
 					modified = true;
 				} else if (key === 'p' || key === 'palette') {
-					node.kambasPalette = targetValue !== undefined ? targetValue : !node.kambasPalette;
+					node.kambasPalette =
+						targetValue !== undefined ? targetValue : !node.kambasPalette;
 					modified = true;
 				}
 			}
@@ -1839,7 +2347,9 @@ export class CanvasImageHandler {
 		if (!canvas?.nodes) return [];
 		const tagSet = new Set<string>();
 		canvas.nodes.forEach((node) => {
-			const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+			const uData = (
+				node as unknown as { unknownData?: { kambasTags?: string[] } }
+			).unknownData;
 			for (const tag of uData?.kambasTags ?? []) {
 				if (tag.trim()) tagSet.add(tag.trim());
 			}
@@ -1850,19 +2360,28 @@ export class CanvasImageHandler {
 	/**
 	 * Collects tags from the live canvas as well as the global vault metadata cache.
 	 */
-	public collectVaultAndCanvasTags(activeView: CanvasItemView): { canvasTags: string[]; suggestions: string[] } {
+	public collectVaultAndCanvasTags(activeView: CanvasItemView): {
+		canvasTags: string[];
+		suggestions: string[];
+	} {
 		const canvasTags = this.collectLiveCanvasTags(activeView);
 		const tagSet = new Set<string>(canvasTags);
 
 		try {
-			const vaultTagCounts = (this.app.metadataCache as unknown as { getTags?: () => Record<string, number> }).getTags?.();
+			const vaultTagCounts = (
+				this.app.metadataCache as unknown as {
+					getTags?: () => Record<string, number>;
+				}
+			).getTags?.();
 			if (vaultTagCounts) {
 				for (const rawTag of Object.keys(vaultTagCounts)) {
 					const tag = rawTag.replace(/^#+/, '').trim().toLowerCase();
 					if (tag) tagSet.add(tag);
 				}
 			}
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 
 		return {
 			canvasTags,
@@ -1887,12 +2406,17 @@ export class CanvasImageHandler {
 		canvas.nodes.forEach((node) => {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
-			const isTarget = Boolean(targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
+			const isTarget = Boolean(
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
+			);
 			const isSel = nodeEl.classList.contains('is-selected');
-			
+
 			if (targetNodeEl ? isTarget : isSel) {
 				selectedCount++;
-				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+				const uData = (
+					node as unknown as { unknownData?: { kambasTags?: string[] } }
+				).unknownData;
 				for (const tag of uData?.kambasTags ?? []) {
 					const clean = tag.trim().toLowerCase();
 					if (clean) {
@@ -1904,18 +2428,26 @@ export class CanvasImageHandler {
 		});
 		const initialTags = Array.from(initialTagSet);
 
-		const { canvasTags, suggestions } = this.collectVaultAndCanvasTags(activeView);
+		const { canvasTags, suggestions } =
+			this.collectVaultAndCanvasTags(activeView);
 
 		new TagModal(
 			this.app,
 			initialTags,
 			suggestions,
 			(tags, tagStates) => {
-				void this.setNodeTags(activeView, tags, initialTags, targetNodeEl, tagStates);
+				void this.setNodeTags(
+					activeView,
+					tags,
+					initialTags,
+					targetNodeEl,
+					tagStates
+				);
 			},
 			{
 				selectedCount: selectedCount || 1,
-				presetTags: canvasTags.length > 0 ? canvasTags : suggestions.slice(0, 10),
+				presetTags:
+					canvasTags.length > 0 ? canvasTags : suggestions.slice(0, 10),
 				tagCounts,
 			}
 		).open();
@@ -1936,15 +2468,22 @@ export class CanvasImageHandler {
 
 		const nodeTagsMap = new Map<string, string[] | undefined>();
 
-		const fullTags = tags.filter((t) => !tagStates || tagStates.get(t) === 'full');
+		const fullTags = tags.filter(
+			(t) => !tagStates || tagStates.get(t) === 'full'
+		);
 		const removedTags = initialTags.filter((t) => !tags.includes(t));
 
 		canvas.nodes.forEach((node, id) => {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
-			const isSel = nodeEl.classList.contains('is-selected') || (targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
+			const isSel =
+				nodeEl.classList.contains('is-selected') ||
+				(targetNodeEl &&
+					(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
 			if (isSel) {
-				const rawNode = node as unknown as { unknownData?: { kambasTags?: string[] } };
+				const rawNode = node as unknown as {
+					unknownData?: { kambasTags?: string[] };
+				};
 				if (!rawNode.unknownData) rawNode.unknownData = {};
 				const existingTags = rawNode.unknownData.kambasTags ?? [];
 
@@ -1955,11 +2494,13 @@ export class CanvasImageHandler {
 					if (!updated.includes(tag)) updated.push(tag);
 				}
 
-				rawNode.unknownData.kambasTags = updated.length > 0 ? updated : undefined;
+				rawNode.unknownData.kambasTags =
+					updated.length > 0 ? updated : undefined;
 				nodeTagsMap.set(id, updated.length > 0 ? updated : undefined);
 
 				// Immediately render badges
-				if (nodeEl.instanceOf(HTMLElement)) this.renderTagBadges(nodeEl, updated);
+				if (nodeEl.instanceOf(HTMLElement))
+					this.renderTagBadges(nodeEl, updated);
 			}
 		});
 
@@ -1972,7 +2513,11 @@ export class CanvasImageHandler {
 		}
 
 		if (typeof canvas.requestSave === 'function') {
-			try { canvas.requestSave(); } catch { /* ignore */ }
+			try {
+				canvas.requestSave();
+			} catch {
+				/* ignore */
+			}
 		}
 
 		if (this.tagFilterPanelEl?.isConnected) {
@@ -1988,7 +2533,9 @@ export class CanvasImageHandler {
 		let data: CanvasFileData;
 		try {
 			data = JSON.parse(content) as CanvasFileData;
-		} catch { return; }
+		} catch {
+			return;
+		}
 		if (!data.nodes) return;
 		let modified = false;
 		data.nodes.forEach((node) => {
@@ -2014,8 +2561,9 @@ export class CanvasImageHandler {
 	 * Opens (or focuses) the in-canvas tag filter sidebar panel.
 	 */
 	public openTagFilterPanel(activeView: CanvasItemView): void {
-		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl
-			?? (activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl;
+		const container =
+			(activeView as unknown as { containerEl?: HTMLElement }).containerEl ??
+			(activeView.canvas as unknown as { wrapperEl?: HTMLElement })?.wrapperEl;
 		if (!container) return;
 
 		// Toggle: close if already open
@@ -2036,29 +2584,46 @@ export class CanvasImageHandler {
 		panel.addEventListener('scroll', (e) => e.stopPropagation());
 
 		// Set dim-opacity CSS var on the container
-		container.style.setProperty('--kambas-dim-opacity', String(this.dimOpacity));
+		container.style.setProperty(
+			'--kambas-dim-opacity',
+			String(this.dimOpacity)
+		);
 
 		// ── Header (drag handle & tabs) ─────────────────────────────────────────────
 		const header = panel.createDiv({ cls: 'kambas-tag-panel-header' });
 		const tabsWrap = header.createDiv({ cls: 'kambas-tag-panel-tabs' });
 
-		const hasTagActive = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
-		const hasColorActive = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+		const hasTagActive =
+			this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+		const hasColorActive =
+			this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
 
 		const tagTab = tabsWrap.createDiv({
-			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'tag' ? ' is-active' : '') + (hasTagActive ? ' has-filter' : ''),
+			cls:
+				'kambas-tag-panel-tab' +
+				(this.activeFilterTab === 'tag' ? ' is-active' : '') +
+				(hasTagActive ? ' has-filter' : ''),
 		});
 		tagTab.createSpan({ text: t.tagModalTitle });
 		if (hasTagActive) {
-			tagTab.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active tag filter' } });
+			tagTab.createSpan({
+				cls: 'kambas-tab-filter-dot',
+				attr: { 'aria-label': 'Active tag filter' },
+			});
 		}
 
 		const colorTab = tabsWrap.createDiv({
-			cls: 'kambas-tag-panel-tab' + (this.activeFilterTab === 'color' ? ' is-active' : '') + (hasColorActive ? ' has-filter' : ''),
+			cls:
+				'kambas-tag-panel-tab' +
+				(this.activeFilterTab === 'color' ? ' is-active' : '') +
+				(hasColorActive ? ' has-filter' : ''),
 		});
 		colorTab.createSpan({ text: t.colorFilterTab ?? 'Color' });
 		if (hasColorActive) {
-			colorTab.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active color filter' } });
+			colorTab.createSpan({
+				cls: 'kambas-tab-filter-dot',
+				attr: { 'aria-label': 'Active color filter' },
+			});
 		}
 
 		tagTab.addEventListener('click', () => {
@@ -2080,7 +2645,9 @@ export class CanvasImageHandler {
 		const headerActions = header.createDiv({ cls: 'kambas-tag-panel-actions' });
 		const closeBtn = headerActions.createDiv({ cls: 'kambas-tag-panel-close' });
 		setIcon(closeBtn, 'x');
-		closeBtn.addEventListener('click', () => this.closeTagFilterPanel(activeView));
+		closeBtn.addEventListener('click', () =>
+			this.closeTagFilterPanel(activeView)
+		);
 
 		this.makePanelDraggable(panel, header, container);
 
@@ -2091,7 +2658,10 @@ export class CanvasImageHandler {
 
 		// ── Opacity slider footer ────────────────────────────────────────────
 		const footer = panel.createDiv({ cls: 'kambas-tag-panel-footer' });
-		footer.createSpan({ cls: 'kambas-tag-slider-label-text', text: 'Dim opacity' });
+		footer.createSpan({
+			cls: 'kambas-tag-slider-label-text',
+			text: 'Dim opacity',
+		});
 
 		// Slider + reset icon on one row
 		const sliderRow = footer.createDiv({ cls: 'kambas-tag-slider-row' });
@@ -2103,12 +2673,17 @@ export class CanvasImageHandler {
 			.setDynamicTooltip()
 			.onChange((value: number) => {
 				this.dimOpacity = value / 100;
-				container.style.setProperty('--kambas-dim-opacity', String(this.dimOpacity));
+				container.style.setProperty(
+					'--kambas-dim-opacity',
+					String(this.dimOpacity)
+				);
 				this.savePanelState(panel);
 			});
 		sliderComp.sliderEl.addClass('kambas-tag-slider');
 
-		const resetBtn = sliderRow.createEl('button', { cls: 'kambas-tag-slider-reset' });
+		const resetBtn = sliderRow.createEl('button', {
+			cls: 'kambas-tag-slider-reset',
+		});
 		setIcon(resetBtn, 'rotate-ccw');
 		resetBtn.setAttribute('aria-label', 'Reset opacity to default');
 		resetBtn.addEventListener('click', () => {
@@ -2163,8 +2738,14 @@ export class CanvasImageHandler {
 		let currentLeft = panel.offsetLeft;
 		let currentTop = panel.offsetTop;
 
-		const maxLeft = Math.max(0, cRect.width - (panel.offsetWidth || pRect.width));
-		const maxTop = Math.max(0, cRect.height - (panel.offsetHeight || pRect.height));
+		const maxLeft = Math.max(
+			0,
+			cRect.width - (panel.offsetWidth || pRect.width)
+		);
+		const maxTop = Math.max(
+			0,
+			cRect.height - (panel.offsetHeight || pRect.height)
+		);
 
 		const clampedLeft = Math.max(0, Math.min(currentLeft, maxLeft));
 		const clampedTop = Math.max(0, Math.min(currentTop, maxTop));
@@ -2186,27 +2767,47 @@ export class CanvasImageHandler {
 				height: panel.style.height || panel.offsetHeight + 'px',
 				dimOpacity: this.dimOpacity,
 			};
-			this.app.saveLocalStorage('kambas-tag-panel-state', JSON.stringify(state));
-		} catch { /* ignore */ }
+			this.app.saveLocalStorage(
+				'kambas-tag-panel-state',
+				JSON.stringify(state)
+			);
+		} catch {
+			/* ignore */
+		}
 	}
 
 	private restorePanelState(panel: HTMLElement, container: HTMLElement): void {
 		try {
-			const raw = this.app.loadLocalStorage('kambas-tag-panel-state') as string | null;
+			const raw = this.app.loadLocalStorage('kambas-tag-panel-state') as
+				| string
+				| null;
 			if (raw) {
-				const state = JSON.parse(raw) as { top?: string; left?: string; width?: string; height?: string; dimOpacity?: number };
-				if (state.top)    panel.style.top    = state.top;
-				if (state.left)   panel.style.left   = state.left;
-				if (state.width)  panel.style.width  = state.width;
+				const state = JSON.parse(raw) as {
+					top?: string;
+					left?: string;
+					width?: string;
+					height?: string;
+					dimOpacity?: number;
+				};
+				if (state.top) panel.style.top = state.top;
+				if (state.left) panel.style.left = state.left;
+				if (state.width) panel.style.width = state.width;
 				if (state.height) panel.style.height = state.height;
-				if (typeof state.dimOpacity === 'number') this.dimOpacity = state.dimOpacity;
+				if (typeof state.dimOpacity === 'number')
+					this.dimOpacity = state.dimOpacity;
 			}
 			// Clamp immediately after restoring position
 			this.clampPanelPosition(panel, container);
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 	}
 
-	private makePanelDraggable(panel: HTMLElement, header: HTMLElement, container: HTMLElement): void {
+	private makePanelDraggable(
+		panel: HTMLElement,
+		header: HTMLElement,
+		container: HTMLElement
+	): void {
 		let isDragging = false;
 		// positionAnchored: true once we've converted right/bottom → left/top on first move
 		let positionAnchored = false;
@@ -2222,21 +2823,21 @@ export class CanvasImageHandler {
 			if (!positionAnchored && mouseDownPRect) {
 				positionAnchored = true;
 				panel.setCssProps({
-					right:  'auto',
+					right: 'auto',
 					bottom: 'auto',
-					left:   `${mouseDownPRect.left - cRect.left}px`,
-					top:    `${mouseDownPRect.top  - cRect.top}px`,
+					left: `${mouseDownPRect.left - cRect.left}px`,
+					top: `${mouseDownPRect.top - cRect.top}px`,
 				});
 			}
 			const panW = panel.offsetWidth;
 			const panH = panel.offsetHeight;
 			let newLeft = e.clientX - dragOffsetX - cRect.left;
-			let newTop  = e.clientY - dragOffsetY - cRect.top;
+			let newTop = e.clientY - dragOffsetY - cRect.top;
 			// Clamp so panel stays fully inside the container
-			newLeft = Math.max(0, Math.min(newLeft, cRect.width  - panW));
-			newTop  = Math.max(0, Math.min(newTop,  cRect.height - panH));
+			newLeft = Math.max(0, Math.min(newLeft, cRect.width - panW));
+			newTop = Math.max(0, Math.min(newTop, cRect.height - panH));
 			panel.style.left = `${newLeft}px`;
-			panel.style.top  = `${newTop}px`;
+			panel.style.top = `${newTop}px`;
 		};
 		const onUp = (): void => {
 			isDragging = false;
@@ -2246,15 +2847,31 @@ export class CanvasImageHandler {
 		};
 
 		header.addEventListener('mousedown', (e: MouseEvent) => {
-			if ((e.target as HTMLElement).closest('.kambas-tag-panel-close') || (e.target as HTMLElement).closest('.kambas-tag-panel-tabs')) return;
+			if (
+				(e.target as HTMLElement).closest('.kambas-tag-panel-close') ||
+				(e.target as HTMLElement).closest('.kambas-tag-panel-tabs')
+			)
+				return;
 			isDragging = true;
 			positionAnchored = false; // reset — we haven't moved yet
 			// Capture panel rect NOW (no DOM writes!) for use on first mousemove
 			mouseDownPRect = panel.getBoundingClientRect();
 			dragOffsetX = e.clientX - mouseDownPRect.left;
 			dragOffsetY = e.clientY - mouseDownPRect.top;
-			document.addEventListener('mousemove', onMove);
-			document.addEventListener('mouseup', onUp);
+			const ownerDoc = header.ownerDocument || document;
+			const cleanupDrag = (): void => {
+				ownerDoc.removeEventListener('mousemove', onMove);
+				ownerDoc.removeEventListener('mouseup', onUp);
+			};
+			const onMoveWithCleanup = (moveEvt: MouseEvent): void => {
+				onMove(moveEvt);
+			};
+			const onUpWithCleanup = (): void => {
+				cleanupDrag();
+				onUp();
+			};
+			ownerDoc.addEventListener('mousemove', onMoveWithCleanup);
+			ownerDoc.addEventListener('mouseup', onUpWithCleanup);
 			e.preventDefault();
 		});
 	}
@@ -2277,53 +2894,79 @@ export class CanvasImageHandler {
 		let cursorStart: number | null = null;
 		let cursorEnd: number | null = null;
 
-		if (activeEl?.instanceOf?.(HTMLInputElement) && activeEl.classList.contains('kambas-tag-search')) {
+		if (
+			activeEl?.instanceOf?.(HTMLInputElement) &&
+			activeEl.classList.contains('kambas-tag-search')
+		) {
 			focusedQuery = activeEl.value;
 			cursorStart = activeEl.selectionStart;
 			cursorEnd = activeEl.selectionEnd;
 		}
 
-		const hasTagActive = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
-		const hasColorActive = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+		const hasTagActive =
+			this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+		const hasColorActive =
+			this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
 
-		const tagTabEl = this.tagFilterPanelEl.querySelector('.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)');
+		const tagTabEl = this.tagFilterPanelEl.querySelector(
+			'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)'
+		);
 		if (tagTabEl) {
 			tagTabEl.classList.toggle('has-filter', hasTagActive);
 			let dot = tagTabEl.querySelector('.kambas-tab-filter-dot');
 			if (hasTagActive && !dot) {
-				tagTabEl.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active tag filter' } });
+				tagTabEl.createSpan({
+					cls: 'kambas-tab-filter-dot',
+					attr: { 'aria-label': 'Active tag filter' },
+				});
 			} else if (!hasTagActive && dot) {
 				dot.remove();
 			}
 		}
 
-		const colorTabEl = this.tagFilterPanelEl.querySelector('.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(2)');
+		const colorTabEl = this.tagFilterPanelEl.querySelector(
+			'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(2)'
+		);
 		if (colorTabEl) {
 			colorTabEl.classList.toggle('has-filter', hasColorActive);
 			let dot = colorTabEl.querySelector('.kambas-tab-filter-dot');
 			if (hasColorActive && !dot) {
-				colorTabEl.createSpan({ cls: 'kambas-tab-filter-dot', attr: { 'aria-label': 'Active color filter' } });
+				colorTabEl.createSpan({
+					cls: 'kambas-tab-filter-dot',
+					attr: { 'aria-label': 'Active color filter' },
+				});
 			} else if (!hasColorActive && dot) {
 				dot.remove();
 			}
 		}
 
-		const body = (this.tagFilterPanelEl as unknown as { _body?: HTMLElement })._body;
-		const listElBefore = body?.querySelector<HTMLElement>('.kambas-tag-panel-list');
+		const body = (this.tagFilterPanelEl as unknown as { _body?: HTMLElement })
+			._body;
+		const listElBefore = body?.querySelector<HTMLElement>(
+			'.kambas-tag-panel-list'
+		);
 		const savedScrollTop = listElBefore ? listElBefore.scrollTop : 0;
 
 		if (body) this.renderFilterPanelBody(body, activeView);
 
-		const listElAfter = body?.querySelector<HTMLElement>('.kambas-tag-panel-list');
+		const listElAfter = body?.querySelector<HTMLElement>(
+			'.kambas-tag-panel-list'
+		);
 		if (listElAfter) listElAfter.scrollTop = savedScrollTop;
 
 		if (focusedQuery !== null && this.tagFilterPanelEl?.isConnected) {
-			const newInput = this.tagFilterPanelEl.querySelector<HTMLInputElement>('input.kambas-tag-search');
+			const newInput = this.tagFilterPanelEl.querySelector<HTMLInputElement>(
+				'input.kambas-tag-search'
+			);
 			if (newInput) {
 				newInput.value = focusedQuery;
 				newInput.focus();
 				if (cursorStart !== null && cursorEnd !== null) {
-					try { newInput.setSelectionRange(cursorStart, cursorEnd); } catch { /* ignore */ }
+					try {
+						newInput.setSelectionRange(cursorStart, cursorEnd);
+					} catch {
+						/* ignore */
+					}
 				}
 				// Trigger input event so list reflects the search query
 				newInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -2332,7 +2975,10 @@ export class CanvasImageHandler {
 		}
 	}
 
-	private renderFilterPanelBody(body: HTMLElement, activeView: CanvasItemView): void {
+	private renderFilterPanelBody(
+		body: HTMLElement,
+		activeView: CanvasItemView
+	): void {
 		if (this.activeFilterTab === 'color') {
 			this.renderColorFilterList(body, activeView);
 		} else {
@@ -2340,7 +2986,9 @@ export class CanvasImageHandler {
 		}
 	}
 
-	private async extractAllNodeColors(activeView: CanvasItemView): Promise<void> {
+	private async extractAllNodeColors(
+		activeView: CanvasItemView
+	): Promise<void> {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
@@ -2350,25 +2998,36 @@ export class CanvasImageHandler {
 			const rawNode = node as unknown as { id: string };
 			const nodeEl = node.nodeEl;
 			if (!nodeEl || !rawNode.id) continue;
-			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+			const img =
+				this.getNativeImageElement(nodeEl) ??
+				nodeEl.querySelector<HTMLImageElement>('img');
 			if (!img?.src) continue;
 			if (this.nodeColorCache.has(rawNode.id)) continue;
 
 			try {
-				const colorName = await getNodeDominantColorName(img.src, includeAccents);
+				const colorName = await getNodeDominantColorName(
+					img.src,
+					includeAccents
+				);
 				this.nodeColorCache.set(rawNode.id, colorName);
 			} catch {
 				this.nodeColorCache.set(rawNode.id, null);
 			}
 		}
 
-		if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
+		if (
+			this.tagFilterPanelEl?.isConnected &&
+			this.activeFilterTab === 'color'
+		) {
 			this.applyTagFilters(activeView, true);
 			this.refreshTagFilterPanel(activeView);
 		}
 	}
 
-	private renderColorFilterList(body: HTMLElement, activeView: CanvasItemView): void {
+	private renderColorFilterList(
+		body: HTMLElement,
+		activeView: CanvasItemView
+	): void {
 		body.empty();
 		const t = getText();
 		const canvas = activeView.canvas;
@@ -2397,12 +3056,20 @@ export class CanvasImageHandler {
 		const extractMode = this.plugin.settings.colorExtractMode ?? 'auto';
 		if (extractMode !== 'disabled') {
 			const btnWrap = controlsWrap.createDiv({ cls: 'kambas-tag-search-wrap' });
-			btnWrap.setCssProps({ justifyContent: 'center', padding: '4px 8px', margin: '4px 8px 2px' });
+			btnWrap.setCssProps({
+				justifyContent: 'center',
+				padding: '4px 8px',
+				margin: '4px 8px 2px',
+			});
 			const extractBtn = btnWrap.createEl('button', {
 				cls: 'mod-cta',
 				text: t.colorExtractBtn ?? 'Extract Image Colors',
 			});
-			extractBtn.setCssProps({ width: '100%', fontSize: '11px', height: '26px' });
+			extractBtn.setCssProps({
+				width: '100%',
+				fontSize: '11px',
+				height: '26px',
+			});
 			extractBtn.addEventListener('click', () => {
 				extractBtn.setText(t.colorExtracting ?? 'Extracting colors...');
 				extractBtn.setAttribute('disabled', 'true');
@@ -2415,17 +3082,27 @@ export class CanvasImageHandler {
 		const colorCounts = new Map<string, number>();
 		// Also count colors only among currently-visible (non-hidden) nodes
 		const visibleColorCounts = new Map<string, number>();
-		const hasAnyFilter = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0 ||
-		                     this.activeTagFilters.size > 0   || this.activeTagExcludes.size > 0;
+		const hasAnyFilter =
+			this.activeColorFilters.size > 0 ||
+			this.activeColorExcludes.size > 0 ||
+			this.activeTagFilters.size > 0 ||
+			this.activeTagExcludes.size > 0;
 
 		const includeAccents = this.plugin.settings.colorIncludeAccents ?? false;
-		const includeNodeColor = this.plugin.settings.colorIncludeNodeColor ?? false;
+		const includeNodeColor =
+			this.plugin.settings.colorIncludeNodeColor ?? false;
 
 		canvas.nodes.forEach((node) => {
-			const rawNode = node as unknown as { id: string; color?: string; unknownData?: { color?: string } };
+			const rawNode = node as unknown as {
+				id: string;
+				color?: string;
+				unknownData?: { color?: string };
+			};
 			const nodeEl = node.nodeEl;
 			if (!nodeEl || !rawNode.id) return;
-			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
+			const img =
+				this.getNativeImageElement(nodeEl) ??
+				nodeEl.querySelector<HTMLImageElement>('img');
 
 			let nodeColorNames: string[] = [];
 
@@ -2441,16 +3118,22 @@ export class CanvasImageHandler {
 			if (img?.src) {
 				let imageColors = this.nodeColorCache.get(rawNode.id);
 				if (imageColors === undefined && extractMode === 'auto') {
-					void getNodeDominantColorName(img.src, includeAccents).then((names) => {
-						this.nodeColorCache.set(rawNode.id, names);
-						if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab === 'color') {
-							if (this.lazyExtractDebounceTimer !== null) window.clearTimeout(this.lazyExtractDebounceTimer);
-							this.lazyExtractDebounceTimer = window.setTimeout(() => {
-								this.lazyExtractDebounceTimer = null;
-								this.refreshTagFilterPanel(activeView);
-							}, 300);
+					void getNodeDominantColorName(img.src, includeAccents).then(
+						(names) => {
+							this.nodeColorCache.set(rawNode.id, names);
+							if (
+								this.tagFilterPanelEl?.isConnected &&
+								this.activeFilterTab === 'color'
+							) {
+								if (this.lazyExtractDebounceTimer !== null)
+									window.clearTimeout(this.lazyExtractDebounceTimer);
+								this.lazyExtractDebounceTimer = window.setTimeout(() => {
+									this.lazyExtractDebounceTimer = null;
+									this.refreshTagFilterPanel(activeView);
+								}, 300);
+							}
 						}
-					});
+					);
 				} else if (Array.isArray(imageColors)) {
 					nodeColorNames.push(...imageColors);
 				}
@@ -2459,18 +3142,24 @@ export class CanvasImageHandler {
 			// Deduplicate colors for this node
 			if (nodeColorNames.length > 0) {
 				const uniqueColors = Array.from(new Set(nodeColorNames));
-				const isVisible = hasAnyFilter && !nodeEl.classList.contains('kambas-tag-hidden');
+				const isVisible =
+					hasAnyFilter && !nodeEl.classList.contains('kambas-tag-hidden');
 				for (const colorName of uniqueColors) {
 					colorCounts.set(colorName, (colorCounts.get(colorName) ?? 0) + 1);
 					if (isVisible) {
-						visibleColorCounts.set(colorName, (visibleColorCounts.get(colorName) ?? 0) + 1);
+						visibleColorCounts.set(
+							colorName,
+							(visibleColorCounts.get(colorName) ?? 0) + 1
+						);
 					}
 				}
 			}
 		});
 
 		// ── 2. Search box (with embedded 'x' clear filter button) ────────────────
-		const searchWrap = controlsWrap.createDiv({ cls: 'kambas-tag-search-wrap' });
+		const searchWrap = controlsWrap.createDiv({
+			cls: 'kambas-tag-search-wrap',
+		});
 		const searchIcon = searchWrap.createSpan({ cls: 'kambas-tag-search-icon' });
 		setIcon(searchIcon, 'search');
 		const searchInput = searchWrap.createEl('input', {
@@ -2479,7 +3168,8 @@ export class CanvasImageHandler {
 		});
 
 		// Clear 'x' button inside search bar (transferred from standalone button)
-		const hasColorActivity = this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+		const hasColorActivity =
+			this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
 		const clearInSearch = searchWrap.createEl('button', {
 			cls: 'kambas-tag-search-clear' + (hasColorActivity ? '' : ' is-hidden'),
 			attr: { 'aria-label': t.colorClearFilter ?? 'Clear color filter' },
@@ -2493,11 +3183,17 @@ export class CanvasImageHandler {
 		});
 
 		// ── 3. Controls toggles: Minor colors, Display color names & Include node colors ──────
-		const togglesWrap = controlsWrap.createDiv({ cls: 'kambas-color-toggles-wrap' });
+		const togglesWrap = controlsWrap.createDiv({
+			cls: 'kambas-color-toggles-wrap',
+		});
 
 		// Toggle: Include minor colors
-		const minorToggleLabel = togglesWrap.createEl('label', { cls: 'kambas-accent-toggle-label' });
-		const minorCheckbox = minorToggleLabel.createEl('input', { attr: { type: 'checkbox' } });
+		const minorToggleLabel = togglesWrap.createEl('label', {
+			cls: 'kambas-accent-toggle-label',
+		});
+		const minorCheckbox = minorToggleLabel.createEl('input', {
+			attr: { type: 'checkbox' },
+		});
 		minorCheckbox.checked = includeAccents;
 		minorToggleLabel.createSpan({ text: 'Include minor colors' });
 		minorCheckbox.addEventListener('change', () => {
@@ -2508,8 +3204,12 @@ export class CanvasImageHandler {
 		});
 
 		// Toggle: Include node color (text cards, groups, borders)
-		const nodeColorToggleLabel = togglesWrap.createEl('label', { cls: 'kambas-accent-toggle-label' });
-		const nodeColorCheckbox = nodeColorToggleLabel.createEl('input', { attr: { type: 'checkbox' } });
+		const nodeColorToggleLabel = togglesWrap.createEl('label', {
+			cls: 'kambas-accent-toggle-label',
+		});
+		const nodeColorCheckbox = nodeColorToggleLabel.createEl('input', {
+			attr: { type: 'checkbox' },
+		});
 		nodeColorCheckbox.checked = includeNodeColor;
 		nodeColorToggleLabel.createSpan({ text: 'Include card colors' });
 		nodeColorCheckbox.addEventListener('change', () => {
@@ -2521,8 +3221,12 @@ export class CanvasImageHandler {
 
 		// Toggle: Display color name
 		const showName = this.plugin.settings.colorShowName ?? true;
-		const nameToggleLabel = togglesWrap.createEl('label', { cls: 'kambas-accent-toggle-label' });
-		const nameCheckbox = nameToggleLabel.createEl('input', { attr: { type: 'checkbox' } });
+		const nameToggleLabel = togglesWrap.createEl('label', {
+			cls: 'kambas-accent-toggle-label',
+		});
+		const nameCheckbox = nameToggleLabel.createEl('input', {
+			attr: { type: 'checkbox' },
+		});
 		nameCheckbox.checked = showName;
 		nameToggleLabel.createSpan({ text: 'Display color name' });
 		nameCheckbox.addEventListener('change', () => {
@@ -2532,17 +3236,29 @@ export class CanvasImageHandler {
 		});
 
 		if (canvas.nodes.size === 0) {
-			body.createDiv({ cls: 'kambas-tag-panel-empty', text: t.colorNoImages ?? 'No nodes found on canvas.' });
+			body.createDiv({
+				cls: 'kambas-tag-panel-empty',
+				text: t.colorNoImages ?? 'No nodes found on canvas.',
+			});
 			return;
 		}
 
 		if (colorCounts.size === 0) {
 			const emptyDiv = body.createDiv({
 				cls: 'kambas-tag-panel-empty',
-				text: extractMode === 'auto' ? 'Extracting or no colors found...' : 'Click button above to extract image colors.',
+				text:
+					extractMode === 'auto'
+						? 'Extracting or no colors found...'
+						: 'Click button above to extract image colors.',
 			});
-			if (this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0) {
-				const resetBtn = emptyDiv.createEl('button', { cls: 'mod-warning', text: 'Clear color filter' });
+			if (
+				this.activeColorFilters.size > 0 ||
+				this.activeColorExcludes.size > 0
+			) {
+				const resetBtn = emptyDiv.createEl('button', {
+					cls: 'mod-warning',
+					text: 'Clear color filter',
+				});
 				resetBtn.setCssProps({ marginTop: '10px' });
 				resetBtn.addEventListener('click', () => {
 					this.activeColorFilters.clear();
@@ -2561,11 +3277,17 @@ export class CanvasImageHandler {
 		// Build colorName → nodeEl[] map so row-hover can outline matching elements
 		const colorToNodes = new Map<string, HTMLElement[]>();
 		canvas.nodes.forEach((node) => {
-			const rawNode = node as unknown as { id: string; color?: string; unknownData?: { color?: string } };
+			const rawNode = node as unknown as {
+				id: string;
+				color?: string;
+				unknownData?: { color?: string };
+			};
 			const nodeEl = node.nodeEl;
 			if (!nodeEl || !rawNode.id) return;
-			const img = this.getNativeImageElement(nodeEl) ?? nodeEl.querySelector<HTMLImageElement>('img');
-			
+			const img =
+				this.getNativeImageElement(nodeEl) ??
+				nodeEl.querySelector<HTMLImageElement>('img');
+
 			const combinedColors: string[] = [];
 			if (includeNodeColor) {
 				const customColor = rawNode.color ?? rawNode.unknownData?.color;
@@ -2583,18 +3305,26 @@ export class CanvasImageHandler {
 
 			for (const c of new Set(combinedColors)) {
 				let bucket = colorToNodes.get(c);
-				if (!bucket) { bucket = []; colorToNodes.set(c, bucket); }
+				if (!bucket) {
+					bucket = [];
+					colorToNodes.set(c, bucket);
+				}
 				bucket.push(nodeEl);
 				// Tag the element so the canvas-node → row direction can read it
 				const existing = nodeEl.getAttribute('data-kambas-colors') ?? '';
 				if (!existing.split(',').includes(c)) {
-					nodeEl.setAttribute('data-kambas-colors', existing ? `${existing},${c}` : c);
+					nodeEl.setAttribute(
+						'data-kambas-colors',
+						existing ? `${existing},${c}` : c
+					);
 				}
 			}
 		});
 
 		// Canvas-node hover → highlight matching panel rows (event delegation)
-		const canvasContainer = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		const canvasContainer = (
+			activeView as unknown as { containerEl?: HTMLElement }
+		).containerEl;
 		const clearRowHighlights = (): void => {
 			listEl.querySelectorAll('.is-related, .is-unrelated').forEach((el) => {
 				el.classList.remove('is-related', 'is-unrelated');
@@ -2603,29 +3333,43 @@ export class CanvasImageHandler {
 		const onCanvasMouseOver = (e: Event): void => {
 			const target = e.target as HTMLElement;
 			const nodeEl = target.closest('[data-kambas-colors]');
-			if (!nodeEl) { clearRowHighlights(); return; }
-			const nodeColors = new Set((nodeEl.getAttribute('data-kambas-colors') ?? '').split(',').filter(Boolean));
-			if (nodeColors.size === 0) { clearRowHighlights(); return; }
-			listEl.querySelectorAll<HTMLElement>('[data-color-name]').forEach((row) => {
-				const cn = row.getAttribute('data-color-name') ?? '';
-				row.classList.toggle('is-related',   nodeColors.has(cn));
-				row.classList.toggle('is-unrelated', !nodeColors.has(cn));
-			});
+			if (!nodeEl) {
+				clearRowHighlights();
+				return;
+			}
+			const nodeColors = new Set(
+				(nodeEl.getAttribute('data-kambas-colors') ?? '')
+					.split(',')
+					.filter(Boolean)
+			);
+			if (nodeColors.size === 0) {
+				clearRowHighlights();
+				return;
+			}
+			listEl
+				.querySelectorAll<HTMLElement>('[data-color-name]')
+				.forEach((row) => {
+					const cn = row.getAttribute('data-color-name') ?? '';
+					row.classList.toggle('is-related', nodeColors.has(cn));
+					row.classList.toggle('is-unrelated', !nodeColors.has(cn));
+				});
 		};
 		const onCanvasMouseLeave = (): void => clearRowHighlights();
 
 		// Tear down previous listeners then install new ones
 		this.colorHighlightCleanup?.();
 		if (canvasContainer) {
-			canvasContainer.addEventListener('mouseover',   onCanvasMouseOver);
-			canvasContainer.addEventListener('mouseleave',  onCanvasMouseLeave);
+			canvasContainer.addEventListener('mouseover', onCanvasMouseOver);
+			canvasContainer.addEventListener('mouseleave', onCanvasMouseLeave);
 			this.colorHighlightCleanup = (): void => {
-				canvasContainer.removeEventListener('mouseover',  onCanvasMouseOver);
+				canvasContainer.removeEventListener('mouseover', onCanvasMouseOver);
 				canvasContainer.removeEventListener('mouseleave', onCanvasMouseLeave);
 				// Remove all data-kambas-colors attributes on cleanup
-				canvasContainer.querySelectorAll('[data-kambas-colors]').forEach((el) => {
-					el.removeAttribute('data-kambas-colors');
-				});
+				canvasContainer
+					.querySelectorAll('[data-kambas-colors]')
+					.forEach((el) => {
+						el.removeAttribute('data-kambas-colors');
+					});
 			};
 		}
 
@@ -2635,8 +3379,13 @@ export class CanvasImageHandler {
 			const sortedColors = Array.from(colorCounts.entries())
 				.filter(([colorName]) => {
 					if (!lower) return true;
-					const localizedColor = (t as unknown as Record<string, string>)[`color${colorName}`] ?? colorName;
-					return colorName.toLowerCase().includes(lower) || localizedColor.toLowerCase().includes(lower);
+					const localizedColor =
+						(t as unknown as Record<string, string>)[`color${colorName}`] ??
+						colorName;
+					return (
+						colorName.toLowerCase().includes(lower) ||
+						localizedColor.toLowerCase().includes(lower)
+					);
 				})
 				// When a filter is active, sort related (visible) colors to the top,
 				// then by total count. When no filter, sort by total count only.
@@ -2660,22 +3409,31 @@ export class CanvasImageHandler {
 				const isExcluded = this.activeColorExcludes.has(colorName);
 
 				// Insert divider between related and unrelated groups
-				if (hasAnyFilter && !dividerInserted && !isRelated && visibleColorCounts.size > 0) {
+				if (
+					hasAnyFilter &&
+					!dividerInserted &&
+					!isRelated &&
+					visibleColorCounts.size > 0
+				) {
 					dividerInserted = true;
 					const divider = listEl.createDiv({ cls: 'kambas-color-divider' });
 					divider.createSpan({ text: 'Not in current view' });
 				}
 
-				const rowCls = 'kambas-tag-panel-item'
-					+ (isIncluded ? ' is-active'   : '')
-					+ (isExcluded ? ' is-excluded' : '')
-					+ (!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
+				const rowCls =
+					'kambas-tag-panel-item' +
+					(isIncluded ? ' is-active' : '') +
+					(isExcluded ? ' is-excluded' : '') +
+					(!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
 				const row = listEl.createDiv({ cls: rowCls });
 				// Tag row for canvas-node → row highlight direction
 				row.setAttribute('data-color-name', colorName);
 
 				const checkEl = row.createSpan({ cls: 'kambas-tag-panel-check' });
-				setIcon(checkEl, isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square');
+				setIcon(
+					checkEl,
+					isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square'
+				);
 
 				const dot = row.createSpan({ cls: 'kambas-color-dot' });
 				if (colorHexMap[colorName]) {
@@ -2683,8 +3441,13 @@ export class CanvasImageHandler {
 				}
 
 				if (showName) {
-					const localizedColor = (t as unknown as Record<string, string>)[`color${colorName}`] ?? colorName;
-					row.createSpan({ cls: 'kambas-tag-panel-pill', text: localizedColor });
+					const localizedColor =
+						(t as unknown as Record<string, string>)[`color${colorName}`] ??
+						colorName;
+					row.createSpan({
+						cls: 'kambas-tag-panel-pill',
+						text: localizedColor,
+					});
 				}
 
 				// Show "N in view" badge alongside the total when a filter is active
@@ -2696,7 +3459,10 @@ export class CanvasImageHandler {
 				}
 				// Single general term: "12 items" / "1 item"
 				const unitText = count === 1 ? 'item' : 'items';
-				row.createSpan({ cls: 'kambas-tag-panel-count', text: `${count} ${unitText}` });
+				row.createSpan({
+					cls: 'kambas-tag-panel-count',
+					text: `${count} ${unitText}`,
+				});
 
 				// Row hover → outline matching canvas image nodes
 				row.addEventListener('mouseenter', () => {
@@ -2727,29 +3493,43 @@ export class CanvasImageHandler {
 			}
 
 			if (sortedColors.length === 0) {
-				listEl.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No colors match.' });
+				listEl.createDiv({
+					cls: 'kambas-tag-panel-empty',
+					text: 'No colors match.',
+				});
 			}
 		};
 
 		renderColorList('');
-		searchInput.addEventListener('input', () => renderColorList(searchInput.value));
+		searchInput.addEventListener('input', () =>
+			renderColorList(searchInput.value)
+		);
 	}
 
-	private renderTagFilterList(body: HTMLElement, activeView: CanvasItemView): void {
+	private renderTagFilterList(
+		body: HTMLElement,
+		activeView: CanvasItemView
+	): void {
 		body.empty();
 		const t = getText();
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
-		const hasAnyFilter = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0 ||
-		                     this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+		const hasAnyFilter =
+			this.activeTagFilters.size > 0 ||
+			this.activeTagExcludes.size > 0 ||
+			this.activeColorFilters.size > 0 ||
+			this.activeColorExcludes.size > 0;
 
 		// Build tag → total count, and tag → visible count maps
 		const tagMap = new Map<string, number>();
 		const visibleTagCounts = new Map<string, number>();
 		canvas.nodes.forEach((node) => {
-			const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
-			const isVisible = hasAnyFilter && !node.nodeEl?.classList.contains('kambas-tag-hidden');
+			const uData = (
+				node as unknown as { unknownData?: { kambasTags?: string[] } }
+			).unknownData;
+			const isVisible =
+				hasAnyFilter && !node.nodeEl?.classList.contains('kambas-tag-hidden');
 			for (const tag of uData?.kambasTags ?? []) {
 				if (!tag.trim()) continue;
 				tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
@@ -2760,7 +3540,10 @@ export class CanvasImageHandler {
 		});
 
 		if (tagMap.size === 0) {
-			const emptyDiv = body.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No tags on this canvas yet.' });
+			const emptyDiv = body.createDiv({
+				cls: 'kambas-tag-panel-empty',
+				text: 'No tags on this canvas yet.',
+			});
 			if (this.activeTagFilters.size > 0) {
 				const resetBtn = emptyDiv.createEl('button', {
 					cls: 'mod-warning',
@@ -2785,7 +3568,8 @@ export class CanvasImageHandler {
 			attr: { type: 'text', placeholder: 'Search tags…' },
 		});
 		// Clear × lives inside the search bar — always in the DOM, no layout shift
-		const hasTagActivity = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+		const hasTagActivity =
+			this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
 		const clearInSearch = searchWrap.createEl('button', {
 			cls: 'kambas-tag-search-clear' + (hasTagActivity ? '' : ' is-hidden'),
 			attr: { 'aria-label': t.tagClearFilter },
@@ -2826,20 +3610,29 @@ export class CanvasImageHandler {
 				const isExcluded = this.activeTagExcludes.has(tag);
 
 				// Divider before first tag with 0 visible count
-				if (hasAnyFilter && !dividerInserted && !isRelated && visibleTagCounts.size > 0) {
+				if (
+					hasAnyFilter &&
+					!dividerInserted &&
+					!isRelated &&
+					visibleTagCounts.size > 0
+				) {
 					dividerInserted = true;
 					const divider = listEl.createDiv({ cls: 'kambas-color-divider' });
 					divider.createSpan({ text: 'Not in current view' });
 				}
 
-				const rowCls = 'kambas-tag-panel-item'
-					+ (isIncluded ? ' is-active'   : '')
-					+ (isExcluded ? ' is-excluded' : '')
-					+ (!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
+				const rowCls =
+					'kambas-tag-panel-item' +
+					(isIncluded ? ' is-active' : '') +
+					(isExcluded ? ' is-excluded' : '') +
+					(!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
 				const row = listEl.createDiv({ cls: rowCls });
 
 				const checkEl = row.createSpan({ cls: 'kambas-tag-panel-check' });
-				setIcon(checkEl, isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square');
+				setIcon(
+					checkEl,
+					isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square'
+				);
 				row.createSpan({ cls: 'kambas-tag-panel-pill', text: `#${tag}` });
 
 				// "N in view" badge when a filter is active
@@ -2849,7 +3642,10 @@ export class CanvasImageHandler {
 						text: `${visibleCount} in view`,
 					});
 				}
-				row.createSpan({ cls: 'kambas-tag-panel-count', text: t.tagNodesCount(count) });
+				row.createSpan({
+					cls: 'kambas-tag-panel-count',
+					text: t.tagNodesCount(count),
+				});
 
 				// Delete tag from all nodes
 				const deleteBtn = row.createSpan({ cls: 'kambas-tag-panel-delete' });
@@ -2879,7 +3675,10 @@ export class CanvasImageHandler {
 			}
 
 			if (sorted.length === 0) {
-				listEl.createDiv({ cls: 'kambas-tag-panel-empty', text: 'No tags match.' });
+				listEl.createDiv({
+					cls: 'kambas-tag-panel-empty',
+					text: 'No tags match.',
+				});
 			}
 		};
 
@@ -2887,20 +3686,26 @@ export class CanvasImageHandler {
 		searchInput.addEventListener('input', () => renderList(searchInput.value));
 	}
 
-
-	public async deleteTagFromCanvas(activeView: CanvasItemView, tagToDelete: string): Promise<void> {
+	public async deleteTagFromCanvas(
+		activeView: CanvasItemView,
+		tagToDelete: string
+	): Promise<void> {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
 		canvas.nodes.forEach((node) => {
-			const rawNode = node as unknown as { unknownData?: { kambasTags?: string[] } };
+			const rawNode = node as unknown as {
+				unknownData?: { kambasTags?: string[] };
+			};
 			const tags = rawNode.unknownData?.kambasTags ?? [];
 			if (!tags.includes(tagToDelete)) return;
 			const newTags = tags.filter((tg) => tg !== tagToDelete);
 			if (rawNode.unknownData) {
-				rawNode.unknownData.kambasTags = newTags.length > 0 ? newTags : undefined;
+				rawNode.unknownData.kambasTags =
+					newTags.length > 0 ? newTags : undefined;
 			}
-			if (node.nodeEl.instanceOf(HTMLElement)) this.renderTagBadges(node.nodeEl, newTags);
+			if (node.nodeEl.instanceOf(HTMLElement))
+				this.renderTagBadges(node.nodeEl, newTags);
 		});
 
 		this.activeTagFilters.delete(tagToDelete);
@@ -2921,10 +3726,17 @@ export class CanvasImageHandler {
 		}, 80);
 	}
 
-	private async persistDeleteTag(file: TFile, tagToDelete: string): Promise<void> {
+	private async persistDeleteTag(
+		file: TFile,
+		tagToDelete: string
+	): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
-		try { data = JSON.parse(content) as CanvasFileData; } catch { return; }
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
 		if (!Array.isArray(data.nodes)) return;
 		let modified = false;
 		for (const node of data.nodes) {
@@ -2943,26 +3755,37 @@ export class CanvasImageHandler {
 	private updateToolbarButtonState(): void {
 		if (!this.tagToolbarBtn) return;
 		const filtersActive =
-			this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0 ||
-			this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+			this.activeTagFilters.size > 0 ||
+			this.activeTagExcludes.size > 0 ||
+			this.activeColorFilters.size > 0 ||
+			this.activeColorExcludes.size > 0;
 		const panelOpen = this.tagFilterPanelEl?.isConnected ?? false;
-		this.tagToolbarBtn.classList.toggle('is-active', filtersActive || panelOpen);
+		this.tagToolbarBtn.classList.toggle(
+			'is-active',
+			filtersActive || panelOpen
+		);
 	}
 
 	private saveFilterState(file: TFile): void {
 		try {
 			this.activeTagFiltersFile = file.path;
 			const key = `kambas-filters:${file.path}`;
-			const hasAny = this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+			const hasAny =
+				this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
 			if (hasAny) {
-				this.app.saveLocalStorage(key, JSON.stringify({
-					include: [...this.activeTagFilters],
-					exclude: [...this.activeTagExcludes],
-				}));
+				this.app.saveLocalStorage(
+					key,
+					JSON.stringify({
+						include: [...this.activeTagFilters],
+						exclude: [...this.activeTagExcludes],
+					})
+				);
 			} else {
 				this.app.saveLocalStorage(key, null);
 			}
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 	}
 
 	private restoreFilterState(file: TFile, activeView: CanvasItemView): void {
@@ -2977,7 +3800,9 @@ export class CanvasImageHandler {
 				return;
 			}
 			// Support both old plain-array format and new { include, exclude } format
-			const parsed = JSON.parse(raw) as string[] | { include?: string[]; exclude?: string[] };
+			const parsed = JSON.parse(raw) as
+				| string[]
+				| { include?: string[]; exclude?: string[] };
 			if (Array.isArray(parsed)) {
 				// Legacy format: treat as plain include list
 				this.activeTagFilters = new Set(parsed);
@@ -2992,7 +3817,9 @@ export class CanvasImageHandler {
 			if (canvas?.nodes) {
 				const liveTags = new Set<string>();
 				canvas.nodes.forEach((node) => {
-					const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
+					const uData = (
+						node as unknown as { unknownData?: { kambasTags?: string[] } }
+					).unknownData;
 					for (const tag of uData?.kambasTags ?? []) {
 						if (tag.trim()) liveTags.add(tag);
 					}
@@ -3001,20 +3828,24 @@ export class CanvasImageHandler {
 					if (!liveTags.has(activeTag)) this.activeTagFilters.delete(activeTag);
 				}
 				for (const excludeTag of this.activeTagExcludes) {
-					if (!liveTags.has(excludeTag)) this.activeTagExcludes.delete(excludeTag);
+					if (!liveTags.has(excludeTag))
+						this.activeTagExcludes.delete(excludeTag);
 				}
 			}
 
 			this.applyTagFilters(activeView);
 			this.updateToolbarButtonState();
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 	}
 
 	private installSelectionGuard(activeView: CanvasItemView): void {
 		this.removeSelectionGuard();
 		const canvas = activeView.canvas;
 		if (!canvas) return;
-		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		const container = (activeView as unknown as { containerEl?: HTMLElement })
+			.containerEl;
 		if (!container) return;
 
 		type CvEx = { selection?: Set<object>; updateSelection?: () => void };
@@ -3027,7 +3858,8 @@ export class CanvasImageHandler {
 			canvas.nodes.forEach((node) => {
 				const el = node.nodeEl;
 				if (!el?.classList.contains('kambas-tag-hidden')) return;
-				const isNodeSelected = el.classList.contains('is-selected') || cx.selection?.has(node);
+				const isNodeSelected =
+					el.classList.contains('is-selected') || cx.selection?.has(node);
 				if (!isNodeSelected) return;
 
 				deselectedAny = true;
@@ -3035,13 +3867,25 @@ export class CanvasImageHandler {
 
 				const nu = node as unknown as { unselect?: () => void };
 				if (typeof nu.unselect === 'function') {
-					try { nu.unselect(); } catch { /* ignore */ }
+					try {
+						nu.unselect();
+					} catch {
+						/* ignore */
+					}
 				}
-				try { cx.selection?.delete(node); } catch { /* ignore */ }
+				try {
+					cx.selection?.delete(node);
+				} catch {
+					/* ignore */
+				}
 			});
 
 			if (deselectedAny && typeof cx.updateSelection === 'function') {
-				try { cx.updateSelection(); } catch { /* ignore */ }
+				try {
+					cx.updateSelection();
+				} catch {
+					/* ignore */
+				}
 			}
 		};
 
@@ -3055,13 +3899,16 @@ export class CanvasImageHandler {
 		});
 
 		// Directly intercept canvas.selectAll if present on canvas instance
-		type CanvasProto = { selectAll?: (nodes?: Set<object>) => void; select?: (node: object) => void };
+		type CanvasProto = {
+			selectAll?: (nodes?: Set<object>) => void;
+			select?: (node: object) => void;
+		};
 		const origCanvas = canvas as unknown as CanvasProto;
 		let origSelectAll: ((nodes?: Set<object>) => void) | undefined = undefined;
 
 		if (typeof origCanvas.selectAll === 'function') {
 			origSelectAll = origCanvas.selectAll;
-			origCanvas.selectAll = function(nodes?: Set<object>): void {
+			origCanvas.selectAll = function (nodes?: Set<object>): void {
 				// If nodes is passed (e.g. from selectAll command), filter out hidden ones
 				const visibleSet = new Set<object>();
 				if (nodes instanceof Set) {
@@ -3084,9 +3931,17 @@ export class CanvasImageHandler {
 
 		// Intercept Ctrl+A / Cmd+A so selectAll only selects visible (non-hidden) nodes
 		const handleKeyGuard = (evt: KeyboardEvent): void => {
-			if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'a' || evt.key === 'A')) {
+			if (
+				(evt.ctrlKey || evt.metaKey) &&
+				(evt.key === 'a' || evt.key === 'A')
+			) {
 				const target = evt.target as HTMLElement | null;
-				if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+				if (
+					target &&
+					(target.tagName === 'INPUT' ||
+						target.tagName === 'TEXTAREA' ||
+						target.isContentEditable)
+				) {
 					return; // standard text input select-all
 				}
 				// Force explicit select of visible nodes only
@@ -3103,7 +3958,11 @@ export class CanvasImageHandler {
 
 		window.addEventListener('keydown', handleKeyGuard, true);
 
-		mo.observe(container, { attributes: true, subtree: true, attributeFilter: ['class'] });
+		mo.observe(container, {
+			attributes: true,
+			subtree: true,
+			attributeFilter: ['class'],
+		});
 		this.tagFilterSelectionGuard = (): void => {
 			mo.disconnect();
 			window.removeEventListener('keydown', handleKeyGuard, true);
@@ -3118,17 +3977,28 @@ export class CanvasImageHandler {
 		this.tagFilterSelectionGuard = null;
 	}
 
-	private applyTagFilters(activeView: CanvasItemView, performZoom = false): void {
+	private applyTagFilters(
+		activeView: CanvasItemView,
+		performZoom = false
+	): void {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
-		const allowZoom = performZoom && (this.plugin.settings.tagZoomOnSelect ?? true);
-		const hasTagIncludes  = this.activeTagFilters.size > 0;
-		const hasTagExcludes  = this.activeTagExcludes.size > 0;
+		const allowZoom =
+			performZoom && (this.plugin.settings.tagZoomOnSelect ?? true);
+		const hasTagIncludes = this.activeTagFilters.size > 0;
+		const hasTagExcludes = this.activeTagExcludes.size > 0;
 		const hasColorIncludes = this.activeColorFilters.size > 0;
 		const hasColorExcludes = this.activeColorExcludes.size > 0;
 
-		if (!hasTagIncludes && !hasTagExcludes && !hasColorIncludes && !hasColorExcludes) {
-			canvas.nodes.forEach((node) => node.nodeEl?.classList.remove('kambas-tag-hidden'));
+		if (
+			!hasTagIncludes &&
+			!hasTagExcludes &&
+			!hasColorIncludes &&
+			!hasColorExcludes
+		) {
+			canvas.nodes.forEach((node) =>
+				node.nodeEl?.classList.remove('kambas-tag-hidden')
+			);
 			this.removeSelectionGuard();
 			// Zoom to fit all nodes once when explicitly clearing/unselecting filters
 			if (allowZoom) {
@@ -3136,19 +4006,32 @@ export class CanvasImageHandler {
 			}
 		} else {
 			canvas.nodes.forEach((node) => {
-				const rawNode = node as unknown as { id: string; unknownData?: { kambasTags?: string[] } };
+				const rawNode = node as unknown as {
+					id: string;
+					unknownData?: { kambasTags?: string[] };
+				};
 				const nodeTags = rawNode.unknownData?.kambasTags ?? [];
 
 				// ── Include checks: node must satisfy ALL active include criteria ──
-				const tagIncludeOk = !hasTagIncludes || nodeTags.some((tag) => this.activeTagFilters.has(tag));
+				const tagIncludeOk =
+					!hasTagIncludes ||
+					nodeTags.some((tag) => this.activeTagFilters.has(tag));
 
-				const includeNodeColor = this.plugin.settings.colorIncludeNodeColor ?? false;
-				const rawNodeWithColor = node as unknown as { id: string; color?: string; unknownData?: { color?: string; kambasTags?: string[] } };
+				const includeNodeColor =
+					this.plugin.settings.colorIncludeNodeColor ?? false;
+				const rawNodeWithColor = node as unknown as {
+					id: string;
+					color?: string;
+					unknownData?: { color?: string; kambasTags?: string[] };
+				};
 				const cachedColors = this.nodeColorCache.get(rawNodeWithColor.id);
-				const nodeColors: string[] = Array.isArray(cachedColors) ? [...cachedColors] : [];
+				const nodeColors: string[] = Array.isArray(cachedColors)
+					? [...cachedColors]
+					: [];
 
 				if (includeNodeColor) {
-					const customColor = rawNodeWithColor.color ?? rawNodeWithColor.unknownData?.color;
+					const customColor =
+						rawNodeWithColor.color ?? rawNodeWithColor.unknownData?.color;
 					if (typeof customColor === 'string' && customColor) {
 						const namedColor = canvasNodePresetColorToName(customColor);
 						if (namedColor && !nodeColors.includes(namedColor)) {
@@ -3157,14 +4040,21 @@ export class CanvasImageHandler {
 					}
 				}
 
-				const colorIncludeOk = !hasColorIncludes || nodeColors.some((c) => this.activeColorFilters.has(c));
+				const colorIncludeOk =
+					!hasColorIncludes ||
+					nodeColors.some((c) => this.activeColorFilters.has(c));
 
 				// ── Exclude checks: hide if node has ANY excluded tag or color ──
-				const tagExcluded   = hasTagExcludes   && nodeTags.some((tag) => this.activeTagExcludes.has(tag));
-				const colorExcluded = hasColorExcludes && nodeColors.some((c)  => this.activeColorExcludes.has(c));
+				const tagExcluded =
+					hasTagExcludes &&
+					nodeTags.some((tag) => this.activeTagExcludes.has(tag));
+				const colorExcluded =
+					hasColorExcludes &&
+					nodeColors.some((c) => this.activeColorExcludes.has(c));
 
 				// Visible = passes all includes AND passes all excludes
-				const matches = tagIncludeOk && colorIncludeOk && !tagExcluded && !colorExcluded;
+				const matches =
+					tagIncludeOk && colorIncludeOk && !tagExcluded && !colorExcluded;
 				node.nodeEl?.classList.toggle('kambas-tag-hidden', !matches);
 			});
 			// Guard prevents rubber-band selection from picking up hidden nodes
@@ -3185,7 +4075,10 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
-		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		let minX = Infinity,
+			minY = Infinity,
+			maxX = -Infinity,
+			maxY = -Infinity;
 		let hasVisible = false;
 
 		canvas.nodes.forEach((node) => {
@@ -3213,7 +4106,8 @@ export class CanvasImageHandler {
 
 		// Manual fallback: compute pan+zoom from canvas transform formula
 		// screen_pos = canvas_pos * zoom + (viewport_center + translation)
-		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		const container = (activeView as unknown as { containerEl?: HTMLElement })
+			.containerEl;
 		if (!container) return;
 		const vpW = container.offsetWidth;
 		const vpH = container.offsetHeight;
@@ -3237,7 +4131,8 @@ export class CanvasImageHandler {
 	 * Safe to call repeatedly — skips if already injected.
 	 */
 	public injectTagFilterButton(activeView: CanvasItemView): void {
-		const container = (activeView as unknown as { containerEl?: HTMLElement }).containerEl;
+		const container = (activeView as unknown as { containerEl?: HTMLElement })
+			.containerEl;
 		if (!container) return;
 
 		if (container.querySelector('.kambas-tag-toolbar-btn')) return;
@@ -3245,8 +4140,11 @@ export class CanvasImageHandler {
 		const controls = container.querySelector<HTMLElement>('.canvas-controls');
 		if (!controls) return;
 
-		const groups = controls.querySelectorAll<HTMLElement>('.canvas-control-group');
-		const targetGroup = groups.length > 0 ? groups[groups.length - 1] : controls;
+		const groups = controls.querySelectorAll<HTMLElement>(
+			'.canvas-control-group'
+		);
+		const targetGroup =
+			groups.length > 0 ? groups[groups.length - 1] : controls;
 
 		const btn = targetGroup.createDiv({
 			cls: 'canvas-control-item kambas-tag-toolbar-btn',
@@ -3267,7 +4165,9 @@ export class CanvasImageHandler {
 	// ──────────────────────────────────────────────────────────────────────────
 
 	private handlePaste = (evt: ClipboardEvent): void => {
-		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		const activeView = this.app.workspace.getActiveViewOfType(
+			ItemView
+		) as unknown as CanvasItemView | null;
 		if (!activeView || activeView.getViewType() !== 'canvas') return;
 
 		const clipboardData = evt.clipboardData;
@@ -3279,7 +4179,9 @@ export class CanvasImageHandler {
 			const file = clipboardData.files[i];
 			if (file.type.startsWith('image/')) {
 				pendingImages.push({
-					filename: file.name || `pasted_image_${Date.now()}.${file.type.split('/')[1] || 'png'}`,
+					filename:
+						file.name ||
+						`pasted_image_${Date.now()}.${file.type.split('/')[1] || 'png'}`,
 					mimeType: file.type,
 					file,
 				});
@@ -3294,7 +4196,9 @@ export class CanvasImageHandler {
 	};
 
 	private handleDrop = (evt: DragEvent): void => {
-		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
+		const activeView = this.app.workspace.getActiveViewOfType(
+			ItemView
+		) as unknown as CanvasItemView | null;
 		if (!activeView || activeView.getViewType() !== 'canvas') return;
 
 		const dataTransfer = evt.dataTransfer;
@@ -3306,7 +4210,9 @@ export class CanvasImageHandler {
 			const file = dataTransfer.files[i];
 			if (file.type.startsWith('image/')) {
 				pendingImages.push({
-					filename: file.name || `dropped_image_${Date.now()}.${file.type.split('/')[1] || 'png'}`,
+					filename:
+						file.name ||
+						`dropped_image_${Date.now()}.${file.type.split('/')[1] || 'png'}`,
 					mimeType: file.type,
 					file,
 				});
@@ -3336,7 +4242,10 @@ export class CanvasImageHandler {
 			const remainingCount = images.length - i;
 
 			if (!applyToAllRemaining || !currentChoice) {
-				const res = await new Promise<{ choice: StorageChoice; applyToAll: boolean }>((resolve) => {
+				const res = await new Promise<{
+					choice: StorageChoice;
+					applyToAll: boolean;
+				}>((resolve) => {
 					const modal = new ImageIngestionModal(
 						this.app,
 						item.filename,
@@ -3357,11 +4266,21 @@ export class CanvasImageHandler {
 			if (item.file) {
 				dims = await getImageDimensions(item.file);
 			} else if (item.arrayBuffer) {
-				const tempUrl = arrayBufferToBase64DataUrl(item.arrayBuffer, item.mimeType);
+				const tempUrl = arrayBufferToBase64DataUrl(
+					item.arrayBuffer,
+					item.mimeType
+				);
 				dims = await getImageDimensions(tempUrl);
 			}
 
-			const pos = this.getCanvasPosition(canvasView, evt, i, dims.width, dims.height, initialMousePos);
+			const pos = this.getCanvasPosition(
+				canvasView,
+				evt,
+				i,
+				dims.width,
+				dims.height,
+				initialMousePos
+			);
 
 			if (currentChoice === 'embed') {
 				let dataUrl = '';
@@ -3373,7 +4292,15 @@ export class CanvasImageHandler {
 				}
 
 				if (dataUrl) {
-					await this.addEmbeddedImageToCanvas(canvasView, dataUrl, item.filename, pos.x, pos.y, dims.width, dims.height);
+					await this.addEmbeddedImageToCanvas(
+						canvasView,
+						dataUrl,
+						item.filename,
+						pos.x,
+						pos.y,
+						dims.width,
+						dims.height
+					);
 				}
 			} else {
 				let buffer: ArrayBuffer | null = null;
@@ -3385,10 +4312,25 @@ export class CanvasImageHandler {
 				}
 
 				if (buffer) {
-					const vaultWithConfig = this.app.vault as unknown as { getConfig?: (key: string) => string };
-					const attachmentFolder = vaultWithConfig.getConfig?.('attachmentFolderPath') || '';
-					const vaultPath = await saveFileToVault(this.app, attachmentFolder, item.filename, buffer);
-					await this.addVaultImageToCanvas(canvasView, vaultPath, pos.x, pos.y, dims.width, dims.height);
+					const vaultWithConfig = this.app.vault as unknown as {
+						getConfig?: (key: string) => string;
+					};
+					const attachmentFolder =
+						vaultWithConfig.getConfig?.('attachmentFolderPath') || '';
+					const vaultPath = await saveFileToVault(
+						this.app,
+						attachmentFolder,
+						item.filename,
+						buffer
+					);
+					await this.addVaultImageToCanvas(
+						canvasView,
+						vaultPath,
+						pos.x,
+						pos.y,
+						dims.width,
+						dims.height
+					);
 				}
 			}
 		}
@@ -3408,7 +4350,11 @@ export class CanvasImageHandler {
 
 		// 1. Try event coordinates if MouseEvent / DragEvent
 		const mouseEvt = evt as MouseEvent;
-		if (typeof mouseEvt?.clientX === 'number' && typeof mouseEvt?.clientY === 'number' && (mouseEvt.clientX !== 0 || mouseEvt.clientY !== 0)) {
+		if (
+			typeof mouseEvt?.clientX === 'number' &&
+			typeof mouseEvt?.clientY === 'number' &&
+			(mouseEvt.clientX !== 0 || mouseEvt.clientY !== 0)
+		) {
 			clientX = mouseEvt.clientX;
 			clientY = mouseEvt.clientY;
 		}
@@ -3428,8 +4374,14 @@ export class CanvasImageHandler {
 		// Convert screen coordinates (clientX, clientY) to Canvas internal coordinates
 		if (canvas && clientX !== null && clientY !== null) {
 			const rawCanvas = canvas as unknown as {
-				posFromEvent?: (evt: { clientX: number; clientY: number }) => { x: number; y: number };
-				posFromClient?: (pos: { x: number; y: number }) => { x: number; y: number };
+				posFromEvent?: (evt: { clientX: number; clientY: number }) => {
+					x: number;
+					y: number;
+				};
+				posFromClient?: (pos: { x: number; y: number }) => {
+					x: number;
+					y: number;
+				};
 				tx?: number;
 				ty?: number;
 				zoom?: number;
@@ -3441,7 +4393,12 @@ export class CanvasImageHandler {
 			if (typeof rawCanvas.posFromEvent === 'function') {
 				try {
 					const cPos = rawCanvas.posFromEvent({ clientX, clientY });
-					if (typeof cPos?.x === 'number' && typeof cPos?.y === 'number' && !Number.isNaN(cPos.x) && !Number.isNaN(cPos.y)) {
+					if (
+						typeof cPos?.x === 'number' &&
+						typeof cPos?.y === 'number' &&
+						!Number.isNaN(cPos.x) &&
+						!Number.isNaN(cPos.y)
+					) {
 						return {
 							x: Math.round(cPos.x - nodeWidth / 2 + indexOffset * 40),
 							y: Math.round(cPos.y - nodeHeight / 2 + indexOffset * 40),
@@ -3456,7 +4413,12 @@ export class CanvasImageHandler {
 			if (typeof rawCanvas.posFromClient === 'function') {
 				try {
 					const cPos = rawCanvas.posFromClient({ x: clientX, y: clientY });
-					if (typeof cPos?.x === 'number' && typeof cPos?.y === 'number' && !Number.isNaN(cPos.x) && !Number.isNaN(cPos.y)) {
+					if (
+						typeof cPos?.x === 'number' &&
+						typeof cPos?.y === 'number' &&
+						!Number.isNaN(cPos.x) &&
+						!Number.isNaN(cPos.y)
+					) {
 						return {
 							x: Math.round(cPos.x - nodeWidth / 2 + indexOffset * 40),
 							y: Math.round(cPos.y - nodeHeight / 2 + indexOffset * 40),
@@ -3468,8 +4430,18 @@ export class CanvasImageHandler {
 			}
 
 			// Method C: Canvas viewport math: (mouseClient - containerRect - tx) / zoom
-			const containerEl = rawCanvas.wrapperEl ?? rawCanvas.containerEl ?? document.querySelector('.canvas-wrapper') ?? document.querySelector('.canvas');
-			if (containerEl && typeof rawCanvas.tx === 'number' && typeof rawCanvas.ty === 'number' && typeof rawCanvas.zoom === 'number' && rawCanvas.zoom > 0) {
+			const containerEl =
+				rawCanvas.wrapperEl ??
+				rawCanvas.containerEl ??
+				document.querySelector('.canvas-wrapper') ??
+				document.querySelector('.canvas');
+			if (
+				containerEl &&
+				typeof rawCanvas.tx === 'number' &&
+				typeof rawCanvas.ty === 'number' &&
+				typeof rawCanvas.zoom === 'number' &&
+				rawCanvas.zoom > 0
+			) {
 				try {
 					const rect = containerEl.getBoundingClientRect();
 					const worldX = (clientX - rect.left - rawCanvas.tx) / rawCanvas.zoom;
@@ -3488,7 +4460,14 @@ export class CanvasImageHandler {
 
 		// 4. Fall back to canvas viewport center if cursor coordinates cannot be determined
 		if (canvas) {
-			const rawCanvas = canvas as unknown as { getViewportBBox?: () => { minX: number; maxX: number; minY: number; maxY: number } };
+			const rawCanvas = canvas as unknown as {
+				getViewportBBox?: () => {
+					minX: number;
+					maxX: number;
+					minY: number;
+					maxY: number;
+				};
+			};
 			if (typeof rawCanvas.getViewportBBox === 'function') {
 				try {
 					const bbox = rawCanvas.getViewportBBox();
@@ -3562,12 +4541,16 @@ export class CanvasImageHandler {
 		nodeData: CanvasNodeData
 	): Promise<void> {
 		const file = this.app.vault.getAbstractFileByPath(canvasFilePath);
-		if (!file || !(file instanceof TFile) || file.extension !== 'canvas') return;
+		if (!file || !(file instanceof TFile) || file.extension !== 'canvas')
+			return;
 
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
 		try {
-			data = (content && content.trim().length > 0) ? JSON.parse(content) as CanvasFileData : { nodes: [], edges: [] };
+			data =
+				content && content.trim().length > 0
+					? (JSON.parse(content) as CanvasFileData)
+					: { nodes: [], edges: [] };
 		} catch {
 			data = { nodes: [], edges: [] };
 		}
@@ -3604,9 +4587,13 @@ export class CanvasImageHandler {
 		canvas.nodes.forEach((node, id) => {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
-			const isTargetNode = targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
+			const isTargetNode =
+				targetNodeEl &&
+				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
 			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
-			const hasImg = nodeEl.querySelector('.kambas-embedded-img') || this.getNativeImageElement(nodeEl);
+			const hasImg =
+				nodeEl.querySelector('.kambas-embedded-img') ||
+				this.getNativeImageElement(nodeEl);
 			if ((isExplicitlySelected || isTargetNode) && hasImg) {
 				targetId = id;
 				targetNodeObj = node;
@@ -3616,7 +4603,9 @@ export class CanvasImageHandler {
 		if (!targetId || !targetNodeObj) return;
 
 		// Open swap modal
-		const result = await new Promise<import('../modals/ImageSwapModal').SwapResult | null>((resolve) => {
+		const result = await new Promise<
+			import('../modals/ImageSwapModal').SwapResult | null
+		>((resolve) => {
 			new ImageSwapModal(this.app, (r) => resolve(r)).open();
 		});
 
@@ -3624,7 +4613,11 @@ export class CanvasImageHandler {
 
 		// Read new media dimensions to update aspect ratio
 		let newDims: { width: number; height: number } | null = null;
-		let newFileOrUrl: { type: 'file' | 'link'; file?: string; url?: string } | null = null;
+		let newFileOrUrl: {
+			type: 'file' | 'link';
+			file?: string;
+			url?: string;
+		} | null = null;
 
 		if (result.source === 'vault' && result.tfile) {
 			const resourceUrl = this.app.vault.getResourcePath(result.tfile);
@@ -3634,14 +4627,24 @@ export class CanvasImageHandler {
 			newDims = await getImageDimensions(result.file);
 			if (result.storageChoice === 'embed') {
 				const buffer = await result.file.arrayBuffer();
-				const mimeType = result.file.type || `image/${result.file.name.split('.').pop()?.toLowerCase() || 'png'}`;
+				const mimeType =
+					result.file.type ||
+					`image/${result.file.name.split('.').pop()?.toLowerCase() || 'png'}`;
 				const dataUrl = arrayBufferToBase64DataUrl(buffer, mimeType);
 				newFileOrUrl = { type: 'link', url: dataUrl };
 			} else {
-				const vaultWithConfig = this.app.vault as unknown as { getConfig?: (key: string) => string };
-				const attachmentFolder = vaultWithConfig.getConfig?.('attachmentFolderPath') || '';
+				const vaultWithConfig = this.app.vault as unknown as {
+					getConfig?: (key: string) => string;
+				};
+				const attachmentFolder =
+					vaultWithConfig.getConfig?.('attachmentFolderPath') || '';
 				const buffer = await result.file.arrayBuffer();
-				const vaultPath = await saveFileToVault(this.app, attachmentFolder, result.file.name, buffer);
+				const vaultPath = await saveFileToVault(
+					this.app,
+					attachmentFolder,
+					result.file.name,
+					buffer
+				);
 				newFileOrUrl = { type: 'file', file: vaultPath };
 			}
 		}
@@ -3688,7 +4691,9 @@ export class CanvasImageHandler {
 		await this.app.vault.modify(canvasFile, JSON.stringify(data, null, 2));
 
 		// Remove old canvas node from live view in-memory so Obsidian re-renders instantly
-		const rawCanvas = canvas as unknown as { removeNode?: (node: unknown) => void };
+		const rawCanvas = canvas as unknown as {
+			removeNode?: (node: unknown) => void;
+		};
 		if (typeof rawCanvas.removeNode === 'function') {
 			try {
 				rawCanvas.removeNode(targetNodeObj);
@@ -3700,7 +4705,11 @@ export class CanvasImageHandler {
 		// Re-create node live in memory
 		if (newFileOrUrl.type === 'file' && newFileOrUrl.file) {
 			const tfile = this.app.vault.getAbstractFileByPath(newFileOrUrl.file);
-			if (tfile && tfile instanceof TFile && typeof canvas.createFileNode === 'function') {
+			if (
+				tfile &&
+				tfile instanceof TFile &&
+				typeof canvas.createFileNode === 'function'
+			) {
 				canvas.createFileNode({
 					file: tfile,
 					pos: { x: nodeData.x, y: nodeData.y },
@@ -3708,7 +4717,11 @@ export class CanvasImageHandler {
 					save: false,
 				});
 			}
-		} else if (newFileOrUrl.type === 'link' && newFileOrUrl.url && typeof canvas.createLinkNode === 'function') {
+		} else if (
+			newFileOrUrl.type === 'link' &&
+			newFileOrUrl.url &&
+			typeof canvas.createLinkNode === 'function'
+		) {
 			canvas.createLinkNode({
 				url: newFileOrUrl.url,
 				pos: { x: nodeData.x, y: nodeData.y },
@@ -3727,23 +4740,46 @@ export class CanvasImageHandler {
 
 		const targetPathOrUrl = newFileOrUrl.file || newFileOrUrl.url;
 		const newCanvasNode = Array.from(canvas.nodes?.values() || []).find((n) => {
-			const rawN = n as unknown as { file?: { path?: string }; url?: string; unknownData?: { file?: string; url?: string } };
-			return rawN.file?.path === targetPathOrUrl || rawN.url === targetPathOrUrl || rawN.unknownData?.file === targetPathOrUrl || rawN.unknownData?.url === targetPathOrUrl;
+			const rawN = n as unknown as {
+				file?: { path?: string };
+				url?: string;
+				unknownData?: { file?: string; url?: string };
+			};
+			return (
+				rawN.file?.path === targetPathOrUrl ||
+				rawN.url === targetPathOrUrl ||
+				rawN.unknownData?.file === targetPathOrUrl ||
+				rawN.unknownData?.url === targetPathOrUrl
+			);
 		});
 
 		if (newCanvasNode) {
-			const rawN = newCanvasNode as unknown as { unknownData?: { kambasFlipH?: boolean; kambasFlipV?: boolean; kambasGrayscale?: boolean; kambasPalette?: boolean; kambasOpacity?: number; kambasTags?: string[] } };
+			const rawN = newCanvasNode as unknown as {
+				unknownData?: {
+					kambasFlipH?: boolean;
+					kambasFlipV?: boolean;
+					kambasGrayscale?: boolean;
+					kambasPalette?: boolean;
+					kambasOpacity?: number;
+					kambasTags?: string[];
+				};
+			};
 			if (!rawN.unknownData) rawN.unknownData = {};
 			if (flipH) rawN.unknownData.kambasFlipH = flipH;
 			if (flipV) rawN.unknownData.kambasFlipV = flipV;
 			if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
 			if (palette) rawN.unknownData.kambasPalette = palette;
 			if (opacity !== undefined) rawN.unknownData.kambasOpacity = opacity;
-			if (Array.isArray(tags) && tags.length > 0) rawN.unknownData.kambasTags = [...tags];
+			if (Array.isArray(tags) && tags.length > 0)
+				rawN.unknownData.kambasTags = [...tags];
 		}
 
 		if (typeof canvas.requestSave === 'function') {
-			try { canvas.requestSave(); } catch { /* Handled */ }
+			try {
+				canvas.requestSave();
+			} catch {
+				/* Handled */
+			}
 		}
 
 		window.setTimeout(() => {
@@ -3756,7 +4792,10 @@ export class CanvasImageHandler {
 	/**
 	 * Re-encodes high-resolution Base64 data URLs for selected canvas image nodes using WebP compression.
 	 */
-	public async optimizeSelectedEmbeddedImages(activeView: CanvasItemView, targetNodeEl?: HTMLElement): Promise<void> {
+	public async optimizeSelectedEmbeddedImages(
+		activeView: CanvasItemView,
+		targetNodeEl?: HTMLElement
+	): Promise<void> {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
@@ -3769,15 +4808,24 @@ export class CanvasImageHandler {
 		for (const canvasNode of canvas.nodes.values()) {
 			const el = canvasNode.nodeEl;
 			if (!el) continue;
-			const isSel = el.classList.contains('is-selected') || (targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
+			const isSel =
+				el.classList.contains('is-selected') ||
+				(targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
 			if (!isSel) continue;
 
-			const rawNode = canvasNode as unknown as { url?: string; unknownData?: { url?: string } };
+			const rawNode = canvasNode as unknown as {
+				url?: string;
+				unknownData?: { url?: string };
+			};
 			const dataUrl = rawNode.url || rawNode.unknownData?.url;
 
 			if (dataUrl && dataUrl.startsWith('data:image/')) {
 				try {
-					const res = await compressAndOptimizeBase64(dataUrl, { maxDimension: maxDim, quality, mimeType: 'image/webp' });
+					const res = await compressAndOptimizeBase64(dataUrl, {
+						maxDimension: maxDim,
+						quality,
+						mimeType: 'image/webp',
+					});
 					if (res.bytesSaved > 0) {
 						if (rawNode.url) rawNode.url = res.dataUrl;
 						if (rawNode.unknownData) rawNode.unknownData.url = res.dataUrl;
@@ -3795,7 +4843,11 @@ export class CanvasImageHandler {
 		}
 
 		if (typeof canvas.requestSave === 'function') {
-			try { canvas.requestSave(); } catch { /* Handled */ }
+			try {
+				canvas.requestSave();
+			} catch {
+				/* Handled */
+			}
 		}
 
 		const t = getText();
@@ -3807,4 +4859,3 @@ export class CanvasImageHandler {
 		}
 	}
 }
-

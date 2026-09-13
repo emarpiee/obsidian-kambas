@@ -1,7 +1,13 @@
 import { App, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
-import { CanvasKeyboardPanSettings, DEFAULT_KEYBOARD_PAN_SETTINGS, Direction } from './canvas/CanvasKeyboardPan';
+
 import { getText } from './i18n';
 import type KambasPlugin from './main';
+
+import {
+	CanvasKeyboardPanSettings,
+	DEFAULT_KEYBOARD_PAN_SETTINGS,
+	Direction,
+} from './canvas/CanvasKeyboardPan';
 
 export interface FilterPreset {
 	id: string;
@@ -53,7 +59,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	loupeZoomLevel: 3.0,
 	loupeSize: 260,
 	loupeShape: 'circle',
-	loupeSmoothing: 0.50,
+	loupeSmoothing: 0.5,
 	selectionZoomToFitHotkey: 'Space',
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
@@ -97,9 +103,7 @@ export class KambasSettingTab extends PluginSettingTab {
 		const t = getText();
 
 		// Display & Canvas Section Header
-		new Setting(containerEl)
-			.setName(t.settingsHeading)
-			.setHeading();
+		new Setting(containerEl).setName(t.settingsHeading).setHeading();
 
 		new Setting(containerEl)
 			.setName(t.hideImageLabelName)
@@ -123,7 +127,9 @@ export class KambasSettingTab extends PluginSettingTab {
 					.addOption('inside', t.tagBadgePositionInside)
 					.setValue(this.plugin.settings.tagBadgePosition ?? 'outside')
 					.onChange(async (value: string) => {
-						this.plugin.settings.tagBadgePosition = value as 'outside' | 'inside';
+						this.plugin.settings.tagBadgePosition = value as
+							| 'outside'
+							| 'inside';
 						await this.plugin.saveSettings();
 						this.plugin.applySettingsCss();
 					})
@@ -143,7 +149,10 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t.paletteSwatchCountName ?? 'Color palette swatches')
-			.setDesc(t.paletteSwatchCountDesc ?? 'Number of dominant colors to display when the color palette is enabled on an image (3–10).')
+			.setDesc(
+				t.paletteSwatchCountDesc ??
+					'Number of dominant colors to display when the color palette is enabled on an image (3–10).'
+			)
 			.addSlider((slider) =>
 				slider
 					.setLimits(3, 10, 1)
@@ -169,9 +178,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		// Color Filter Section
-		new Setting(containerEl)
-			.setName(t.colorFilterPanel)
-			.setHeading();
+		new Setting(containerEl).setName(t.colorFilterPanel).setHeading();
 
 		new Setting(containerEl)
 			.setName(t.colorExtractModeName)
@@ -183,15 +190,16 @@ export class KambasSettingTab extends PluginSettingTab {
 					.addOption('disabled', t.colorModeDisabled)
 					.setValue(this.plugin.settings.colorExtractMode ?? 'auto')
 					.onChange(async (value: string) => {
-						this.plugin.settings.colorExtractMode = value as 'auto' | 'manual' | 'disabled';
+						this.plugin.settings.colorExtractMode = value as
+							| 'auto'
+							| 'manual'
+							| 'disabled';
 						await this.plugin.saveSettings();
 					})
 			);
 
 		// Performance & Base64 Optimization Section
-		new Setting(containerEl)
-			.setName(t.base64Heading)
-			.setHeading();
+		new Setting(containerEl).setName(t.base64Heading).setHeading();
 
 		new Setting(containerEl)
 			.setName(t.autoOptimizeBase64Name)
@@ -222,9 +230,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		// Visual Inspection Section
-		new Setting(containerEl)
-			.setName(t.loupeHeading)
-			.setHeading();
+		new Setting(containerEl).setName(t.loupeHeading).setHeading();
 
 		new Setting(containerEl)
 			.setName(t.loupeHotkeyName)
@@ -234,7 +240,8 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setPlaceholder('q')
 					.setValue(this.plugin.settings.loupeHotkey ?? 'q')
 					.onChange(async (value) => {
-						this.plugin.settings.loupeHotkey = value.trim().toLowerCase() || 'q';
+						this.plugin.settings.loupeHotkey =
+							value.trim().toLowerCase() || 'q';
 						await this.plugin.saveSettings();
 					})
 			);
@@ -277,7 +284,10 @@ export class KambasSettingTab extends PluginSettingTab {
 					.addOption('square', t.loupeShapeSquare)
 					.setValue(this.plugin.settings.loupeShape ?? 'circle')
 					.onChange(async (value: string) => {
-						this.plugin.settings.loupeShape = value as 'circle' | 'square' | 'rounded';
+						this.plugin.settings.loupeShape = value as
+							| 'circle'
+							| 'square'
+							| 'rounded';
 						await this.plugin.saveSettings();
 					})
 			);
@@ -288,7 +298,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			.addSlider((slider) =>
 				slider
 					.setLimits(0.05, 1.0, 0.05)
-					.setValue(this.plugin.settings.loupeSmoothing ?? 0.50)
+					.setValue(this.plugin.settings.loupeSmoothing ?? 0.5)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.loupeSmoothing = value;
@@ -304,18 +314,19 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setPlaceholder('Space')
 					.setValue(this.plugin.settings.selectionZoomToFitHotkey ?? 'Space')
 					.onChange(async (value) => {
-						this.plugin.settings.selectionZoomToFitHotkey = value.trim() || 'Space';
+						this.plugin.settings.selectionZoomToFitHotkey =
+							value.trim() || 'Space';
 						await this.plugin.saveSettings();
 					})
 			);
 
 		// Canvas Keyboard Pan Controls Section
-		new Setting(containerEl)
-			.setName(t.keyboardPanHeading)
-			.setHeading();
+		new Setting(containerEl).setName(t.keyboardPanHeading).setHeading();
 
 		const keyboardPanViewContainer = containerEl.createDiv();
-		keyboardPanViewContainer.appendChild(this.renderPanView(this.plugin.settings.keyboardPan.keys, null));
+		keyboardPanViewContainer.appendChild(
+			this.renderPanView(this.plugin.settings.keyboardPan.keys, null)
+		);
 
 		new Setting(containerEl)
 			.setName(t.panControlsName)
@@ -327,10 +338,14 @@ export class KambasSettingTab extends PluginSettingTab {
 					this.cleanupKeyListener();
 					this.plugin.settings.keyboardPan.keys = {
 						...this.plugin.settings.keyboardPan.keys,
-						[Direction.North]: DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.North],
-						[Direction.West]: DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.West],
-						[Direction.South]: DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.South],
-						[Direction.East]: DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.East],
+						[Direction.North]:
+							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.North],
+						[Direction.West]:
+							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.West],
+						[Direction.South]:
+							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.South],
+						[Direction.East]:
+							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.East],
 					};
 					await this.plugin.saveSettings();
 					this.display();
@@ -344,10 +359,15 @@ export class KambasSettingTab extends PluginSettingTab {
 					this.keys = { ...this.plugin.settings.keyboardPan.keys };
 
 					keyboardPanViewContainer.empty();
-					keyboardPanViewContainer.appendChild(this.renderPanView(this.keys, this.activeDirection));
+					keyboardPanViewContainer.appendChild(
+						this.renderPanView(this.keys, this.activeDirection)
+					);
 
 					const listener = (evt: KeyboardEvent): void => {
-						if (evt.repeat || ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(evt.key)) {
+						if (
+							evt.repeat ||
+							['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(evt.key)
+						) {
 							return;
 						}
 
@@ -376,7 +396,9 @@ export class KambasSettingTab extends PluginSettingTab {
 						}
 
 						keyboardPanViewContainer.empty();
-						keyboardPanViewContainer.appendChild(this.renderPanView(this.keys, this.activeDirection));
+						keyboardPanViewContainer.appendChild(
+							this.renderPanView(this.keys, this.activeDirection)
+						);
 
 						if (this.activeDirection === null) {
 							void this.saveKeys(this.keys);
@@ -395,7 +417,8 @@ export class KambasSettingTab extends PluginSettingTab {
 				button.setIcon('rotate-ccw');
 				button.setTooltip(t.restoreDefaultTooltip);
 				button.onClick(async () => {
-					this.plugin.settings.keyboardPan.maxSpeed = DEFAULT_KEYBOARD_PAN_SETTINGS.maxSpeed;
+					this.plugin.settings.keyboardPan.maxSpeed =
+						DEFAULT_KEYBOARD_PAN_SETTINGS.maxSpeed;
 					await this.plugin.saveSettings();
 					this.display();
 				});
@@ -411,12 +434,12 @@ export class KambasSettingTab extends PluginSettingTab {
 			});
 
 		// Canvas Keyboard Zoom Controls Section
-		new Setting(containerEl)
-			.setName(t.keyboardZoomHeading)
-			.setHeading();
+		new Setting(containerEl).setName(t.keyboardZoomHeading).setHeading();
 
 		const keyboardZoomViewContainer = containerEl.createDiv();
-		keyboardZoomViewContainer.appendChild(this.renderZoomView(this.plugin.settings.keyboardPan.keys, null));
+		keyboardZoomViewContainer.appendChild(
+			this.renderZoomView(this.plugin.settings.keyboardPan.keys, null)
+		);
 
 		new Setting(containerEl)
 			.setName(t.zoomControlsName)
@@ -428,8 +451,10 @@ export class KambasSettingTab extends PluginSettingTab {
 					this.cleanupKeyListener();
 					this.plugin.settings.keyboardPan.keys = {
 						...this.plugin.settings.keyboardPan.keys,
-						[Direction.ZoomIn]: DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.ZoomIn],
-						[Direction.ZoomOut]: DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.ZoomOut],
+						[Direction.ZoomIn]:
+							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.ZoomIn],
+						[Direction.ZoomOut]:
+							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.ZoomOut],
 					};
 					await this.plugin.saveSettings();
 					this.display();
@@ -443,10 +468,15 @@ export class KambasSettingTab extends PluginSettingTab {
 					this.keys = { ...this.plugin.settings.keyboardPan.keys };
 
 					keyboardZoomViewContainer.empty();
-					keyboardZoomViewContainer.appendChild(this.renderZoomView(this.keys, this.activeDirection));
+					keyboardZoomViewContainer.appendChild(
+						this.renderZoomView(this.keys, this.activeDirection)
+					);
 
 					const listener = (evt: KeyboardEvent): void => {
-						if (evt.repeat || ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(evt.key)) {
+						if (
+							evt.repeat ||
+							['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(evt.key)
+						) {
 							return;
 						}
 
@@ -469,7 +499,9 @@ export class KambasSettingTab extends PluginSettingTab {
 						}
 
 						keyboardZoomViewContainer.empty();
-						keyboardZoomViewContainer.appendChild(this.renderZoomView(this.keys, this.activeDirection));
+						keyboardZoomViewContainer.appendChild(
+							this.renderZoomView(this.keys, this.activeDirection)
+						);
 
 						if (this.activeDirection === null) {
 							void this.saveKeys(this.keys);
@@ -488,7 +520,8 @@ export class KambasSettingTab extends PluginSettingTab {
 				button.setIcon('rotate-ccw');
 				button.setTooltip(t.restoreDefaultTooltip);
 				button.onClick(async () => {
-					this.plugin.settings.keyboardPan.zoomSpeed = DEFAULT_KEYBOARD_PAN_SETTINGS.zoomSpeed;
+					this.plugin.settings.keyboardPan.zoomSpeed =
+						DEFAULT_KEYBOARD_PAN_SETTINGS.zoomSpeed;
 					await this.plugin.saveSettings();
 					this.display();
 				});
@@ -496,7 +529,12 @@ export class KambasSettingTab extends PluginSettingTab {
 			.addSlider((slider) => {
 				slider
 					.setLimits(1, 50, 1)
-					.setValue(Math.round((this.plugin.settings.keyboardPan.zoomSpeed ?? DEFAULT_KEYBOARD_PAN_SETTINGS.zoomSpeed) * 1000))
+					.setValue(
+						Math.round(
+							(this.plugin.settings.keyboardPan.zoomSpeed ??
+								DEFAULT_KEYBOARD_PAN_SETTINGS.zoomSpeed) * 1000
+						)
+					)
 					.onChange((value) => {
 						this.plugin.settings.keyboardPan.zoomSpeed = value / 1000;
 						void this.plugin.saveSettings();
@@ -504,7 +542,9 @@ export class KambasSettingTab extends PluginSettingTab {
 			});
 	}
 
-	public async saveKeys(keys: Partial<CanvasKeyboardPanSettings['keys']>): Promise<void> {
+	public async saveKeys(
+		keys: Partial<CanvasKeyboardPanSettings['keys']>
+	): Promise<void> {
 		if (
 			!keys[Direction.North] ||
 			!keys[Direction.West] ||
@@ -545,10 +585,30 @@ export class KambasSettingTab extends PluginSettingTab {
 		const panGrid = container.createDiv({ cls: 'pan-kb-cross-grid' });
 
 		const panDirs = [
-			{ dir: Direction.North, icon: 'arrow-up', keyArea: 'pan-key-north', labelArea: 'pan-label-north' },
-			{ dir: Direction.West, icon: 'arrow-left', keyArea: 'pan-key-west', labelArea: 'pan-label-west' },
-			{ dir: Direction.South, icon: 'arrow-down', keyArea: 'pan-key-south', labelArea: 'pan-label-south' },
-			{ dir: Direction.East, icon: 'arrow-right', keyArea: 'pan-key-east', labelArea: 'pan-label-east' },
+			{
+				dir: Direction.North,
+				icon: 'arrow-up',
+				keyArea: 'pan-key-north',
+				labelArea: 'pan-label-north',
+			},
+			{
+				dir: Direction.West,
+				icon: 'arrow-left',
+				keyArea: 'pan-key-west',
+				labelArea: 'pan-label-west',
+			},
+			{
+				dir: Direction.South,
+				icon: 'arrow-down',
+				keyArea: 'pan-key-south',
+				labelArea: 'pan-label-south',
+			},
+			{
+				dir: Direction.East,
+				icon: 'arrow-right',
+				keyArea: 'pan-key-east',
+				labelArea: 'pan-label-east',
+			},
 		];
 
 		for (const item of panDirs) {
@@ -599,7 +659,10 @@ export class KambasSettingTab extends PluginSettingTab {
 		return container;
 	}
 
-	public getKeyLabel(keys: Partial<CanvasKeyboardPanSettings['keys']>, direction: Direction): string {
+	public getKeyLabel(
+		keys: Partial<CanvasKeyboardPanSettings['keys']>,
+		direction: Direction
+	): string {
 		const key = keys[direction] ?? '?';
 		return KeyLabelOverrides[key] ?? key;
 	}
