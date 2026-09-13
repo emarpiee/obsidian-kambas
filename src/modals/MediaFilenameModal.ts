@@ -39,11 +39,11 @@ export class MediaFilenameModal extends Modal {
 		const { contentEl, titleEl } = this;
 		contentEl.empty();
 
-		const actionTitle = this.isCopy ? 'Copy Embedded Media to Vault' : 'Move Embedded Media to Vault';
+		const actionTitle = this.isCopy ? 'Copy Media to Vault' : 'Move Media to Vault';
 		titleEl.setText(actionTitle);
 
 		const descP = contentEl.createEl('p', { cls: 'kambas-modal-desc' });
-		descP.setText('Choose how the exported media file should be named in your vault:');
+		descP.setText('Choose how the media file should be named in your vault:');
 
 		let applyAll = false;
 

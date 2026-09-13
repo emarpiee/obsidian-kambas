@@ -1180,7 +1180,61 @@ export class CanvasImageHandler {
 			if (canvasNodeData.type === 'file' && canvasNodeData.file) {
 				const abstractFile = this.app.vault.getAbstractFileByPath(canvasNodeData.file);
 				if (abstractFile instanceof TFile) {
-					const newPath = targetFolder.path === '/' ? abstractFile.name : `${targetFolder.path}/${abstractFile.name}`;
+					const defaultName = abstractFile.name;
+					const tags = canvasNodeData.kambasTags || [];
+
+					if (!applyStrategyToAll || !currentNamingStrategy) {
+						const result = await new Promise<{ option: NamingStrategyOption; customName?: string; applyToAll: boolean }>((resolve) => {
+							const modal = new MediaFilenameModal(
+								this.app,
+								defaultName,
+								tags,
+								remainingCount,
+								false,
+								(res) => resolve(res)
+							);
+							modal.open();
+						});
+
+						currentNamingStrategy = result.option;
+						currentCustomName = result.customName || '';
+						applyStrategyToAll = result.applyToAll;
+					}
+
+					if (currentNamingStrategy === 'cancel') {
+						break;
+					}
+
+					const extIdx = abstractFile.name.lastIndexOf('.');
+					const ext = extIdx !== -1 ? abstractFile.name.substring(extIdx) : '';
+
+					let targetName = defaultName;
+					if (currentNamingStrategy === 'custom' && currentCustomName) {
+						const cleanCustom = currentCustomName.replace(/[/\\?%*:|"<>]/g, '-');
+						let counter = 1;
+						targetName = `${cleanCustom}-${String(counter).padStart(2, '0')}${ext}`;
+						let checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						while (this.app.vault.getAbstractFileByPath(checkPath)) {
+							counter++;
+							targetName = `${cleanCustom}-${String(counter).padStart(2, '0')}${ext}`;
+							checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						}
+					} else if (currentNamingStrategy === 'tag') {
+						const cleanedTags = tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
+						if (cleanedTags.length > 0) {
+							const baseTagStr = cleanedTags.join('-');
+							let counter = 1;
+							targetName = `${baseTagStr}-${String(counter).padStart(2, '0')}${ext}`;
+							let checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							while (this.app.vault.getAbstractFileByPath(checkPath)) {
+								counter++;
+								targetName = `${baseTagStr}-${String(counter).padStart(2, '0')}${ext}`;
+								checkPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							}
+						}
+					}
+
+					const newPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
 					if (abstractFile.path !== newPath) {
 						await this.app.fileManager.renameFile(abstractFile, newPath);
 						canvasNodeData.file = newPath;
@@ -1202,7 +1256,7 @@ export class CanvasImageHandler {
 					u8arr[n] = bstr.charCodeAt(n);
 				}
 
-				const defaultName = `embedded_image_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+				const defaultName = `canvas_image_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
 				const tags = canvasNodeData.kambasTags || [];
 
 				if (!applyStrategyToAll || !currentNamingStrategy) {
@@ -1367,25 +1421,81 @@ export class CanvasImageHandler {
 			const canvasNodeData = canvasFileData.nodes.find((n) => n.id === id);
 			if (!canvasNodeData) continue;
 
-			// Case 1: Native vault media file node (type === 'file') -> copy vault file to target directory with -copy-NN formatting
+			// Case 1: Native vault media file node (type === 'file') -> copy vault file to target directory
 			if (canvasNodeData.type === 'file' && canvasNodeData.file) {
 				const abstractFile = this.app.vault.getAbstractFileByPath(canvasNodeData.file);
 				if (abstractFile instanceof TFile) {
+					const defaultName = abstractFile.name;
+					const tags = canvasNodeData.kambasTags || [];
+
+					if (!applyCopyStrategyToAll || !currentCopyNamingStrategy) {
+						const result = await new Promise<{ option: NamingStrategyOption; customName?: string; applyToAll: boolean }>((resolve) => {
+							const modal = new MediaFilenameModal(
+								this.app,
+								defaultName,
+								tags,
+								remainingCount,
+								true,
+								(res) => resolve(res)
+							);
+							modal.open();
+						});
+
+						currentCopyNamingStrategy = result.option;
+						currentCopyCustomName = result.customName || '';
+						applyCopyStrategyToAll = result.applyToAll;
+					}
+
+					if (currentCopyNamingStrategy === 'cancel') {
+						break;
+					}
+
 					const extIdx = abstractFile.name.lastIndexOf('.');
 					const base = extIdx !== -1 ? abstractFile.name.substring(0, extIdx) : abstractFile.name;
 					const ext = extIdx !== -1 ? abstractFile.name.substring(extIdx) : '';
 
 					let counter = 1;
-					let targetName = `${base}-copy-${String(counter).padStart(2, '0')}${ext}`;
-					let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					let targetName = `${base}-${String(counter).padStart(2, '0')}${ext}`;
 
-					while (this.app.vault.getAbstractFileByPath(targetPath)) {
-						counter++;
-						targetName = `${base}-copy-${String(counter).padStart(2, '0')}${ext}`;
-						targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
+						const cleanCustom = currentCopyCustomName.replace(/[/\\?%*:|"<>]/g, '-');
+						targetName = `${cleanCustom}-${String(counter).padStart(2, '0')}${ext}`;
+						let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						while (this.app.vault.getAbstractFileByPath(targetPath)) {
+							counter++;
+							targetName = `${cleanCustom}-${String(counter).padStart(2, '0')}${ext}`;
+							targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						}
+					} else if (currentCopyNamingStrategy === 'tag') {
+						const cleanedTags = tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
+						if (cleanedTags.length > 0) {
+							const baseTagStr = cleanedTags.join('-');
+							targetName = `${baseTagStr}-${String(counter).padStart(2, '0')}${ext}`;
+							let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							while (this.app.vault.getAbstractFileByPath(targetPath)) {
+								counter++;
+								targetName = `${baseTagStr}-${String(counter).padStart(2, '0')}${ext}`;
+								targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							}
+						} else {
+							let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							while (this.app.vault.getAbstractFileByPath(targetPath)) {
+								counter++;
+								targetName = `${base}-${String(counter).padStart(2, '0')}${ext}`;
+								targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+							}
+						}
+					} else {
+						let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						while (this.app.vault.getAbstractFileByPath(targetPath)) {
+							counter++;
+							targetName = `${base}-${String(counter).padStart(2, '0')}${ext}`;
+							targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+						}
 					}
 
-					await this.app.vault.copy(abstractFile, targetPath);
+					const finalPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
+					await this.app.vault.copy(abstractFile, finalPath);
 				}
 			}
 			// Case 2: Embedded base64 image link node (type === 'link' with data:image/...) -> copy/export base64 to target directory
@@ -1401,7 +1511,7 @@ export class CanvasImageHandler {
 					u8arr[n] = bstr.charCodeAt(n);
 				}
 
-				const defaultName = `embedded_image-copy-01.${ext}`;
+				const defaultName = `canvas_image-01.${ext}`;
 				const tags = canvasNodeData.kambasTags || [];
 
 				if (!applyCopyStrategyToAll || !currentCopyNamingStrategy) {
@@ -1426,9 +1536,9 @@ export class CanvasImageHandler {
 					break;
 				}
 
-				const base = 'embedded_image';
+				const base = 'canvas_image';
 				let counter = 1;
-				let targetName = `${base}-copy-${String(counter).padStart(2, '0')}.${ext}`;
+				let targetName = `${base}-${String(counter).padStart(2, '0')}.${ext}`;
 
 				if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
 					const cleanCustom = currentCopyCustomName.replace(/[/\\?%*:|"<>]/g, '-');
@@ -1454,7 +1564,7 @@ export class CanvasImageHandler {
 						let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
 						while (this.app.vault.getAbstractFileByPath(targetPath)) {
 							counter++;
-							targetName = `${base}-copy-${String(counter).padStart(2, '0')}.${ext}`;
+							targetName = `${base}-${String(counter).padStart(2, '0')}.${ext}`;
 							targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
 						}
 					}
@@ -1462,7 +1572,7 @@ export class CanvasImageHandler {
 					let targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
 					while (this.app.vault.getAbstractFileByPath(targetPath)) {
 						counter++;
-						targetName = `${base}-copy-${String(counter).padStart(2, '0')}.${ext}`;
+						targetName = `${base}-${String(counter).padStart(2, '0')}.${ext}`;
 						targetPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
 					}
 				}
