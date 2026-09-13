@@ -232,6 +232,67 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	box-sizing: border-box;
 }
 
+.kambas-naming-options {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 12px 0 16px 0;
+}
+
+.kambas-naming-option {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 6px);
+	background: var(--background-primary);
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.kambas-naming-option:hover {
+	background: var(--background-secondary-alt);
+}
+
+.kambas-naming-option.is-selected {
+	border-color: var(--interactive-accent);
+	background: var(--background-secondary);
+}
+
+.kambas-naming-option input[type="radio"] {
+	margin-top: 3px;
+	cursor: pointer;
+}
+
+.kambas-naming-option label {
+	flex: 1;
+	cursor: pointer;
+}
+
+.kambas-opt-title {
+	font-weight: var(--font-semibold, 600);
+	font-size: var(--font-ui-small, 13px);
+	color: var(--text-normal);
+}
+
+.kambas-opt-subtitle {
+	font-size: var(--font-ui-smaller, 11px);
+	color: var(--text-muted);
+	margin-top: 2px;
+	word-break: break-all;
+}
+
+.kambas-custom-input-wrap {
+	margin-top: 8px;
+	width: 100%;
+}
+
+.kambas-custom-filename-input {
+	width: 100%;
+	box-sizing: border-box;
+}
+
 .kambas-settings-radio-group {
 	display: flex;
 	align-items: center;
