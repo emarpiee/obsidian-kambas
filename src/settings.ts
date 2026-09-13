@@ -39,6 +39,7 @@ export interface KambasSettings {
 	loupeSmoothing: number; // Mouse tracking interpolation factor (0.05 - 1.0, lower = smoother/less sensitive)
 	selectionZoomToFitHotkey: string; // Hotkey to zoom to fit selected elements
 	keyboardPan: CanvasKeyboardPanSettings;
+	tagColors?: Record<string, { text?: string; bg?: string }>;
 }
 
 export const DEFAULT_SETTINGS: KambasSettings = {
@@ -62,6 +63,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	loupeSmoothing: 0.5,
 	selectionZoomToFitHotkey: 'Space',
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
+	tagColors: {},
 };
 
 const KeyLabelOverrides: Record<string, string> = {

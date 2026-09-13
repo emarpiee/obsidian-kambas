@@ -1,6 +1,7 @@
 import {
 	App,
 	ItemView,
+	Menu,
 	Notice,
 	SliderComponent,
 	TFile,
@@ -32,6 +33,8 @@ import {
 	NamingStrategyOption,
 } from '../modals/MediaFilenameModal';
 import { TagModal } from '../modals/TagModal';
+import { TagRenameModal } from '../modals/TagRenameModal';
+import { TagColorModal } from '../modals/TagColorModal';
 import {
 	arrayBufferToBase64DataUrl,
 	blobToBase64,
@@ -2437,7 +2440,11 @@ export class CanvasImageHandler {
 	/**
 	 * Renders (or updates) tag badge pills in the bottom-left of a node element.
 	 */
-	public renderTagBadges(nodeEl: HTMLElement, tags: string[]): void {
+	public renderTagBadges(
+		nodeEl: HTMLElement,
+		tags: string[],
+		forceReRender = false
+	): void {
 		let bar = nodeEl.querySelector<HTMLElement>('.kambas-tag-bar');
 
 		if (!tags || tags.length === 0) {
@@ -2449,15 +2456,24 @@ export class CanvasImageHandler {
 			bar = nodeEl.createDiv({ cls: 'kambas-tag-bar' });
 		}
 
-		// Only re-render if tags changed
+		const tagColorsMap = this.plugin.settings.tagColors ?? {};
+		const tagKey = tags
+			.map((t) => {
+				const c = tagColorsMap[t.toLowerCase()];
+				return `${t}:${c?.text ?? ''}:${c?.bg ?? ''}`;
+			})
+			.join(',');
+
 		const existing = bar.dataset.tags;
-		const tagKey = tags.join(',');
-		if (existing === tagKey) return;
+		if (!forceReRender && existing === tagKey) return;
 		bar.dataset.tags = tagKey;
 		bar.empty();
 
 		for (const tag of tags) {
 			const pill = bar.createSpan({ cls: 'kambas-tag-pill' });
+			const colors = tagColorsMap[tag.toLowerCase()];
+			if (colors?.bg) pill.style.backgroundColor = colors.bg;
+			if (colors?.text) pill.style.color = colors.text;
 
 			const parts = tag.split('/');
 			if (parts.length > 1) {
@@ -3789,7 +3805,14 @@ export class CanvasImageHandler {
 					checkEl,
 					isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square'
 				);
-				row.createSpan({ cls: 'kambas-tag-panel-pill', text: `#${tag}` });
+				const tagPill = row.createSpan({
+					cls: 'kambas-tag-panel-pill',
+					text: `#${tag}`,
+				});
+				const tagColorsMap = this.plugin.settings.tagColors ?? {};
+				const customColor = tagColorsMap[tag.toLowerCase()];
+				if (customColor?.bg) tagPill.style.backgroundColor = customColor.bg;
+				if (customColor?.text) tagPill.style.color = customColor.text;
 
 				// "N in view" badge when a filter is active
 				if (isRelated) {
@@ -3805,16 +3828,52 @@ export class CanvasImageHandler {
 					text: t.tagNodesCount(count),
 				});
 
-				// Delete tag from all nodes
-				const deleteBtn = row.createSpan({ cls: 'kambas-tag-panel-delete' });
-				setIcon(deleteBtn, 'trash-2');
-				deleteBtn.setAttribute(
+				// Native Obsidian menu button (Rename, Add color to tags, Delete)
+				const menuBtn = row.createSpan({
+					cls: 'kambas-tag-panel-menu-btn',
+				});
+				setIcon(menuBtn, 'ellipsis-vertical');
+				menuBtn.setAttribute(
 					'aria-label',
-					t.deleteTagTooltip ?? 'Delete tag from all nodes'
+					t.tagItemMenuTooltip ?? 'Tag options'
 				);
-				deleteBtn.addEventListener('click', (ev) => {
+				menuBtn.addEventListener('click', (ev) => {
 					ev.stopPropagation();
-					void this.deleteTagFromCanvas(activeView, tag);
+					ev.preventDefault();
+
+					const menu = new Menu();
+
+					// 1. Rename
+					menu.addItem((item) => {
+						item.setTitle(t.renameTag ?? 'Rename')
+							.setIcon('pencil')
+							.onClick(() => {
+								new TagRenameModal(this.app, tag, (newTag) => {
+									void this.renameTagOnCanvas(activeView, tag, newTag);
+								}).open();
+							});
+					});
+
+					// 2. Add color to tags
+					menu.addItem((item) => {
+						item.setTitle(t.setTagColor ?? 'Add color to tag')
+							.setIcon('palette')
+							.onClick(() => {
+								this.promptSetTagColor(activeView, tag);
+							});
+					});
+
+					// 3. Trash / Delete
+					menu.addItem((item) => {
+						item.setTitle(t.deleteTag ?? 'Delete tag')
+							.setIcon('trash-2')
+							.setWarning(true)
+							.onClick(() => {
+								void this.deleteTagFromCanvas(activeView, tag);
+							});
+					});
+
+					menu.showAtMouseEvent(ev);
 				});
 
 				// 3-state cycle: neutral → include → exclude → neutral
@@ -3908,6 +3967,135 @@ export class CanvasImageHandler {
 			const next = tags.filter((tg) => tg !== tagToDelete);
 			nd.kambasTags = next.length > 0 ? next : undefined;
 			if (!nd.kambasTags) delete nd.kambasTags;
+			modified = true;
+		}
+		if (modified) this.scheduleVaultModify(file, data);
+	}
+
+	public promptSetTagColor(activeView: CanvasItemView, tag: string): void {
+		const currentColors =
+			this.plugin.settings.tagColors?.[tag.toLowerCase()];
+		new TagColorModal(this.app, tag, currentColors, (newColors) => {
+			if (!this.plugin.settings.tagColors) {
+				this.plugin.settings.tagColors = {};
+			}
+			const tagKey = tag.toLowerCase();
+			if (newColors && (newColors.text || newColors.bg)) {
+				this.plugin.settings.tagColors[tagKey] = newColors;
+			} else {
+				delete this.plugin.settings.tagColors[tagKey];
+			}
+			void this.plugin.saveSettings().then(() => {
+				const canvas = activeView.canvas;
+				if (canvas?.nodes) {
+					canvas.nodes.forEach((node) => {
+						const uData = (
+							node as unknown as { unknownData?: { kambasTags?: string[] } }
+						).unknownData;
+						const tags = uData?.kambasTags ?? [];
+						if (node.nodeEl?.instanceOf(HTMLElement)) {
+							this.renderTagBadges(node.nodeEl, tags, true);
+						}
+					});
+				}
+				this.refreshTagFilterPanel(activeView);
+			});
+		}).open();
+	}
+
+	public async renameTagOnCanvas(
+		activeView: CanvasItemView,
+		oldTag: string,
+		newTag: string
+	): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes || !newTag || oldTag === newTag) return;
+
+		let modifiedAny = false;
+
+		canvas.nodes.forEach((node) => {
+			const rawNode = node as unknown as {
+				unknownData?: { kambasTags?: string[] };
+			};
+			const tags = rawNode.unknownData?.kambasTags ?? [];
+			if (!tags.includes(oldTag)) return;
+
+			const nextTags: string[] = [];
+			for (const t of tags) {
+				if (t === oldTag) {
+					if (!nextTags.includes(newTag)) nextTags.push(newTag);
+				} else {
+					if (!nextTags.includes(t)) nextTags.push(t);
+				}
+			}
+
+			if (rawNode.unknownData) {
+				rawNode.unknownData.kambasTags = nextTags;
+			}
+			modifiedAny = true;
+
+			if (node.nodeEl.instanceOf(HTMLElement)) {
+				this.renderTagBadges(node.nodeEl, nextTags, true);
+			}
+		});
+
+		if (this.activeTagFilters.has(oldTag)) {
+			this.activeTagFilters.delete(oldTag);
+			this.activeTagFilters.add(newTag);
+		}
+		if (this.activeTagExcludes.has(oldTag)) {
+			this.activeTagExcludes.delete(oldTag);
+			this.activeTagExcludes.add(newTag);
+		}
+
+		const tagColorsMap = this.plugin.settings.tagColors;
+		if (tagColorsMap && tagColorsMap[oldTag.toLowerCase()]) {
+			tagColorsMap[newTag.toLowerCase()] = tagColorsMap[oldTag.toLowerCase()];
+			delete tagColorsMap[oldTag.toLowerCase()];
+			void this.plugin.saveSettings();
+		}
+
+		const file = activeView.file;
+		if (file) this.saveFilterState(file);
+
+		if (file && modifiedAny) {
+			await this.persistRenameTag(file, oldTag, newTag);
+		}
+
+		window.setTimeout(() => {
+			this.applyTagFilters(activeView);
+			this.refreshTagFilterPanel(activeView);
+		}, 80);
+	}
+
+	private async persistRenameTag(
+		file: TFile,
+		oldTag: string,
+		newTag: string
+	): Promise<void> {
+		const content = await this.app.vault.read(file);
+		let data: CanvasFileData;
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!Array.isArray(data.nodes)) return;
+		let modified = false;
+		for (const node of data.nodes) {
+			const nd = node as unknown as { kambasTags?: string[] };
+			const tags = nd.kambasTags;
+			if (!tags?.includes(oldTag)) continue;
+
+			const next: string[] = [];
+			for (const t of tags) {
+				if (t === oldTag) {
+					if (!next.includes(newTag)) next.push(newTag);
+				} else {
+					if (!next.includes(t)) next.push(t);
+				}
+			}
+			nd.kambasTags = next;
 			modified = true;
 		}
 		if (modified) this.scheduleVaultModify(file, data);

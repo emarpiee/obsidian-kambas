@@ -1008,8 +1008,9 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	text-align: center;
 }
 
-/* ── Delete button (trash icon, appears on row hover) ─────────────────────── */
-.kambas-tag-panel-delete {
+/* ── Delete & Menu buttons (appears on row hover) ─────────────────────── */
+.kambas-tag-panel-delete,
+.kambas-tag-panel-menu-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1023,12 +1024,14 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	transition: color 0.1s ease, background 0.1s ease;
 }
 
-.kambas-tag-panel-delete svg.svg-icon {
+.kambas-tag-panel-delete svg.svg-icon,
+.kambas-tag-panel-menu-btn svg.svg-icon {
 	width: 15px;
 	height: 15px;
 }
 
-.kambas-tag-panel-item:hover .kambas-tag-panel-delete {
+.kambas-tag-panel-item:hover .kambas-tag-panel-delete,
+.kambas-tag-panel-item:hover .kambas-tag-panel-menu-btn {
 	color: var(--text-muted);
 }
 
@@ -1037,13 +1040,64 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	background: rgba(255, 80, 80, 0.15);
 }
 
-.kambas-tag-panel-item.is-active .kambas-tag-panel-delete {
-	color: rgba(255, 255, 255, 0.6);
+.kambas-tag-panel-item:hover .kambas-tag-panel-menu-btn:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
 }
 
-.kambas-tag-panel-item.is-active .kambas-tag-panel-delete:hover {
+.kambas-tag-panel-item.is-active .kambas-tag-panel-delete,
+.kambas-tag-panel-item.is-active .kambas-tag-panel-menu-btn {
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.kambas-tag-panel-item.is-active .kambas-tag-panel-delete:hover,
+.kambas-tag-panel-item.is-active .kambas-tag-panel-menu-btn:hover {
 	color: #fff;
 	background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Tag Color Modal styling ────────────────────────────────────────────── */
+.kambas-tag-color-modal {
+	max-width: 420px;
+}
+
+.kambas-tag-color-preview-wrap {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px;
+	background: var(--background-secondary);
+	border-radius: 8px;
+	margin-top: 8px;
+}
+
+.kambas-tag-color-preview-label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--text-muted);
+}
+
+.kambas-tag-color-preview-pill {
+	font-size: 12px;
+	padding: 4px 10px;
+}
+
+.kambas-tag-color-preset-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.kambas-color-picker-input {
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: none;
+	border-radius: 6px;
+	background: none;
+	cursor: pointer;
+	margin-left: 8px;
 }
 
 /* ── Opacity slider footer ────────────────────────────────────────────────── */
