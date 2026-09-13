@@ -1571,7 +1571,17 @@ export class CanvasImageHandler {
 		bar.empty();
 
 		for (const tag of tags) {
-			bar.createSpan({ cls: 'kambas-tag-pill', text: `#${tag}` });
+			const pill = bar.createSpan({ cls: 'kambas-tag-pill' });
+
+			const parts = tag.split('/');
+			if (parts.length > 1) {
+				const ns = parts.slice(0, -1).join('/') + '/';
+				const name = parts[parts.length - 1];
+				pill.createSpan({ cls: 'kambas-tag-ns', text: `#${ns}` });
+				pill.createSpan({ cls: 'kambas-tag-name', text: name });
+			} else {
+				pill.createSpan({ cls: 'kambas-tag-name', text: `#${tag}` });
+			}
 		}
 	}
 
@@ -1592,6 +1602,29 @@ export class CanvasImageHandler {
 	}
 
 	/**
+	 * Collects tags from the live canvas as well as the global vault metadata cache.
+	 */
+	public collectVaultAndCanvasTags(activeView: CanvasItemView): { canvasTags: string[]; suggestions: string[] } {
+		const canvasTags = this.collectLiveCanvasTags(activeView);
+		const tagSet = new Set<string>(canvasTags);
+
+		try {
+			const vaultTagCounts = (this.app.metadataCache as unknown as { getTags?: () => Record<string, number> }).getTags?.();
+			if (vaultTagCounts) {
+				for (const rawTag of Object.keys(vaultTagCounts)) {
+					const tag = rawTag.replace(/^#+/, '').trim().toLowerCase();
+					if (tag) tagSet.add(tag);
+				}
+			}
+		} catch { /* ignore */ }
+
+		return {
+			canvasTags,
+			suggestions: Array.from(tagSet).sort(),
+		};
+	}
+
+	/**
 	 * Opens the TagModal for the selected node(s) and applies resulting tags.
 	 */
 	public openTagModal(
@@ -1601,10 +1634,10 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
-		// Collect initial tags:
-		// If right-clicked on a specific target node, use that target node's tags.
-		// Otherwise (bulk multi-select context menu / toolbar), collect the union of tags across ALL selected nodes.
 		const initialTagSet = new Set<string>();
+		const tagCounts = new Map<string, number>();
+		let selectedCount = 0;
+
 		canvas.nodes.forEach((node) => {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
@@ -1612,19 +1645,34 @@ export class CanvasImageHandler {
 			const isSel = nodeEl.classList.contains('is-selected');
 			
 			if (targetNodeEl ? isTarget : isSel) {
+				selectedCount++;
 				const uData = (node as unknown as { unknownData?: { kambasTags?: string[] } }).unknownData;
 				for (const tag of uData?.kambasTags ?? []) {
-					if (tag.trim()) initialTagSet.add(tag);
+					const clean = tag.trim().toLowerCase();
+					if (clean) {
+						initialTagSet.add(clean);
+						tagCounts.set(clean, (tagCounts.get(clean) ?? 0) + 1);
+					}
 				}
 			}
 		});
 		const initialTags = Array.from(initialTagSet);
 
-		const suggestions = this.collectLiveCanvasTags(activeView);
+		const { canvasTags, suggestions } = this.collectVaultAndCanvasTags(activeView);
 
-		new TagModal(this.app, initialTags, suggestions, (tags) => {
-			void this.setNodeTags(activeView, tags, initialTags, targetNodeEl);
-		}).open();
+		new TagModal(
+			this.app,
+			initialTags,
+			suggestions,
+			(tags, tagStates) => {
+				void this.setNodeTags(activeView, tags, initialTags, targetNodeEl, tagStates);
+			},
+			{
+				selectedCount: selectedCount || 1,
+				presetTags: canvasTags.length > 0 ? canvasTags : suggestions.slice(0, 10),
+				tagCounts,
+			}
+		).open();
 	}
 
 	/**
@@ -1634,15 +1682,15 @@ export class CanvasImageHandler {
 		activeView: CanvasItemView,
 		tags: string[],
 		initialTags: string[] = [],
-		targetNodeEl?: Element | null
+		targetNodeEl?: Element | null,
+		tagStates?: Map<string, 'full' | 'mixed'>
 	): Promise<void> {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
-		const selectedNodeIds: string[] = [];
+		const nodeTagsMap = new Map<string, string[] | undefined>();
 
-		// Collect initial tags that were passed into the modal (to calculate added vs removed tags)
-		const addedTags = tags.filter((t) => !initialTags.includes(t));
+		const fullTags = tags.filter((t) => !tagStates || tagStates.get(t) === 'full');
 		const removedTags = initialTags.filter((t) => !tags.includes(t));
 
 		canvas.nodes.forEach((node, id) => {
@@ -1650,48 +1698,45 @@ export class CanvasImageHandler {
 			if (!nodeEl) return;
 			const isSel = nodeEl.classList.contains('is-selected') || (targetNodeEl && (nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
 			if (isSel) {
-				selectedNodeIds.push(id);
 				const rawNode = node as unknown as { unknownData?: { kambasTags?: string[] } };
 				if (!rawNode.unknownData) rawNode.unknownData = {};
 				const existingTags = rawNode.unknownData.kambasTags ?? [];
-				// Keep existing tags not explicitly removed, plus any newly added tags
+
+				// Keep existing tags that were not explicitly removed
 				let updated = existingTags.filter((t) => !removedTags.includes(t));
-				for (const tag of addedTags) {
+				// Add any full tags (tags applied to ALL nodes)
+				for (const tag of fullTags) {
 					if (!updated.includes(tag)) updated.push(tag);
 				}
+
 				rawNode.unknownData.kambasTags = updated.length > 0 ? updated : undefined;
+				nodeTagsMap.set(id, updated.length > 0 ? updated : undefined);
 
 				// Immediately render badges
 				if (nodeEl.instanceOf(HTMLElement)) this.renderTagBadges(nodeEl, updated);
 			}
 		});
 
-		if (selectedNodeIds.length === 0) return;
+		if (nodeTagsMap.size === 0) return;
 
-		// Always write directly to the JSON file — requestSave() alone strips custom unknownData fields.
 		const file = activeView.file;
 		if (file) {
-			await this.persistTagsDiff(file, selectedNodeIds, addedTags, removedTags);
-			// Re-stamp badges from saved state to confirm persistence
+			await this.persistNodeTagsMap(file, nodeTagsMap);
 			window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 100);
 		}
 
-		// Also nudge the canvas so it refreshes internal rendering
 		if (typeof canvas.requestSave === 'function') {
 			try { canvas.requestSave(); } catch { /* ignore */ }
 		}
 
-		// Refresh filter panel if open
 		if (this.tagFilterPanelEl?.isConnected) {
 			window.setTimeout(() => this.refreshTagFilterPanel(activeView), 150);
 		}
 	}
 
-	private async persistTagsDiff(
+	private async persistNodeTagsMap(
 		file: TFile,
-		selectedNodeIds: string[],
-		addedTags: string[],
-		removedTags: string[]
+		nodeTagsMap: Map<string, string[] | undefined>
 	): Promise<void> {
 		const content = await this.app.vault.read(file);
 		let data: CanvasFileData;
@@ -1701,14 +1746,10 @@ export class CanvasImageHandler {
 		if (!data.nodes) return;
 		let modified = false;
 		data.nodes.forEach((node) => {
-			if (node.id && selectedNodeIds.includes(node.id)) {
+			if (node.id && nodeTagsMap.has(node.id)) {
 				const nd = node as unknown as { kambasTags?: string[] };
-				const existing = nd.kambasTags ?? [];
-				let updated = existing.filter((t) => !removedTags.includes(t));
-				for (const tag of addedTags) {
-					if (!updated.includes(tag)) updated.push(tag);
-				}
-				if (updated.length > 0) {
+				const updated = nodeTagsMap.get(node.id);
+				if (updated && updated.length > 0) {
 					nd.kambasTags = updated;
 				} else {
 					delete nd.kambasTags;

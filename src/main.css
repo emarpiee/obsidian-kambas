@@ -540,6 +540,15 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	user-select: none;
 }
 
+.kambas-tag-pill .kambas-tag-ns,
+.kambas-tag-chip .kambas-tag-ns,
+.kambas-tag-preset-pill .kambas-tag-ns,
+.kambas-tag-suggest-label .kambas-tag-ns {
+	opacity: 0.65;
+	margin-right: 1px;
+	font-weight: 400;
+}
+
 .canvas-node.is-selected .kambas-tag-pill:hover {
 	background-color: var(--tag-background-hover, rgba(var(--color-accent-hsl), 0.25));
 	transform: scale(1.05);
@@ -1064,6 +1073,69 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	padding: 16px;
 }
 
+/* Preset / Quick Tags row */
+.kambas-tag-preset-row {
+	margin-top: 12px;
+	padding-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.kambas-tag-preset-header {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-bottom: 6px;
+}
+
+.kambas-tag-preset-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.kambas-tag-preset-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 500;
+	cursor: pointer;
+	user-select: none;
+	background: var(--tag-background, rgba(var(--color-accent-hsl), 0.08));
+	color: var(--tag-color, var(--text-muted));
+	border: 1px solid var(--tag-border-color, transparent);
+	transition: transform 0.1s ease, background 0.1s ease, color 0.1s ease;
+}
+
+.kambas-tag-preset-pill:hover {
+	transform: translateY(-1px);
+	background: var(--tag-background-hover, rgba(var(--color-accent-hsl), 0.18));
+	color: var(--text-accent);
+}
+
+.kambas-tag-chip.is-mixed {
+	border-style: dashed;
+	border-color: var(--interactive-accent);
+	background: var(--tag-background, rgba(var(--color-accent-hsl), 0.08));
+	opacity: 0.9;
+	cursor: pointer;
+}
+
+.kambas-tag-chip.is-mixed:hover {
+	opacity: 1;
+	background: var(--tag-background-hover, rgba(var(--color-accent-hsl), 0.2));
+}
+
+.kambas-tag-count-badge {
+	font-size: 10px;
+	opacity: 0.7;
+	margin-left: 3px;
+	font-weight: 400;
+}
+
 /* Chip input wrapper — column layout so chips and input are in separate rows */
 .kambas-tag-chip-wrap {
 	display: flex;
@@ -1170,6 +1242,9 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 .kambas-tag-suggest-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	padding: 7px 12px;
 	font-size: 13px;
 	color: var(--text-normal);
@@ -1184,6 +1259,26 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 .kambas-tag-suggest-item:focus {
 	background: var(--background-modifier-hover);
 	color: var(--text-accent);
+}
+
+.kambas-tag-suggest-item .kambas-tag-suggest-label {
+	display: inline-flex;
+	align-items: center;
+}
+
+.kambas-tag-suggest-badge {
+	display: inline-flex;
+	align-items: center;
+	font-size: 10px;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: var(--tag-background, rgba(var(--color-accent-hsl), 0.12));
+	color: var(--text-accent);
+	font-weight: 500;
+	margin-left: 12px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	border: 1px solid var(--tag-border-color, transparent);
 }
 
 /* Button row in tag modal */
