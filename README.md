@@ -136,7 +136,7 @@ Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab:
 - **Custom Tag Colors**: Set individual tag background and text colors directly in the tag modal or plugin settings.
 - **Tag Badges & Visibility**: Toggle canvas tag badge display or change badge positions (outside-below or inside bottom-left).
 - **Tag Management**: Rename tags canvas-wide, change tag colors, or delete tags directly from the panel.
-- **Presets & Search**: Save, load, search, and clear filter configurations.
+- **Search & Clear**: Search tags or clear active filter configurations.
 
 #### Colors Tab
 
