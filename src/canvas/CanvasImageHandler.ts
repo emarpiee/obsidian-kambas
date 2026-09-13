@@ -8,6 +8,7 @@ import {
 	arrayBufferToBase64DataUrl,
 	blobToBase64,
 	canvasNodePresetColorToName,
+	compressAndOptimizeBase64,
 	extractImagePalette,
 	getImageDimensions,
 	getNodeDominantColorName,
@@ -3454,6 +3455,59 @@ export class CanvasImageHandler {
 		}, 60);
 
 		new Notice(getText().swapSuccess);
+	}
+
+	/**
+	 * Re-encodes high-resolution Base64 data URLs for selected canvas image nodes using WebP compression.
+	 */
+	public async optimizeSelectedEmbeddedImages(activeView: CanvasItemView, targetNodeEl?: HTMLElement): Promise<void> {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		let totalBytesSaved = 0;
+		let optimizedCount = 0;
+
+		const maxDim = this.plugin.settings.base64MaxDimension || 2048;
+		const quality = this.plugin.settings.base64Quality || 0.82;
+
+		for (const canvasNode of canvas.nodes.values()) {
+			const el = canvasNode.nodeEl;
+			if (!el) continue;
+			const isSel = el.classList.contains('is-selected') || (targetNodeEl && (el === targetNodeEl || el.contains(targetNodeEl)));
+			if (!isSel) continue;
+
+			const rawNode = canvasNode as unknown as { url?: string; unknownData?: { url?: string } };
+			const dataUrl = rawNode.url || rawNode.unknownData?.url;
+
+			if (dataUrl && dataUrl.startsWith('data:image/')) {
+				try {
+					const res = await compressAndOptimizeBase64(dataUrl, { maxDimension: maxDim, quality, mimeType: 'image/webp' });
+					if (res.bytesSaved > 0) {
+						if (rawNode.url) rawNode.url = res.dataUrl;
+						if (rawNode.unknownData) rawNode.unknownData.url = res.dataUrl;
+
+						const imgEl = el.querySelector<HTMLImageElement>('img');
+						if (imgEl) imgEl.src = res.dataUrl;
+
+						totalBytesSaved += res.bytesSaved;
+						optimizedCount++;
+					}
+				} catch (err) {
+					console.error('Failed to optimize embedded image:', err);
+				}
+			}
+		}
+
+		if (typeof canvas.requestSave === 'function') {
+			try { canvas.requestSave(); } catch { /* Handled */ }
+		}
+
+		if (optimizedCount > 0) {
+			const kbSaved = Math.round(totalBytesSaved / 1024);
+			new Notice(`Optimized ${optimizedCount} embedded image(s), saved ~${kbSaved} KB!`);
+		} else {
+			new Notice('No compressible base64 images selected.');
+		}
 	}
 }
 

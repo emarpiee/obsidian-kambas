@@ -3,6 +3,15 @@ import { CanvasKeyboardPanSettings, DEFAULT_KEYBOARD_PAN_SETTINGS, Direction } f
 import { getText } from './i18n';
 import type KambasPlugin from './main';
 
+export interface FilterPreset {
+	id: string;
+	name: string;
+	includeTags: string[];
+	excludeTags: string[];
+	includeColors: string[];
+	excludeColors: string[];
+}
+
 export interface KambasSettings {
 	hideImageLabel: boolean;
 	tagBadgePosition: 'outside' | 'inside';
@@ -13,6 +22,14 @@ export interface KambasSettings {
 	colorIncludeAccents: boolean; // Include minor accent colors in filter extraction
 	colorShowName: boolean; // Display color name text in color filter panel list
 	colorIncludeNodeColor: boolean; // Include native canvas node custom border/background color
+	filterPresets: FilterPreset[]; // Saved filter panel state presets
+	autoOptimizeBase64OnIngest: boolean; // Automatically optimize Base64 strings on paste/drop
+	base64MaxDimension: number; // Max resolution for compressed Base64 images
+	base64Quality: number; // Quality for WebP compression (0.1 - 1.0)
+	loupeHotkey: string; // Hotkey for Loupe Zoom Inspector
+	loupeZoomLevel: number; // Magnification factor (1.5x - 10.0x)
+	loupeSize: number; // Loupe lens diameter in px (100px - 600px)
+	loupeShape: 'circle' | 'square' | 'rounded'; // Loupe lens shape
 	keyboardPan: CanvasKeyboardPanSettings;
 }
 
@@ -26,6 +43,14 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	colorIncludeAccents: false,
 	colorShowName: true,
 	colorIncludeNodeColor: false,
+	filterPresets: [],
+	autoOptimizeBase64OnIngest: false,
+	base64MaxDimension: 2048,
+	base64Quality: 0.82,
+	loupeHotkey: 'q',
+	loupeZoomLevel: 3.0,
+	loupeSize: 260,
+	loupeShape: 'circle',
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
 
@@ -155,6 +180,100 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.colorExtractMode ?? 'auto')
 					.onChange(async (value: string) => {
 						this.plugin.settings.colorExtractMode = value as 'auto' | 'manual' | 'disabled';
+						await this.plugin.saveSettings();
+					})
+			);
+
+		// Performance & Base64 Optimization Section
+		new Setting(containerEl)
+			.setName('Base64 image optimization')
+			.setHeading();
+
+		new Setting(containerEl)
+			.setName('Auto-optimize Base64 on paste / drop')
+			.setDesc('Automatically compress pasted or dropped Base64 images to WebP format.')
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.autoOptimizeBase64OnIngest ?? false)
+					.onChange(async (value) => {
+						this.plugin.settings.autoOptimizeBase64OnIngest = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Maximum image dimension (px)')
+			.setDesc('Resize images exceeding this width/height before embedding in canvas (e.g. 2048px).')
+			.addText((text) =>
+				text
+					.setPlaceholder('2048')
+					.setValue(String(this.plugin.settings.base64MaxDimension ?? 2048))
+					.onChange(async (value) => {
+						const num = parseInt(value, 10);
+						if (!isNaN(num) && num > 0) {
+							this.plugin.settings.base64MaxDimension = num;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		// Visual Inspection Section
+		new Setting(containerEl)
+			.setName('Visual inspection (Loupe Tool)')
+			.setHeading();
+
+		new Setting(containerEl)
+			.setName('Loupe activation hotkey')
+			.setDesc('Hold down this key while hovering over an image node to inspect details.')
+			.addText((text) =>
+				text
+					.setPlaceholder('q')
+					.setValue(this.plugin.settings.loupeHotkey ?? 'q')
+					.onChange(async (value) => {
+						this.plugin.settings.loupeHotkey = value.trim().toLowerCase() || 'q';
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Loupe magnification level')
+			.setDesc('Zoom multiplier for the loupe lens (1.5x – 10.0x).')
+			.addSlider((slider) =>
+				slider
+					.setLimits(1.5, 10.0, 0.5)
+					.setValue(this.plugin.settings.loupeZoomLevel ?? 3.0)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.loupeZoomLevel = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Loupe lens diameter (px)')
+			.setDesc('Size of the loupe lens in pixels (100px – 600px).')
+			.addSlider((slider) =>
+				slider
+					.setLimits(100, 600, 20)
+					.setValue(this.plugin.settings.loupeSize ?? 260)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.loupeSize = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Loupe lens shape')
+			.setDesc('Visual shape of the magnifying lens frame.')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('circle', 'Circle')
+					.addOption('rounded', 'Rounded rectangle')
+					.addOption('square', 'Square')
+					.setValue(this.plugin.settings.loupeShape ?? 'circle')
+					.onChange(async (value: string) => {
+						this.plugin.settings.loupeShape = value as 'circle' | 'square' | 'rounded';
 						await this.plugin.saveSettings();
 					})
 			);

@@ -486,7 +486,6 @@ export async function getNodeDominantColorName(src: string, includeAccents = fal
 						detectedColors.add(colorName);
 					}
 				}
-
 				resolve(detectedColors.size > 0 ? Array.from(detectedColors) : null);
 			} catch {
 				resolve(null);
@@ -501,5 +500,109 @@ export async function getNodeDominantColorName(src: string, includeAccents = fal
 		}
 	});
 }
+
+/**
+ * Categorizes a set of detected color names or RGB colors into broader color families (#warm, #cool, #monochrome, #pastel, #neon, #earthy).
+ */
+export function classifyColorFamily(colors: string[]): string[] {
+	if (!colors || colors.length === 0) return [];
+	const families = new Set<string>();
+
+	const lowerColors = colors.map((c) => c.toLowerCase());
+	const isMono = lowerColors.every((c) => c === 'black' || c === 'white' || c === 'gray');
+
+	if (isMono) {
+		families.add('monochrome');
+		return Array.from(families);
+	}
+
+	for (const color of lowerColors) {
+		if (['red', 'orange', 'yellow', 'pink'].includes(color)) {
+			families.add('warm');
+		} else if (['blue', 'cyan', 'teal', 'indigo', 'purple', 'green'].includes(color)) {
+			families.add('cool');
+		}
+	}
+
+	return Array.from(families);
+}
+
+/**
+ * Optimizes and compresses a Base64 data URL string or Blob by re-encoding to WebP/JPEG with max dimension constraints.
+ */
+export async function compressAndOptimizeBase64(
+	src: string | Blob,
+	options: { maxDimension?: number; quality?: number; mimeType?: string } = {}
+): Promise<{ dataUrl: string; width: number; height: number; bytesSaved: number }> {
+	const maxDim = options.maxDimension ?? 2048;
+	const quality = options.quality ?? 0.82;
+	const targetMime = options.mimeType ?? 'image/webp';
+
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.crossOrigin = 'Anonymous';
+		img.onload = (): void => {
+			try {
+				let width = img.naturalWidth || 400;
+				let height = img.naturalHeight || 300;
+
+				let origSize = 0;
+				if (typeof src === 'string' && src.startsWith('data:')) {
+					origSize = Math.round((src.length * 3) / 4);
+				} else if (src instanceof Blob) {
+					origSize = src.size;
+				}
+
+				if (width > maxDim || height > maxDim) {
+					if (width > height) {
+						height = Math.round((height * maxDim) / width);
+						width = maxDim;
+					} else {
+						width = Math.round((width * maxDim) / height);
+						height = maxDim;
+					}
+				}
+
+				const canvas = createEl('canvas');
+				canvas.width = width;
+				canvas.height = height;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					reject(new Error('Failed to get 2D canvas context'));
+					return;
+				}
+
+				// White background for PNG transparency conversion if converting to JPEG
+				if (targetMime === 'image/jpeg') {
+					ctx.fillStyle = '#ffffff';
+					ctx.fillRect(0, 0, width, height);
+				}
+
+				ctx.drawImage(img, 0, 0, width, height);
+
+				const optimizedDataUrl = canvas.toDataURL(targetMime, quality);
+				const newSize = Math.round((optimizedDataUrl.length * 3) / 4);
+				const bytesSaved = Math.max(0, origSize - newSize);
+
+				resolve({
+					dataUrl: optimizedDataUrl,
+					width,
+					height,
+					bytesSaved,
+				});
+			} catch (err) {
+				reject(err instanceof Error ? err : new Error(typeof err === 'string' ? err : 'Failed to optimize image'));
+			}
+		};
+		img.onerror = (err): void => reject(err instanceof Error ? err : new Error('Failed to load image for optimization'));
+
+		if (typeof src === 'string') {
+			img.src = src;
+		} else {
+			img.src = URL.createObjectURL(src);
+		}
+	});
+}
+
 
 

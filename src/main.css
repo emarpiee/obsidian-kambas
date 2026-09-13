@@ -63,6 +63,49 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 }
 
+/* Loupe Inspector CSS */
+.kambas-loupe-inspector {
+	position: fixed;
+	width: var(--kambas-loupe-size, 220px);
+	height: var(--kambas-loupe-size, 220px);
+	left: var(--kambas-loupe-left, 0px);
+	top: var(--kambas-loupe-top, 0px);
+	border: 3px solid var(--interactive-accent);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 12px rgba(255, 255, 255, 0.3);
+	pointer-events: none;
+	z-index: 9999;
+	overflow: hidden;
+	background-color: var(--background-primary);
+	will-change: left, top;
+}
+
+.kambas-loupe-shape-circle {
+	border-radius: 50%;
+}
+
+.kambas-loupe-shape-rounded {
+	border-radius: 20px;
+}
+
+.kambas-loupe-shape-square {
+	border-radius: 4px;
+}
+
+.kambas-loupe-inner {
+	position: absolute;
+	top: 0;
+	left: 0;
+	pointer-events: none;
+	transform-origin: 0 0;
+	width: var(--kambas-loupe-width, 100%);
+	height: var(--kambas-loupe-height, 100%);
+	transform: var(--kambas-loupe-transform, none);
+}
+
+.kambas-loupe-inner * {
+	pointer-events: none !important;
+}
+
 
 /* Image Transformation utility classes */
 .canvas-node.kambas-img-flip-h img {

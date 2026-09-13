@@ -2,6 +2,7 @@ import './main.css';
 import { ItemView, Menu, Plugin } from 'obsidian';
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
 import { CanvasKeyboardPan } from './canvas/CanvasKeyboardPan';
+import { CanvasLoupeInspector } from './canvas/CanvasLoupeInspector';
 import { CanvasItemView } from './canvas/CanvasTypes';
 import { getText } from './i18n';
 import { FolderSuggestModal } from './modals/FolderSuggestModal';
@@ -12,6 +13,7 @@ export default class KambasPlugin extends Plugin {
 	public settings!: KambasSettings;
 	private canvasImageHandler!: CanvasImageHandler;
 	public canvasKeyboardPan!: CanvasKeyboardPan;
+	private canvasLoupeInspector!: CanvasLoupeInspector;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -21,6 +23,8 @@ export default class KambasPlugin extends Plugin {
 
 		this.canvasKeyboardPan = new CanvasKeyboardPan(this, () => this.settings.keyboardPan);
 		this.canvasKeyboardPan.registerEvents();
+
+		this.canvasLoupeInspector = new CanvasLoupeInspector(this);
 
 		// Add Settings Tab to Obsidian Settings
 		this.addSettingTab(new KambasSettingTab(this.app, this));
@@ -247,6 +251,16 @@ export default class KambasPlugin extends Plugin {
 						});
 				});
 			}
+
+			if (hasAnyImage) {
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item.setTitle(t.optimizeImageSize)
+						.setIcon('minimize-2')
+						.onClick(() => {
+							void this.canvasImageHandler.optimizeSelectedEmbeddedImages(activeView, targetNodeEl);
+						});
+				});
+			}
 		};
 
 		// Single node context menu
@@ -375,6 +389,9 @@ export default class KambasPlugin extends Plugin {
 		}
 		if (this.canvasKeyboardPan) {
 			this.canvasKeyboardPan.stopPan(true);
+		}
+		if (this.canvasLoupeInspector) {
+			this.canvasLoupeInspector.destroy();
 		}
 	}
 
