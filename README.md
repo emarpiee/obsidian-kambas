@@ -56,13 +56,23 @@ A right-click context menu appears on any canvas node. For image nodes, this inc
 | :--- | :--- |
 | **Flip horizontal / vertical** | Mirror the image along its X or Y axis (persisted across virtualized canvas nodes). |
 | **Toggle grayscale** | Apply a CSS grayscale filter to evaluate value structure and contrast without color distraction. |
-| **Color palette** | Extract and display dominant color swatches as an overlay on the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button. |
+| **Toggle color palette** | Extract and display dominant color swatches as an overlay on the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button. |
 | **Change opacity** | Set transparency (0–100%) on any node type — images, text cards, file embeds, or groups. |
 | **Reset to original size** | Restore a scaled node to its native pixel dimensions. |
 | **Copy media to clipboard** | Copy the raw image data from the canvas node to the system clipboard. |
 | **Swap media…** | Replace the current image or video with another from your vault, a local file, or the clipboard — preserving position and aspect ratio. |
 | **Embed in canvas file…** | Convert a vault-linked file node into an inline Base64 data URI (with optional deletion of the source file). |
-| **Move / Copy media to…** | Relocate or duplicate a vault-linked media file to another folder using a fuzzy-finder picker. |
+| **Move / Copy media to…** | Relocate or duplicate a vault-linked media file using a modal picker with clean incremental numbering (`canvas_image-01`) and customizable numbering formats. |
+
+---
+
+### Loupe Inspector Tool
+
+Inspect fine image details, textures, and artwork without altering canvas zoom levels:
+
+- **Hotkey Lens Toggle**: Press `Q` (configurable) over any canvas image node to open an interactive magnifying loupe lens.
+- **Smooth Mouse Tracking**: Features smooth dampening interpolation for fluid cursor movement over image details.
+- **Customizable Optics**: Adjust magnification power (1.5x–10.0x), lens size (100px–600px), and lens shape (`circle`, `square`, `rounded`) in settings.
 
 ---
 
@@ -75,11 +85,28 @@ When you paste from clipboard or drag-and-drop files onto the canvas, Kambas int
 
 Multi-file drops are handled in a single batch operation. The **Hide media label** setting suppresses the technical data URI header that would otherwise appear above embedded image cards, giving a clean card-style appearance.
 
+#### Base64 Optimization & Compression
+
+To prevent bloated `.canvas` file sizes and preserve canvas performance:
+
+- **Auto-Compress on Ingest**: Enable automatic WebP compression on incoming pasted/dropped Base64 images.
+- **Resolution & Quality Controls**: Configure maximum pixel dimension caps (default: 2048px) and WebP quality targets (0.1–1.0).
+
+---
+
+### Advanced Media Organization & Naming
+
+When moving or copying media assets within your vault:
+
+- **Media Filename Strategy**: Standardized default naming (`canvas_image-01`) eliminates irregular filenames.
+- **Flexible Numbering Formats**: Select from Zero-Padding (`01, 02...`), Roman Numerals (`I, II...` / `i, ii...`), Letters (`A, B...` / `a, b...`), or Arabic Numerals (`1, 2...`).
+- **Batch Memory & Badges**: Real-time destination folder badges display target paths while remembering your selected numbering style across batch operations.
+
 ---
 
 ### Filter Panel (Tags & Colors)
 
-The Filter Panel is a floating, draggable, resizable panel accessible from the **Tags** button in the canvas toolbar. It has two tabs — **Tags** and **Colors** — that work together to isolate, explore, and focus on specific subsets of canvas image nodes. Active filter indicators (dot badges) appear on each tab header whenever active filters exist within that tab.
+The Filter Panel is a floating, draggable, resizable panel accessible from the **Tags** button in the canvas toolbar. It has two tabs — **Tags** and **Colors** — that work together to isolate, explore, and focus on specific subsets of canvas image nodes. Active filter indicators (dot badges) appear on each tab header whenever active filters exist within that tab. Filter state presets can also be saved and loaded directly from the panel.
 
 #### How Filtering Works
 
@@ -122,11 +149,11 @@ Hovering over a color row **outlines the matching canvas images** with an accent
 
 #### Tags Tab
 
-- **Tag assignment**: Right-click any node to open the tag modal. Type multiple comma-separated phrases to auto-format them into kebab-case tags (e.g. `character design, concept art` → `#character-design`, `#concept-art`). Press `Enter` to apply immediately.
+- **Tag assignment**: Right-click any node to open the tag modal. Active tag chips display cleanly above the input field. Type multiple comma-separated phrases to auto-format them into kebab-case tags (e.g. `character design, concept art` → `#character-design`, `#concept-art`). Press `Enter` to apply immediately.
 - **Tag badges**: Tags render as small badges on canvas nodes. Badge position (outside-below or inside-bottom-left) is configurable in settings.
 - **Toggle badge visibility**: The **Toggle tag visibility** command palette action shows or hides all badges on the current canvas.
 - **Delete tag**: Each tag row has a trash icon that permanently removes the tag from every node in the canvas.
-- **Search**: A search field at the top of the tab filters the list in real time.
+- **Search & Presets**: A search field at the top of the tab filters the list in real time, with preset options to save and reload filter configurations.
 - **Clear**: The **×** button inside the search bar clears all active includes and excludes for the Tags tab simultaneously.
 
 #### Colors Tab
@@ -152,6 +179,12 @@ Hovering over a color row **outlines the matching canvas images** with an accent
 
 ---
 
+### Multi-Window & Popout Canvas Support
+
+Kambas provides full compatibility for Obsidian popout windows. Keyboard pan controls, Loupe inspector lenses, canvas hotkeys, filter panel overlays, and image transform state work reliably across popout canvas windows.
+
+---
+
 ### Internationalization (i18n)
 
 Kambas includes complete native localization for **13 languages**, matching your Obsidian UI language setting automatically:
@@ -166,6 +199,8 @@ Kambas includes complete native localization for **13 languages**, matching your
 | :--- | :--- |
 | Pan Up / Down / Left / Right | `W` / `S` / `A` / `D` or Arrow Keys |
 | Zoom In / Out | `+` / `-` |
+| Selection Zoom to Fit | `Space` |
+| Loupe Inspector | `Q` |
 | Toggle tag visibility | Command Palette |
 
 Pan speed and zoom sensitivity are configurable in **Settings > Kambas**.
@@ -190,6 +225,15 @@ Open **Obsidian Settings > Kambas** to configure:
 | **Include accent colors** | Include low-coverage minor accent colors in HSV filter extraction. |
 | **Display color names** | Display color name text labels alongside swatches in the color filter list. |
 | **Include card colors** | Include native Obsidian canvas card/node border and background colors in filtering. |
+| **Auto-optimize Base64** | Automatically compress pasted/dropped Base64 images to WebP data URIs. |
+| **Base64 max dimension** | Maximum pixel resolution limit for Base64 image compression (default: 2048px). |
+| **Base64 quality** | WebP compression quality factor (0.1–1.0). |
+| **Loupe hotkey** | Key shortcut to toggle the Loupe magnifier lens (default: `q`). |
+| **Loupe zoom level** | Magnification factor for the Loupe lens (1.5x–10.0x). |
+| **Loupe size** | Diameter/size of the Loupe lens in pixels (100px–600px). |
+| **Loupe shape** | Shape of the magnifier lens (`circle`, `square`, `rounded`). |
+| **Loupe smoothing** | Dampened movement interpolation for smooth mouse tracking. |
+| **Selection zoom hotkey** | Hotkey to zoom and fit viewport around selected canvas nodes (default: `Space`). |
 
 ---
 
