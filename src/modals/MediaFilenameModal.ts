@@ -1,10 +1,12 @@
 import { App, Modal, Setting } from 'obsidian';
+import { NumberFormatStyle, formatIncrementalNumber } from '../utils/numberFormatters';
 
 export type NamingStrategyOption = 'default' | 'tag' | 'custom' | 'cancel';
 
 export interface MediaFilenameResult {
 	option: NamingStrategyOption;
 	customName?: string;
+	numberFormat: NumberFormatStyle;
 	applyToAll: boolean;
 }
 
@@ -17,6 +19,7 @@ export class MediaFilenameModal extends Modal {
 	private resolved = false;
 
 	private selectedOption: NamingStrategyOption = 'default';
+	private selectedNumberFormat: NumberFormatStyle = 'padded_2';
 	private customNameInput = '';
 
 	constructor(
@@ -47,12 +50,6 @@ export class MediaFilenameModal extends Modal {
 
 		let applyAll = false;
 
-		// Tag preview string
-		const cleanedTags = this.tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
-		const tagPreviewName = cleanedTags.length > 0
-			? `${cleanedTags.join('-')}-01`
-			: '(No tags on current media - will fallback to default)';
-
 		// 1. Radio / Button group for naming strategy
 		const optionsContainer = contentEl.createDiv({ cls: 'kambas-naming-options' });
 
@@ -69,7 +66,7 @@ export class MediaFilenameModal extends Modal {
 		const tagRadio = optTag.createEl('input', { type: 'radio', attr: { name: 'naming_opt', id: 'opt_tag' } });
 		const tagLabel = optTag.createEl('label', { attr: { for: 'opt_tag' } });
 		tagLabel.createDiv({ cls: 'kambas-opt-title', text: 'Tag Filename' });
-		tagLabel.createDiv({ cls: 'kambas-opt-subtitle', text: tagPreviewName });
+		const tagSubEl = tagLabel.createDiv({ cls: 'kambas-opt-subtitle' });
 
 		// Option 3: Custom Filename
 		const optCustom = optionsContainer.createDiv({ cls: 'kambas-naming-option' });
@@ -84,6 +81,18 @@ export class MediaFilenameModal extends Modal {
 			cls: 'kambas-custom-filename-input'
 		});
 		customInput.disabled = true;
+
+		const updateSubtitles = (): void => {
+			const cleanedTags = this.tags.map((t) => t.replace(/^#+/, '').trim().replace(/[/\\?%*:|"<>]/g, '-')).filter(Boolean);
+			const numStr = formatIncrementalNumber(1, this.selectedNumberFormat);
+			tagSubEl.setText(
+				cleanedTags.length > 0
+					? `${cleanedTags.join('-')}-${numStr}`
+					: '(No tags on current media - will fallback to default)'
+			);
+		};
+
+		updateSubtitles();
 
 		// Radio selection change listener
 		const updateSelection = (selected: NamingStrategyOption): void => {
@@ -108,11 +117,30 @@ export class MediaFilenameModal extends Modal {
 			this.customNameInput = (e.target as HTMLInputElement).value;
 		});
 
-		// 2. Batch toggle option
+		// 2. Numbering Format Dropdown Setting
+		new Setting(contentEl)
+			.setName('Numbering format')
+			.setDesc('Format used for incremental counters (e.g., when duplicate names exist or in batch exports).')
+			.addDropdown((dd) => {
+				dd.addOption('padded_2', '01, 02, 03... (2 Digits)')
+					.addOption('padded_3', '001, 002, 003... (3 Digits)')
+					.addOption('simple', '1, 2, 3... (Unpadded)')
+					.addOption('roman_upper', 'I, ii, iii, iv... (Roman upper)')
+					.addOption('roman_lower', 'I, ii, iii, iv... (Roman lower)')
+					.addOption('letter_upper', 'A, b, c... (Alphabet upper)')
+					.addOption('letter_lower', 'A, b, c... (Alphabet lower)')
+					.setValue('padded_2')
+					.onChange((val: string) => {
+						this.selectedNumberFormat = val as NumberFormatStyle;
+						updateSubtitles();
+					});
+			});
+
+		// 3. Batch toggle option
 		if (this.remainingCount > 1) {
 			new Setting(contentEl)
 				.setName(`Apply to all ${this.remainingCount} remaining items`)
-				.setDesc('Uses the selected naming strategy for all selected media items.')
+				.setDesc('Uses the selected naming strategy and numbering format for all remaining items.')
 				.addToggle((toggle) =>
 					toggle.setValue(false).onChange((v) => {
 						applyAll = v;
@@ -120,7 +148,7 @@ export class MediaFilenameModal extends Modal {
 				);
 		}
 
-		// 3. Action Buttons
+		// 4. Action Buttons
 		const btnContainer = contentEl.createDiv({ cls: 'modal-button-container' });
 
 		const cancelBtn = btnContainer.createEl('button', { text: 'Cancel' });
@@ -138,6 +166,7 @@ export class MediaFilenameModal extends Modal {
 			this.onChoose({
 				option: this.selectedOption,
 				customName: this.customNameInput.trim(),
+				numberFormat: this.selectedNumberFormat,
 				applyToAll: applyAll
 			});
 		});
@@ -146,7 +175,7 @@ export class MediaFilenameModal extends Modal {
 	onClose(): void {
 		this.contentEl.empty();
 		if (!this.resolved) {
-			this.onChoose({ option: 'cancel', applyToAll: false });
+			this.onChoose({ option: 'cancel', numberFormat: this.selectedNumberFormat, applyToAll: false });
 		}
 	}
 }
