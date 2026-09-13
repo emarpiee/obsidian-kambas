@@ -52,17 +52,15 @@ The result is a **single portable `.canvas` file** — no attachments folder, no
 
 Right-click any canvas node to access enhanced controls:
 
-| Command | Description |
-| :--- | :--- |
-| **Flip horizontal / vertical** | Mirror the image along its X or Y axis (persisted across canvas re-renders). |
-| **Toggle grayscale** | Apply a CSS grayscale filter to evaluate light values, structure, and contrast without color distraction. |
-| **Toggle color palette** | Extract and display dominant color swatches overlaying the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button. |
-| **Change opacity** | Set transparency (0–100%) on any node type — images, text cards, file embeds, or groups. |
-| **Reset to original size** | Restore a scaled node to its native pixel dimensions. |
-| **Copy media to clipboard** | Copy raw image data directly to system clipboard. |
-| **Swap media…** | Replace an existing image or video with another from your vault, local disk, or clipboard — preserving node position and aspect ratio. |
-| **Embed in canvas file…** | Convert vault-linked image nodes into inline Base64 data URIs (with optional deletion of source vault file). |
-| **Move / Copy media to…** | Relocate or duplicate vault-linked media files using a modal picker with clean incremental numbering (`canvas_image-01`). |
+- **Flip horizontal / vertical**: Mirror the image along its X or Y axis (persisted across canvas re-renders).
+- **Toggle grayscale**: Apply a CSS grayscale filter to evaluate light values, structure, and contrast without color distraction.
+- **Toggle color palette**: Extract and display dominant color swatches overlaying the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button.
+- **Change opacity**: Set transparency (0–100%) on any node type — images, text cards, file embeds, or groups.
+- **Reset to original size**: Restore a scaled node to its native pixel dimensions.
+- **Copy media to clipboard**: Copy raw image data directly to system clipboard.
+- **Swap media…**: Replace an existing image or video with another from your vault, local disk, or clipboard — preserving node position and aspect ratio.
+- **Embed in canvas file…**: Convert vault-linked image nodes into inline Base64 data URIs (with optional deletion of source vault file).
+- **Move / Copy media to…**: Relocate or duplicate vault-linked media files using a modal picker with clean incremental numbering (`canvas_image-01`).
 
 ---
 
@@ -148,13 +146,11 @@ Native localization support for **14 languages**, matching Obsidian UI automatic
 
 ### Keyboard Navigation
 
-| Action | Default Shortcut |
-| :--- | :--- |
-| **Pan Canvas (Up / Down / Left / Right)** | `W` / `S` / `A` / `D` or `Arrow Keys` |
-| **Zoom In / Out** | `+` / `-` |
-| **Selection Zoom to Fit** | `Space` |
-| **Loupe Inspector Lens** | `Q` |
-| **Toggle Tag Visibility** | Command Palette |
+- **Pan Canvas (Up / Down / Left / Right)**: `W` / `S` / `A` / `D` or `Arrow Keys`
+- **Zoom In / Out**: `+` / `-`
+- **Selection Zoom to Fit**: `Space`
+- **Loupe Inspector Lens**: `Q`
+- **Toggle Tag Visibility**: Command Palette
 
 ---
 
