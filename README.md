@@ -3,7 +3,7 @@
 
 # Kambas
 
-**A PureRef-inspired visual workspace and image toolkit for Obsidian Canvas.**
+**An image toolkit and enhanced visual workspace for Obsidian Canvas.**
 
 Kambas transforms Obsidian Canvas into a self-contained, portable reference environment for designers, researchers, and visual creators. Its core feature is **embedded image storage** — images are encoded as Base64 data URIs and stored directly inside the `.canvas` file itself, eliminating vault clutter and broken link dependencies entirely.
 
@@ -50,46 +50,44 @@ The result is a **single portable `.canvas` file** — no attachments folder, no
 
 ### Image & Node Manipulation
 
-A right-click context menu appears on any canvas node. For image nodes, this includes:
+Right-click any canvas node to access enhanced controls:
 
 | Command | Description |
 | :--- | :--- |
-| **Flip horizontal / vertical** | Mirror the image along its X or Y axis (persisted across virtualized canvas nodes). |
-| **Toggle grayscale** | Apply a CSS grayscale filter to evaluate value structure and contrast without color distraction. |
-| **Toggle color palette** | Extract and display dominant color swatches as an overlay on the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button. |
+| **Flip horizontal / vertical** | Mirror the image along its X or Y axis (persisted across canvas re-renders). |
+| **Toggle grayscale** | Apply a CSS grayscale filter to evaluate light values, structure, and contrast without color distraction. |
+| **Toggle color palette** | Extract and display dominant color swatches overlaying the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button. |
 | **Change opacity** | Set transparency (0–100%) on any node type — images, text cards, file embeds, or groups. |
 | **Reset to original size** | Restore a scaled node to its native pixel dimensions. |
-| **Copy media to clipboard** | Copy the raw image data from the canvas node to the system clipboard. |
-| **Swap media…** | Replace the current image or video with another from your vault, a local file, or the clipboard — preserving position and aspect ratio. |
-| **Embed in canvas file…** | Convert a vault-linked file node into an inline Base64 data URI (with optional deletion of the source file). |
-| **Move / Copy media to…** | Relocate or duplicate a vault-linked media file using a modal picker with clean incremental numbering (`canvas_image-01`) and customizable numbering formats. |
+| **Copy media to clipboard** | Copy raw image data directly to system clipboard. |
+| **Swap media…** | Replace an existing image or video with another from your vault, local disk, or clipboard — preserving node position and aspect ratio. |
+| **Embed in canvas file…** | Convert vault-linked image nodes into inline Base64 data URIs (with optional deletion of source vault file). |
+| **Move / Copy media to…** | Relocate or duplicate vault-linked media files using a modal picker with clean incremental numbering (`canvas_image-01`). |
 
 ---
 
 ### Loupe Inspector Tool
 
-Inspect fine image details, textures, and artwork without altering canvas zoom levels:
+Inspect fine image details and artwork without changing canvas zoom levels:
 
-- **Hotkey Lens Toggle**: Press `Q` (configurable) over any canvas image node to open an interactive magnifying loupe lens.
-- **Smooth Mouse Tracking**: Features smooth dampening interpolation for fluid cursor movement over image details.
-- **Customizable Optics**: Adjust magnification power (1.5x–10.0x), lens size (100px–600px), and lens shape (`circle`, `square`, `rounded`) in settings.
+- **Hotkey Lens Toggle**: Press `Q` (configurable) over any image node to open an interactive magnifying loupe lens.
+- **Smooth Tracking**: Features dampened motion interpolation for smooth, precise cursor movement over image details.
+- **Custom Optics**: Adjust magnification power (1.5x–10.0x), lens size (100px–600px), and lens shape (`circle`, `square`, `rounded`) in settings.
 
 ---
 
 ### Storage & Ingestion
 
-When you paste from clipboard or drag-and-drop files onto the canvas, Kambas intercepts the action and presents a choice:
+Pasting or dropping files onto the canvas presents an instant choice:
 
-- **Embed in canvas** — encode the image as a Base64 data URI stored inside the `.canvas` file.
-- **Save to vault** — write the file to a configured attachment folder as a standard Obsidian file link.
+- **Embed in canvas** — encode image as a Base64 data URI stored inside `.canvas`.
+- **Save to vault** — save to a configured attachment folder as a standard file link.
 
-Multi-file drops are handled in a single batch operation. The **Hide media label** setting suppresses the technical data URI header that would otherwise appear above embedded image cards, giving a clean card-style appearance.
+Multi-file drops are processed in a single batch. The **Hide media label** setting suppresses technical data URI headers above embedded image cards for a clean visual presentation.
 
 #### Base64 Optimization & Compression
 
-To prevent bloated `.canvas` file sizes and preserve canvas performance:
-
-- **Auto-Compress on Ingest**: Enable automatic WebP compression on incoming pasted/dropped Base64 images.
+- **Auto-Compress on Ingest**: Automatically compress pasted or dropped Base64 images to WebP data URIs.
 - **Resolution & Quality Controls**: Configure maximum pixel dimension caps (default: 2048px) and WebP quality targets (0.1–1.0).
 
 ---
@@ -98,92 +96,53 @@ To prevent bloated `.canvas` file sizes and preserve canvas performance:
 
 When moving or copying media assets within your vault:
 
-- **Media Filename Strategy**: Standardized default naming (`canvas_image-01`) eliminates irregular filenames.
-- **Flexible Numbering Formats**: Select from Zero-Padding (`01, 02...`), Roman Numerals (`I, II...` / `i, ii...`), Letters (`A, B...` / `a, b...`), or Arabic Numerals (`1, 2...`).
-- **Batch Memory & Badges**: Real-time destination folder badges display target paths while remembering your selected numbering style across batch operations.
+- **Standardized Naming**: Default naming format (`canvas_image-01`) eliminates irregular filenames.
+- **Flexible Numbering Formats**: Choose from Zero-Padding (`01, 02...`), Roman Numerals (`I, II...` / `i, ii...`), Letters (`A, B...` / `a, b...`), or Arabic Numerals (`1, 2...`).
+- **Batch Memory & Badges**: Target destination badges display target paths while remembering numbering choices across operations.
 
 ---
 
 ### Filter Panel (Tags & Colors)
 
-The Filter Panel is a floating, draggable, resizable panel accessible from the **Tags** button in the canvas toolbar. It has two tabs — **Tags** and **Colors** — that work together to isolate, explore, and focus on specific subsets of canvas image nodes. Active filter indicators (dot badges) appear on each tab header whenever active filters exist within that tab. Filter state presets can also be saved and loaded directly from the panel.
+A floating, resizable, position-remembered panel accessed from the **Tags** button in the canvas toolbar.
 
 #### How Filtering Works
 
-Kambas uses an **include + exclude** model per tab. Each row in the filter list cycles through three states on repeated click:
+Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab:
+- **Exclude wins over include**: If a node matches an included tag but also an excluded color, it is hidden.
+- **Non-matching nodes dim**: Filtered-out nodes dim cleanly (adjustable opacity down to 12%) rather than abruptly disappearing.
 
-| State | Icon | Visual | Behavior |
-| :--- | :--- | :--- | :--- |
-| **Neutral** | ☐ | Default | Not involved in filtering |
-| **Include** ✓ | ☑ | Blue accent background | Node must have this tag or color to be visible |
-| **Exclude** ✗ | ✕ | Red background | Node is hidden if it has this tag or color, even if it also matches an include filter |
+#### Contextual "In View" Intelligence
 
-**Exclude wins over include.** If a node matches an included tag but also has an excluded color, it is hidden. This allows fine-grained refinement: include a broad category, then exclude specific attributes within it.
+- **"N in view" badges**: Displays how many currently visible nodes co-contain each tag or color.
+- **Auto-Sorting**: Rows sort dynamically by visible count to surface relevant co-occurring attributes first.
+- **Dimmed Unrelated Rows**: Attributes absent from visible nodes display at reduced opacity (45%).
 
-When any filter is active, nodes that do not match are dimmed rather than removed. The dim opacity is adjustable via a slider in the panel footer (default: 12%).
+#### Bidirectional Cross-Highlighting
 
-#### Contextual Awareness — "In View" Intelligence
-
-When a filter is active, the panel automatically surfaces which tags and colors are **co-present in the currently visible nodes** — without any hovering or manual inspection needed.
-
-- **"N in view" badge**: Each row shows a secondary amber badge indicating how many of the currently-visible nodes also carry that tag or color.
-- **Related-first sorting**: Rows are sorted by their visible count, so the most co-occurring tags and colors always appear at the top.
-- **Divider**: A "Not in current view" section separator groups rows that have zero presence in the visible set, keeping the relevant options immediately accessible.
-- **Dimmed unrelated rows**: Tags or colors absent from the current view are displayed at reduced opacity (45%), hoverable to full opacity on demand.
-
-**Example**: You include Gray in the Color tab. The panel immediately shows:
-```
-☑  Gray        [20 in view]   20 images    ← active include
-☐  Red         [3 in view]    3 images     ← 3 visible gray images also contain red
-☐  Orange      [2 in view]    17 images    ← 2 visible gray images also contain orange
-───────── NOT IN CURRENT VIEW ─────────
-☐  White                      14 images    ← dimmed; absent from all visible images
-☐  Black                      5 images     ← dimmed
-```
-
-You can then click Red once (include) or twice (exclude) to refine without leaving the panel.
-
-#### Cross-Highlighting
-
-Hovering over a color row **outlines the matching canvas images** with an accent-colored glow, letting you preview which nodes would be affected before committing. Hovering over a canvas image node **highlights its corresponding color rows** in the panel and dims unrelated rows, making the relationship bidirectional and instantaneous.
+- Hovering filter rows highlights matching canvas elements with custom borders.
+- Hovering canvas image nodes highlights their corresponding tag and color rows in the panel.
 
 #### Tags Tab
 
-- **Tag assignment**: Right-click any node to open the tag modal. Active tag chips display cleanly above the input field. Type multiple comma-separated phrases to auto-format them into kebab-case tags (e.g. `character design, concept art` → `#character-design`, `#concept-art`). Press `Enter` to apply immediately.
-- **Tag badges**: Tags render as small badges on canvas nodes. Badge position (outside-below or inside-bottom-left) is configurable in settings.
-- **Toggle badge visibility**: The **Toggle tag visibility** command palette action shows or hides all badges on the current canvas.
-- **Delete tag**: Each tag row has a trash icon that permanently removes the tag from every node in the canvas.
-- **Search & Presets**: A search field at the top of the tab filters the list in real time, with preset options to save and reload filter configurations.
-- **Clear**: The **×** button inside the search bar clears all active includes and excludes for the Tags tab simultaneously.
+- **Tag Assignment**: Right-click nodes or use tag modal to add comma-separated kebab-case tags (`#character-design`).
+- **Custom Tag Colors**: Set individual tag background and text colors directly in the tag modal or plugin settings.
+- **Tag Badges & Visibility**: Toggle canvas tag badge display or change badge positions (outside-below or inside bottom-left).
+- **Tag Management**: Rename tags canvas-wide, change tag colors, or delete tags directly from the panel.
+- **Presets & Search**: Save, load, search, and clear filter configurations.
 
 #### Colors Tab
 
-- **Dominant color extraction**: Kambas analyses each image's pixel data using HSV color buckling and classifies it into up to 13 named chromatic and neutral color categories: Black, Gray, White, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink.
-- **Canvas Card Color Filtering**: Optionally filter by native Obsidian canvas node colors (Red, Orange, Yellow, Green, Cyan, Purple, Gray).
-- **Multi-color per image**: An image can belong to multiple color buckets (e.g. a landscape with a red tree on a gray sky belongs to both Red and Gray).
-- **Extraction modes** (configurable in settings):
-  - **Auto** — colors are extracted lazily in the background when the Colors tab is opened.
-  - **Manual** — extraction runs only when the "Scan canvas colors" button is clicked.
-  - **Disabled** — color extraction is turned off entirely.
-- **Accent & Name Customization**: Configurable settings to include/ignore minor accent colors and show/hide text color names next to swatches.
-- **Search**: Filter the color list by name in real time.
-- **Clear**: The **×** button inside the search bar clears all active color includes and excludes.
-
-#### Shared Filter Behaviours
-
-- **Auto zoom-to-fit**: Toggling any filter automatically pans and zooms the viewport to frame all matching visible nodes. Toggle **Zoom on select** in settings to enable or disable this.
-- **Persistent filters**: Active includes and excludes survive panel close, canvas reopen, and Obsidian restart — stored per canvas file path in local storage.
-- **Toolbar indicator**: The toolbar button remains lit (accent color) whenever any filter is active, even with the panel closed.
-- **Selection guard**: Hidden nodes are automatically deselected during rubber-band selection and `Ctrl+A`, preventing accidental batch operations on filtered-out content.
-- **Drag & resize**: The panel header can be dragged to any position. A plain click on the header never moves the panel — dragging requires actual mouse movement. The panel size is also resizable and persisted.
+- **Dominant Color Extraction**: HSV color classification into up to 13 color categories: Black, Gray, White, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink.
+- **Canvas Card Color Filtering**: Filter by Obsidian node border/background colors.
+- **Extraction Modes**: Configurable to **Auto** (on tab open), **Manual** ("Scan canvas colors" button), or **Disabled**.
 
 ---
 
 ### Internationalization (i18n)
 
-Kambas includes complete native localization for **13 languages**, matching your Obsidian UI language setting automatically:
-
-- **English**, **Deutsch**, **Français**, **Español**, **日本語**, **简体中文**, **繁體中文**, **한국어**, **Русский**, **Italiano**, **Português**, **Nederlands**.
+Native localization support for **14 languages**, matching Obsidian UI automatically:
+- English, Deutsch, Français, Español, 日本語, 简体中文, 繁體中文, 한국어, Русский, Italiano, Português, Nederlands, العربية, עברית.
 
 ---
 
@@ -191,85 +150,51 @@ Kambas includes complete native localization for **13 languages**, matching your
 
 | Action | Default Shortcut |
 | :--- | :--- |
-| Pan Up / Down / Left / Right | `W` / `S` / `A` / `D` or Arrow Keys |
-| Zoom In / Out | `+` / `-` |
-| Selection Zoom to Fit | `Space` |
-| Loupe Inspector | `Q` |
-| Toggle tag visibility | Command Palette |
-
-Pan speed and zoom sensitivity are configurable in **Settings > Kambas**.
+| **Pan Canvas (Up / Down / Left / Right)** | `W` / `S` / `A` / `D` or `Arrow Keys` |
+| **Zoom In / Out** | `+` / `-` |
+| **Selection Zoom to Fit** | `Space` |
+| **Loupe Inspector Lens** | `Q` |
+| **Toggle Tag Visibility** | Command Palette |
 
 ---
 
 ## Configuration
 
-Open **Obsidian Settings > Kambas** to configure:
+Access settings in **Obsidian Settings > Kambas**:
 
 | Setting | Description |
 | :--- | :--- |
-| **Hide media label** | Hides the raw data URI header above embedded image cards for a cleaner appearance. |
-| **Color palette swatches** | Number of dominant colors to extract and display per image (3–10). |
-| **Palette color separator** | Custom delimiter used when copying all palette colors to clipboard (e.g. `, `, `\n`, ` `). |
-| **Pan speed** | Maximum canvas pan speed per frame (WASD / arrow keys). |
-| **Zoom sensitivity** | Step size for each zoom increment. |
-| **Tag filter dim opacity** | Opacity of hidden nodes while a filter is active (default: 12%). |
-| **Tag badge position** | Outside-below the node, or inside at the bottom-left. |
-| **Zoom on select** | Auto-zoom to fit visible nodes when a filter is toggled. |
-| **Color extraction mode** | Auto, Manual ("Scan canvas colors"), or Disabled. |
-| **Include accent colors** | Include low-coverage minor accent colors in HSV filter extraction. |
-| **Display color names** | Display color name text labels alongside swatches in the color filter list. |
-| **Include card colors** | Include native Obsidian canvas card/node border and background colors in filtering. |
-| **Auto-optimize Base64** | Automatically compress pasted/dropped Base64 images to WebP data URIs. |
-| **Base64 max dimension** | Maximum pixel resolution limit for Base64 image compression (default: 2048px). |
-| **Base64 quality** | WebP compression quality factor (0.1–1.0). |
-| **Loupe hotkey** | Key shortcut to toggle the Loupe magnifier lens (default: `q`). |
-| **Loupe zoom level** | Magnification factor for the Loupe lens (1.5x–10.0x). |
-| **Loupe size** | Diameter/size of the Loupe lens in pixels (100px–600px). |
-| **Loupe shape** | Shape of the magnifier lens (`circle`, `square`, `rounded`). |
-| **Loupe smoothing** | Dampened movement interpolation for smooth mouse tracking. |
+| **Hide media label** | Hides raw data URI header text above embedded image cards. |
+| **Color palette swatches** | Number of dominant colors to extract (3–10). |
+| **Palette color separator** | Delimiter used when copying palette colors (e.g. `, `, `\n`). |
+| **Pan speed & Zoom sensitivity** | Adjust WASD/Arrow pan speeds and viewport zoom step sizes. |
+| **Tag filter dim opacity** | Opacity of non-matching nodes during active filtering (default: 12%). |
+| **Tag badge position** | Position tag badges outside-below or inside bottom-left. |
+| **Zoom on select** | Auto-zoom viewport to fit visible nodes when filters update. |
+| **Auto-close filter panel** | Automatically close panel when losing focus or clicking outside. |
+| **Color extraction mode** | Auto, Manual, or Disabled color extraction. |
+| **Include accent colors** | Include low-coverage minor accent colors in HSV extraction. |
+| **Display color names** | Show color name labels alongside swatches in color filter list. |
+| **Include card colors** | Include native Obsidian canvas card colors in filtering. |
+| **Auto-optimize Base64** | Automatically compress pasted/dropped Base64 images to WebP URIs. |
+| **Base64 max dimension** | Maximum pixel resolution limit for Base64 compression (default: 2048px). |
+| **Base64 quality** | WebP compression quality slider (0.1–1.0). |
+| **Loupe optics** | Hotkey (`Q`), magnification (1.5x–10.0x), lens size (100px–600px), shape, and motion smoothing. |
 | **Selection zoom hotkey** | Hotkey to zoom and fit viewport around selected canvas nodes (default: `Space`). |
-
----
-
-## Technical Notes
-
-### Data Persistence
-
-Kambas stores all node state inside the `.canvas` JSON without touching original image files:
-
-- **`kambasTags`** — array of tag strings, stored as a top-level node property.
-- **`unknownData.kambasFlipH/V`** — horizontal and vertical flip state.
-- **`unknownData.kambasGrayscale`** — grayscale filter toggle.
-- **`unknownData.kambasPalette`** — palette swatch overlay toggle.
-- **`unknownData.kambasOpacity`** — node transparency value.
-- **`unknownData.originalWidth/Height`** — cached native dimensions for reset-to-size.
-
-Filter state (active includes and excludes per canvas file) is stored in Obsidian's local storage, separate from the `.canvas` file itself.
-
-### Trade-offs of Inline Embedding
-
-| Consideration | Detail |
-| :--- | :--- |
-| **Supported formats** | PNG, JPG/JPEG, WebP, GIF, SVG. Non-image files (PDF, audio, video) cannot be Base64-embedded. |
-| **File size** | Base64 encoding adds ~33% to binary size. Large boards with many high-resolution images will produce larger `.canvas` files. |
-| **Performance** | Canvases with dozens of high-resolution embedded images may increase initial render times and memory usage. For ultra-high-resolution archives, native vault attachment linking is recommended. |
-| **Vault indexing** | Embedded Base64 strings inside `.canvas` JSON are not indexed by Obsidian's standard asset search. |
 
 ---
 
 ## Installation
 
 ### Community Plugins
-
-1. Open **Settings > Community Plugins** and disable Restricted Mode.
-2. Click **Browse**, search for **Kambas**, and install.
-3. Enable **Kambas** in the installed plugins list.
+1. Open **Settings > Community Plugins** and turn off Restricted Mode.
+2. Search for **Kambas** and install.
+3. Enable **Kambas** in installed plugins.
 
 ### Manual Installation
-
 1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/emarpiee/obsidian-kambas/releases).
-2. Create `<vault>/.obsidian/plugins/obsidian-kambas/` and copy the files inside.
-3. Reload Obsidian and enable **Kambas** under **Community Plugins**.
+2. Create folder `<vault>/.obsidian/plugins/obsidian-kambas/`.
+3. Copy downloaded files inside, reload Obsidian, and enable plugin.
 
 ---
 
@@ -277,7 +202,7 @@ Filter state (active includes and excludes per canvas file) is stored in Obsidia
 
 ```bash
 npm install        # Install dependencies
-npm run dev        # Start dev build watcher
+npm run dev        # Dev build watcher
 npm run health     # Type-check and lint
 npm run build      # Production bundle
 ```
@@ -286,7 +211,7 @@ npm run build      # Production bundle
 
 ## Support
 
-If Kambas improves your workflow, consider supporting its development:
+If Kambas improves your workflow, consider supporting development:
 
 - [Ko-fi](https://ko-fi.com/emarpiee)
 - [PayPal](https://paypal.me/emarpiee)
