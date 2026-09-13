@@ -130,6 +130,8 @@ export interface TranslationSchema {
 	tagBadgePositionInside: string;
 	tagZoomOnSelectName: string;
 	tagZoomOnSelectDesc: string;
+	tagPanelAutoCloseName: string;
+	tagPanelAutoCloseDesc: string;
 	paletteCopySeparatorName: string;
 	paletteCopySeparatorDesc: string;
 	colorExtractModeName: string;
@@ -347,6 +349,9 @@ const en: TranslationSchema = {
 	tagZoomOnSelectName: 'Auto-zoom on tag selection',
 	tagZoomOnSelectDesc:
 		'Automatically zoom and fit visible elements when selecting or clearing tag filters in the panel.',
+	tagPanelAutoCloseName: 'Auto-close panel when unfocused',
+	tagPanelAutoCloseDesc:
+		'Automatically close the filter panel when clicking outside or losing focus.',
 	paletteCopySeparatorName: 'Color palette copy separator',
 	paletteCopySeparatorDesc:
 		'Delimiter used when clicking the copy button on a color palette to copy all hex values to clipboard.',
@@ -568,6 +573,8 @@ const zh: TranslationSchema = {
 	tagBadgePositionInside: '内侧（左下角）',
 	tagZoomOnSelectName: '选择标签时自动缩放',
 	tagZoomOnSelectDesc: '在面板中选择或清除标签筛选时，自动缩放并适应可见元素。',
+	tagPanelAutoCloseName: '失去焦点时自动关闭面板',
+	tagPanelAutoCloseDesc: '在点击面板外部或失去焦点时自动关闭筛选面板。',
 	paletteCopySeparatorName: '调色板复制分隔符',
 	paletteCopySeparatorDesc:
 		'点击调色板复制按钮将所有十六进制颜色复制到剪贴板时使用的分隔符。',
@@ -795,6 +802,8 @@ const zhTW: TranslationSchema = {
 	tagBadgePositionInside: '內側（左下角）',
 	tagZoomOnSelectName: '選擇標籤時自動縮放',
 	tagZoomOnSelectDesc: '在面板中選擇或清除標籤篩選時，自動縮放並適應可見元素。',
+	tagPanelAutoCloseName: '失去焦點時自動關閉面板',
+	tagPanelAutoCloseDesc: '在點擊面板外部或失去焦點時自動關閉篩選面板。',
 	paletteCopySeparatorName: '調色板複製分隔符',
 	paletteCopySeparatorDesc:
 		'點擊調色板複製按鈕將所有十六進位顏色複製至剪貼簿時使用的分隔符。',
@@ -1009,6 +1018,9 @@ const es: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automático al seleccionar etiqueta',
 	tagZoomOnSelectDesc:
 		'Ajusta y hace zoom automáticamente en los elementos visibles al seleccionar o limpiar filtros de etiquetas.',
+	tagPanelAutoCloseName: 'Cerrar panel al perder el foco',
+	tagPanelAutoCloseDesc:
+		'Cierra automáticamente el panel de filtros al hacer clic fuera o perder el foco.',
 	paletteCopySeparatorName: 'Separador al copiar paleta de colores',
 	paletteCopySeparatorDesc:
 		'Delimitador usado al hacer clic en el botón de copiar paleta para copiar todos los valores hex al portapapeles.',
@@ -1241,6 +1253,9 @@ const fr: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automatique lors de la sélection d’étiquette',
 	tagZoomOnSelectDesc:
 		'Zoome et ajuste automatiquement les éléments visibles lors de la sélection ou de l’effacement des filtres d’étiquettes.',
+	tagPanelAutoCloseName: 'Fermer automatiquement le panneau hors focus',
+	tagPanelAutoCloseDesc:
+		'Ferme automatiquement le panneau de filtres lors d’un clic à l’extérieur ou de la perte de focus.',
 	paletteCopySeparatorName: 'Séparateur de copie de la palette de couleurs',
 	paletteCopySeparatorDesc:
 		'Délimiteur utilisé lors du clic sur le bouton de copie de la palette pour copier toutes les valeurs hexadécimales dans le presse-papiers.',
@@ -1476,6 +1491,9 @@ const de: TranslationSchema = {
 	tagZoomOnSelectName: 'Automatischer Zoom bei Tag-Auswahl',
 	tagZoomOnSelectDesc:
 		'Zoomt und passt sichtbare Elemente automatisch an, wenn Tag-Filter im Panel ausgewählt oder zurückgesetzt werden.',
+	tagPanelAutoCloseName: 'Panel bei Fokusverlust automatisch schließen',
+	tagPanelAutoCloseDesc:
+		'Schließt das Filter-Panel automatisch bei Klick außerhalb oder Fokusverlust.',
 	paletteCopySeparatorName: 'Trennzeichen für Farbpaletten-Kopie',
 	paletteCopySeparatorDesc:
 		'Trennzeichen beim Klicken auf die Paletten-Kopierschaltfläche zum Kopieren aller Hex-Werte in die Zwischenablage.',
@@ -1708,6 +1726,9 @@ const ja: TranslationSchema = {
 	tagZoomOnSelectName: 'タグ選択時の自動ズーム',
 	tagZoomOnSelectDesc:
 		'パネルでタグフィルターを選択または解除したときに、表示要素に合わせて自動的にズーム・フィットさせます。',
+	tagPanelAutoCloseName: 'フォーカス喪失時にパネルを自動閉鎖',
+	tagPanelAutoCloseDesc:
+		'パネル外部をクリックした際やフォーカスが外れた際に、フィルターパネルを自動的に閉じます。',
 	paletteSwatchCountName: 'カラーパレットのスウォッチ数',
 	paletteSwatchCountDesc:
 		'画像でカラーパレットを有効にした際に表示する主要な色の数（3～10）。',
@@ -1940,6 +1961,9 @@ const ko: TranslationSchema = {
 	tagZoomOnSelectName: '태그 선택 시 자동 확대/축소',
 	tagZoomOnSelectDesc:
 		'패널에서 태그 필터를 선택하거나 해제할 때 표시되는 요소에 맞춰 자동으로 확대/축소합니다.',
+	tagPanelAutoCloseName: '포커스 해제 시 패널 자동 닫기',
+	tagPanelAutoCloseDesc:
+		'패널 외부를 클릭하거나 포커스를 잃었을 때 필터 패널을 자동으로 닫습니다.',
 	paletteCopySeparatorName: '색상 팔레트 복사 구분자',
 	paletteCopySeparatorDesc:
 		'색상 팔레트 복사 버튼을 눌러 모든 HEX 값을 클립보드에 복사할 때 사용할 구분자입니다.',
@@ -2166,6 +2190,9 @@ const ru: TranslationSchema = {
 	tagZoomOnSelectName: 'Автомасштабирование при выборе тега',
 	tagZoomOnSelectDesc:
 		'Автоматически приближает и подгоняет видимые элементы при выборе или сбросе фильтров тегов.',
+	tagPanelAutoCloseName: 'Автозакрытие панели при потере фокуса',
+	tagPanelAutoCloseDesc:
+		'Автоматически закрывать панель фильтров при клике снаружи или потере фокуса.',
 	paletteCopySeparatorName: 'Разделитель копирования цветовой палитры',
 	paletteCopySeparatorDesc:
 		'Разделитель, используемый при нажатии кнопки копирования палитры для копирования всех HEX-значений в буфер обмена.',
@@ -2398,6 +2425,9 @@ const pt: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automático ao selecionar tag',
 	tagZoomOnSelectDesc:
 		'Aproxima e ajusta automaticamente os elementos visíveis ao selecionar ou limpar filtros de tag.',
+	tagPanelAutoCloseName: 'Fechar painel automaticamente ao perder o foco',
+	tagPanelAutoCloseDesc:
+		'Fecha automaticamente o painel de filtros ao clicar fora ou perder o foco.',
 	paletteCopySeparatorName: 'Separador de cópia da paleta de cores',
 	paletteCopySeparatorDesc:
 		'Delimitador usado ao clicar no botão de copiar da paleta para copiar todos os valores hexadecimais para a área de transferência.',
@@ -2622,6 +2652,9 @@ const it: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automatico alla selezione tag',
 	tagZoomOnSelectDesc:
 		'Ingrandisce e adatta automaticamente gli elementi visibili quando si selezionano o rimuovono i filtri tag.',
+	tagPanelAutoCloseName: 'Chiudi automaticamente il pannello quando perde il focus',
+	tagPanelAutoCloseDesc:
+		'Chiude automaticamente il pannello dei filtri quando si fa clic all’esterno o si perde il focus.',
 	paletteCopySeparatorName: 'Separatore di copia tavolozza colori',
 	paletteCopySeparatorDesc:
 		'Delimitatore utilizzato quando si fa clic sul pulsante di copia della tavolozza per copiare tutti i valori esadecimali negli appunti.',
@@ -2848,6 +2881,9 @@ const ar: TranslationSchema = {
 	tagZoomOnSelectName: 'التكبير التلقائي عند تحديد الوسم',
 	tagZoomOnSelectDesc:
 		'تكبير وملاءمة العناصر المرئية تلقائيًا عند تحديد تصفية الوسوم أو مسحها.',
+	tagPanelAutoCloseName: 'إغلاق اللوحة تلقائيًا عند فقدان التركيز',
+	tagPanelAutoCloseDesc:
+		'إغلاق لوحة التصفية تلقائيًا عند النقر بالخارج أو فقدان التركيز.',
 	paletteCopySeparatorName: 'فاصل نسخ لوحة الألوان',
 	paletteCopySeparatorDesc:
 		'الفاصل المستخدم عند النقر فوق زر نسخ لوحة الألوان لنسخ جميع قيم hex إلى الحافظة.',
@@ -2985,6 +3021,9 @@ const he: TranslationSchema = {
 	tagZoomOnSelectName: 'תקריב אוטומטי בעת בחירת תגית',
 	tagZoomOnSelectDesc:
 		'מבצע תקריב ומתאים אוטומטית רכיבים גלויים בעת בחירה או ניקוי מסנני תגיות.',
+	tagPanelAutoCloseName: 'סגור לוח אוטומטית בעת איבוד מיקוד',
+	tagPanelAutoCloseDesc:
+		'סוגר אוטומטית את לוח המסננים בעת לחיצה מחוץ ללוח או איבוד מיקוד.',
 	paletteCopySeparatorName: 'מפריד העתקת פלטת צבעים',
 	paletteCopySeparatorDesc:
 		'המפריד המשמש בעת לחיצה על כפתור העתקת הפלטה להעתקת כל ערכי ה-HEX ללוח הגזירים.',

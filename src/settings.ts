@@ -22,6 +22,7 @@ export interface KambasSettings {
 	hideImageLabel: boolean;
 	tagBadgePosition: 'outside' | 'inside';
 	tagZoomOnSelect: boolean;
+	tagPanelAutoClose: boolean; // Auto-close filter panel when canvas/panel loses focus
 	paletteSwatchCount: number; // 3 to 10 swatches
 	paletteCopySeparator: string; // Separator for copied hex values
 	colorExtractMode: 'auto' | 'manual' | 'disabled'; // Color filter extraction mode
@@ -46,6 +47,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	hideImageLabel: true,
 	tagBadgePosition: 'outside',
 	tagZoomOnSelect: true,
+	tagPanelAutoClose: true,
 	paletteSwatchCount: 5,
 	paletteCopySeparator: ', ',
 	colorExtractMode: 'auto',
@@ -145,6 +147,18 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.tagZoomOnSelect ?? true)
 					.onChange(async (value) => {
 						this.plugin.settings.tagZoomOnSelect = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t.tagPanelAutoCloseName)
+			.setDesc(t.tagPanelAutoCloseDesc)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.tagPanelAutoClose ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.tagPanelAutoClose = value;
 						await this.plugin.saveSettings();
 					})
 			);

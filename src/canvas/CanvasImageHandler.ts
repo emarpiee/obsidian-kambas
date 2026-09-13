@@ -2919,11 +2919,33 @@ export class CanvasImageHandler {
 		ro.observe(panel);
 
 		// Clean up when panel is removed
+		let onOutsidePointerDown: ((evt: PointerEvent) => void) | null = null;
+
+		if (this.plugin.settings.tagPanelAutoClose) {
+			onOutsidePointerDown = (evt: PointerEvent): void => {
+				const target = evt.target as HTMLElement | null;
+				if (!target) return;
+				// Ignore clicks inside panel or on tag toolbar buttons
+				if (
+					panel.contains(target) ||
+					target.closest('.kambas-tag-toolbar-group') ||
+					target.closest('.kambas-tag-toolbar-btn')
+				) {
+					return;
+				}
+				this.closeTagFilterPanel(activeView);
+			};
+			document.addEventListener('pointerdown', onOutsidePointerDown, true);
+		}
+
 		const panelObserver = new MutationObserver(() => {
 			if (!panel.isConnected) {
 				ro.disconnect();
 				containerRo.disconnect();
 				panelObserver.disconnect();
+				if (onOutsidePointerDown) {
+					document.removeEventListener('pointerdown', onOutsidePointerDown, true);
+				}
 			}
 		});
 		panelObserver.observe(document.body, { childList: true, subtree: true });
@@ -2934,6 +2956,16 @@ export class CanvasImageHandler {
 		const cRect = container.getBoundingClientRect();
 		const pRect = panel.getBoundingClientRect();
 		if (cRect.width === 0 || cRect.height === 0) return;
+
+		// Clamp width/height if user resized panel larger than canvas container
+		const maxWidth = Math.max(200, cRect.width - 24);
+		const maxHeight = Math.max(160, cRect.height - 24);
+		if (panel.offsetWidth > maxWidth) {
+			panel.style.width = `${maxWidth}px`;
+		}
+		if (panel.offsetHeight > maxHeight) {
+			panel.style.height = `${maxHeight}px`;
+		}
 
 		let currentLeft = panel.offsetLeft;
 		let currentTop = panel.offsetTop;
@@ -3664,9 +3696,12 @@ export class CanvasImageHandler {
 					});
 				}
 
+				// Right-aligned counts wrapper for consistent alignment
+				const countsWrap = row.createDiv({ cls: 'kambas-tag-panel-counts' });
+
 				// Show "N in view" badge alongside the total when a filter is active
 				if (isRelated) {
-					row.createSpan({
+					countsWrap.createSpan({
 						cls: 'kambas-tag-panel-count kambas-in-view-count',
 						text: t.inViewCount
 							? t.inViewCount(visibleCount)
@@ -3677,7 +3712,7 @@ export class CanvasImageHandler {
 				const countText = t.itemCount
 					? t.itemCount(count)
 					: `${count} ${count === 1 ? 'item' : 'items'}`;
-				row.createSpan({
+				countsWrap.createSpan({
 					cls: 'kambas-tag-panel-count',
 					text: countText,
 				});
@@ -3958,16 +3993,19 @@ export class CanvasImageHandler {
 					if (customColor.text) tagPill.style.color = customColor.text;
 				}
 
+				// Right-aligned counts wrapper for consistent alignment
+				const countsWrap = row.createDiv({ cls: 'kambas-tag-panel-counts' });
+
 				// "N in view" badge when a filter is active
 				if (isRelated) {
-					row.createSpan({
+					countsWrap.createSpan({
 						cls: 'kambas-tag-panel-count kambas-in-view-count',
 						text: t.inViewCount
 							? t.inViewCount(visibleCount)
 							: `${visibleCount} in view`,
 					});
 				}
-				row.createSpan({
+				countsWrap.createSpan({
 					cls: 'kambas-tag-panel-count',
 					text: t.tagNodesCount(count),
 				});

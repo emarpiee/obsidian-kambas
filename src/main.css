@@ -645,6 +645,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	left: 12px;
 	width: 240px;
 	min-width: 200px;
+	max-width: calc(100% - 24px);
 	min-height: 160px;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
@@ -964,6 +965,14 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	border: 1px solid var(--tag-border-color, transparent);
 }
 
+.kambas-tag-panel-counts {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
 .kambas-tag-panel-count {
 	font-size: 11px;
 	color: var(--text-muted);
@@ -972,7 +981,6 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	padding: 1px 7px;
 	flex-shrink: 0;
 	font-weight: 500;
-	margin-left: auto;
 }
 
 /* "N in view" amber badge — appears when filter is active */
