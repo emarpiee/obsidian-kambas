@@ -2,6 +2,7 @@ import './main.css';
 import { ItemView, Menu, Plugin } from 'obsidian';
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
 import { CanvasKeyboardPan } from './canvas/CanvasKeyboardPan';
+import { CanvasSelectionZoom } from './canvas/CanvasSelectionZoom';
 import { CanvasLoupeInspector } from './canvas/CanvasLoupeInspector';
 import { CanvasItemView } from './canvas/CanvasTypes';
 import { getText } from './i18n';
@@ -13,6 +14,7 @@ export default class KambasPlugin extends Plugin {
 	public settings!: KambasSettings;
 	private canvasImageHandler!: CanvasImageHandler;
 	public canvasKeyboardPan!: CanvasKeyboardPan;
+	private canvasSelectionZoom!: CanvasSelectionZoom;
 	private canvasLoupeInspector!: CanvasLoupeInspector;
 
 	async onload(): Promise<void> {
@@ -23,6 +25,9 @@ export default class KambasPlugin extends Plugin {
 
 		this.canvasKeyboardPan = new CanvasKeyboardPan(this, () => this.settings.keyboardPan);
 		this.canvasKeyboardPan.registerEvents();
+
+		this.canvasSelectionZoom = new CanvasSelectionZoom(this);
+		this.canvasSelectionZoom.registerEvents();
 
 		this.canvasLoupeInspector = new CanvasLoupeInspector(this);
 

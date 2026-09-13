@@ -24,6 +24,13 @@
 	transition: opacity 0.15s ease;
 }
 
+/* Smooth zoom transition for Space key & double-click viewport panning */
+.canvas-wrapper.kambas-smooth-zoom .canvas-content,
+.canvas-wrapper.kambas-smooth-zoom .canvas,
+.canvas.kambas-smooth-zoom .canvas-content {
+	transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
 /* Remove scrollbar-gutter and scrollbar widths on all nested elements */
 .canvas-node:has(.kambas-embedded-img) *,
 .canvas-node-content:has(.kambas-embedded-img) * {
@@ -68,15 +75,17 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	position: fixed;
 	width: var(--kambas-loupe-size, 220px);
 	height: var(--kambas-loupe-size, 220px);
-	left: var(--kambas-loupe-left, 0px);
-	top: var(--kambas-loupe-top, 0px);
+	left: 0;
+	top: 0;
+	transform: translate3d(var(--kambas-loupe-left, 0px), var(--kambas-loupe-top, 0px), 0);
 	border: 3px solid var(--interactive-accent);
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 12px rgba(255, 255, 255, 0.3);
 	pointer-events: none;
 	z-index: 9999;
 	overflow: hidden;
 	background-color: var(--background-primary);
-	will-change: left, top;
+	will-change: transform;
+	contain: layout style paint;
 }
 
 .kambas-loupe-shape-circle {
@@ -100,6 +109,8 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	width: var(--kambas-loupe-width, 100%);
 	height: var(--kambas-loupe-height, 100%);
 	transform: var(--kambas-loupe-transform, none);
+	will-change: transform;
+	contain: layout style paint;
 }
 
 .kambas-loupe-inner * {

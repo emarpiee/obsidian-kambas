@@ -163,6 +163,8 @@ export class CanvasImageHandler {
 	// Event handlers
 	// ──────────────────────────────────────────────────────────────────────────
 
+
+	/** Tracks which node was last zoomed into via double-click (for toggle behaviour). */
 	private focusedZoomNodeEl: Element | null = null;
 
 	private handleDblClick = (evt: MouseEvent): void => {
@@ -187,6 +189,13 @@ export class CanvasImageHandler {
 
 		const canvas = activeView.canvas;
 		if (!canvas) return;
+
+		// Enable smooth viewport transition class on canvas container
+		const wrapperEl = (canvas as unknown as { wrapperEl?: HTMLElement }).wrapperEl ?? document.querySelector('.workspace-leaf.mod-active .canvas-wrapper');
+		if (wrapperEl) {
+			wrapperEl.classList.add('kambas-smooth-zoom');
+			window.setTimeout(() => wrapperEl.classList.remove('kambas-smooth-zoom'), 350);
+		}
 
 		// If this node is already focused from a previous double-click, unfocus & fit to view
 		if (this.focusedZoomNodeEl === nodeEl) {
@@ -745,17 +754,17 @@ export class CanvasImageHandler {
 	}
 
 	private handleKeyDown = (evt: KeyboardEvent): void => {
+		if (this.plugin.app.workspace.activeEditor) return;
+		const target = evt.target as HTMLElement | null;
+		if (target) {
+			const tag = target.tagName.toLowerCase();
+			if (tag === 'input' || tag === 'textarea' || target.isContentEditable || target.closest('.cm-editor')) return;
+		}
+
 		const activeView = this.app.workspace.getActiveViewOfType(ItemView) as unknown as CanvasItemView | null;
 		if (!activeView || activeView.getViewType() !== 'canvas') return;
 
-		const activeEl = document.activeElement as HTMLElement | null;
-		if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
-			return;
-		}
-
-		const key = evt.key;
-		const lowerKey = key.toLowerCase();
-
+		const lowerKey = evt.key.toLowerCase();
 		if (lowerKey === 'h' || lowerKey === 'v' || lowerKey === 'g') {
 			void this.toggleSelectedImageTransform(activeView, lowerKey);
 		}

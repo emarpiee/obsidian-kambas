@@ -30,6 +30,7 @@ export interface KambasSettings {
 	loupeZoomLevel: number; // Magnification factor (1.5x - 10.0x)
 	loupeSize: number; // Loupe lens diameter in px (100px - 600px)
 	loupeShape: 'circle' | 'square' | 'rounded'; // Loupe lens shape
+	selectionZoomToFitHotkey: string; // Hotkey to zoom to fit selected elements
 	keyboardPan: CanvasKeyboardPanSettings;
 }
 
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	loupeZoomLevel: 3.0,
 	loupeSize: 260,
 	loupeShape: 'circle',
+	selectionZoomToFitHotkey: 'Space',
 	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
 };
 
@@ -274,6 +276,19 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.loupeShape ?? 'circle')
 					.onChange(async (value: string) => {
 						this.plugin.settings.loupeShape = value as 'circle' | 'square' | 'rounded';
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Zoom to fit selection hotkey')
+			.setDesc('Press this hotkey when elements are selected to zoom to fit them. Press again to zoom back out (Default: Space).')
+			.addText((text) =>
+				text
+					.setPlaceholder('Space')
+					.setValue(this.plugin.settings.selectionZoomToFitHotkey ?? 'Space')
+					.onChange(async (value) => {
+						this.plugin.settings.selectionZoomToFitHotkey = value.trim() || 'Space';
 						await this.plugin.saveSettings();
 					})
 			);
