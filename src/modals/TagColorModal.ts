@@ -188,9 +188,12 @@ export class TagColorModal extends Modal {
 			text: t.clearTagColor ?? 'Clear color',
 		});
 		setIcon(resetBtn, 'rotate-ccw');
+		resetBtn.setAttribute('title', t.clearTagColor ?? 'Clear color');
 		resetBtn.addEventListener('click', () => {
-			this.onSave(null);
-			this.close();
+			this.textColor = '';
+			this.bgColor = '';
+			this.updateInputs();
+			this.updatePreview();
 		});
 
 		const rightBtns = btnRow.createDiv({ cls: 'kambas-tag-color-right-btns' });

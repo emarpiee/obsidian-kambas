@@ -580,7 +580,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	flex-wrap: wrap;
 	gap: 4px;
 	z-index: 10;
-	pointer-events: none; /* pass-through by default */
+	pointer-events: auto;
 	max-width: 100%;
 }
 
@@ -616,8 +616,14 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	background-color: var(--tag-background, rgba(var(--color-accent-hsl), 0.15));
 	color: var(--tag-color, var(--text-accent));
 	border: 1px solid var(--tag-border-color, transparent);
-	transition: background-color 0.12s ease, transform 0.12s ease;
 	user-select: none;
+	cursor: pointer;
+	transition: outline 0.1s ease, outline-offset 0.1s ease;
+}
+
+.kambas-tag-pill:hover {
+	outline: 1px solid currentColor;
+	outline-offset: 1px;
 }
 
 .kambas-tag-pill .kambas-tag-ns,
@@ -627,11 +633,6 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	opacity: 0.65;
 	margin-right: 1px;
 	font-weight: 400;
-}
-
-.canvas-node.is-selected .kambas-tag-pill:hover {
-	background-color: var(--tag-background-hover, rgba(var(--color-accent-hsl), 0.25));
-	transform: scale(1.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -943,12 +944,24 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 .kambas-tag-panel-pill {
+	display: inline-flex;
+	align-items: center;
 	font-size: 13px;
 	color: var(--text-normal);
-	flex: 1;
+	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	white-space: nowrap;
+	max-width: 140px;
+	border-radius: 12px;
+	transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.kambas-tag-panel-pill.has-custom-color {
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.4;
+	border: 1px solid var(--tag-border-color, transparent);
 }
 
 .kambas-tag-panel-count {
@@ -959,6 +972,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	padding: 1px 7px;
 	flex-shrink: 0;
 	font-weight: 500;
+	margin-left: auto;
 }
 
 /* "N in view" amber badge — appears when filter is active */
@@ -1177,16 +1191,19 @@ body.kambas-hide-all-tags .kambas-tag-bar {
    Kambas — Canvas toolbar tag button
    ═══════════════════════════════════════════════════════════════ */
 
-.kambas-tag-toolbar-btn {
+.kambas-tag-toolbar-btn,
+.kambas-tag-toolbar-clear-btn {
 	cursor: pointer;
 	color: var(--icon-color);
 	opacity: var(--icon-opacity);
 	transition: opacity 0.15s ease, color 0.15s ease;
 }
 
-.kambas-tag-toolbar-btn:hover {
+.kambas-tag-toolbar-btn:hover,
+.kambas-tag-toolbar-clear-btn:hover {
 	opacity: 1;
 	color: var(--text-normal);
+	cursor: pointer;
 }
 
 .kambas-tag-toolbar-btn.is-active {
@@ -1194,7 +1211,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	opacity: 1;
 }
 
-.kambas-tag-toolbar-btn svg.svg-icon {
+.kambas-tag-toolbar-btn svg.svg-icon,
+.kambas-tag-toolbar-clear-btn svg.svg-icon {
 	width: 18px;
 	height: 18px;
 }
@@ -1295,11 +1313,13 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	flex-wrap: wrap;
 	gap: 6px;
 	min-height: 0;
+	margin-bottom: 8px;
 }
 
 /* Empty chip row takes no space */
 .kambas-tag-chip-row:empty {
 	display: none;
+	margin-bottom: 0;
 }
 
 /* Input row always at the bottom */

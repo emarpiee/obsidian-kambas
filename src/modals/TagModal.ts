@@ -9,6 +9,7 @@ export class TagModal extends Modal {
 	private presetTags: string[] = [];
 	private selectedCount: number;
 	private tagCounts: Map<string, number>;
+	private tagColors?: Record<string, { text?: string; bg?: string }>;
 	// Tracks whether each tag applies to all nodes ('full') or only some nodes ('mixed')
 	private tagStates: Map<string, 'full' | 'mixed'> = new Map();
 	private onSubmit: (
@@ -34,6 +35,7 @@ export class TagModal extends Modal {
 			selectedCount?: number;
 			presetTags?: string[];
 			tagCounts?: Map<string, number>;
+			tagColors?: Record<string, { text?: string; bg?: string }>;
 		}
 	) {
 		super(app);
@@ -45,6 +47,7 @@ export class TagModal extends Modal {
 			this.suggestions.slice(0, 10);
 		this.selectedCount = options?.selectedCount ?? 1;
 		this.tagCounts = options?.tagCounts ?? new Map<string, number>();
+		this.tagColors = options?.tagColors;
 		this.onSubmit = onSubmit;
 
 		// Initialize tag states based on counts across selected nodes
@@ -226,6 +229,10 @@ export class TagModal extends Modal {
 			const chip = this.chipRow.createSpan({
 				cls: `kambas-tag-chip ${isMixed ? 'is-mixed' : ''}`,
 			});
+			const customColor = this.tagColors?.[tag.toLowerCase()];
+			if (customColor?.bg) chip.style.backgroundColor = customColor.bg;
+			if (customColor?.text) chip.style.color = customColor.text;
+
 			if (isMixed) {
 				chip.title = `Partial tag (${count}/${this.selectedCount} items). Click chip to apply to all selected items.`;
 			}
@@ -278,6 +285,10 @@ export class TagModal extends Modal {
 			if (!normalized) continue;
 
 			const pill = container.createSpan({ cls: 'kambas-tag-preset-pill' });
+			const customColor = this.tagColors?.[normalized.toLowerCase()];
+			if (customColor?.bg) pill.style.backgroundColor = customColor.bg;
+			if (customColor?.text) pill.style.color = customColor.text;
+
 			this.formatTagLabel(pill, normalized);
 
 			pill.addEventListener('mousedown', (e) => {
@@ -339,6 +350,9 @@ export class TagModal extends Modal {
 				cls: 'kambas-tag-suggest-item',
 				attr: { tabindex: '0' },
 			});
+			const customColor = this.tagColors?.[s.toLowerCase()];
+			if (customColor?.bg) item.style.backgroundColor = customColor.bg;
+			if (customColor?.text) item.style.color = customColor.text;
 
 			const label = item.createSpan({ cls: 'kambas-tag-suggest-label' });
 			this.formatTagLabel(label, s);

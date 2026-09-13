@@ -77,6 +77,7 @@ export class CanvasImageHandler {
 	private nodeColorCache: Map<string, string[] | null> = new Map();
 	private dimOpacity = 0.12;
 	private tagToolbarBtn: HTMLElement | null = null;
+	private tagToolbarClearBtn: HTMLElement | null = null;
 	private tagFilterSelectionGuard: (() => void) | null = null;
 	private colorHighlightCleanup: (() => void) | null = null;
 	private tagHighlightCleanup: (() => void) | null = null;
@@ -2485,6 +2486,59 @@ export class CanvasImageHandler {
 			} else {
 				pill.createSpan({ cls: 'kambas-tag-name', text: `#${tag}` });
 			}
+
+			const onTagClick = (ev: MouseEvent | PointerEvent): void => {
+				ev.stopPropagation();
+				ev.preventDefault();
+
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
+				if (!activeView || activeView.getViewType() !== 'canvas') return;
+
+				// Open panel if not currently open
+				if (!this.tagFilterPanelEl?.isConnected) {
+					this.openTagFilterPanel(activeView);
+				}
+
+				// Switch tab to 'tag' if on 'color'
+				if (this.activeFilterTab !== 'tag') {
+					this.activeFilterTab = 'tag';
+					if (this.tagFilterPanelEl?.isConnected) {
+						const tagTabEl = this.tagFilterPanelEl.querySelector(
+							'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)'
+						);
+						const colorTabEl = this.tagFilterPanelEl.querySelector(
+							'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(2)'
+						);
+						tagTabEl?.classList.add('is-active');
+						colorTabEl?.classList.remove('is-active');
+					}
+				}
+
+				// Set focus on this specific tag filter
+				this.activeTagFilters.clear();
+				this.activeTagExcludes.clear();
+				this.activeTagFilters.add(tag);
+
+				// Apply filter and zoom to matching nodes
+				this.applyTagFilters(activeView, true);
+				this.refreshTagFilterPanel(activeView);
+
+				// Scroll the tag item in the filter panel list into view and highlight briefly
+				if (this.tagFilterPanelEl?.isConnected) {
+					const row = this.tagFilterPanelEl.querySelector<HTMLElement>(
+						`[data-tag-name="${CSS.escape(tag)}"]`
+					);
+					if (row) {
+						row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+					}
+				}
+			};
+
+			pill.addEventListener('mousedown', (ev) => ev.stopPropagation());
+			pill.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+			pill.addEventListener('click', onTagClick);
 		}
 	}
 
@@ -2598,6 +2652,7 @@ export class CanvasImageHandler {
 				presetTags:
 					canvasTags.length > 0 ? canvasTags : suggestions.slice(0, 10),
 				tagCounts,
+				tagColors: this.plugin.settings.tagColors,
 			}
 		).open();
 	}
@@ -3904,8 +3959,11 @@ export class CanvasImageHandler {
 				});
 				const tagColorsMap = this.plugin.settings.tagColors ?? {};
 				const customColor = tagColorsMap[tag.toLowerCase()];
-				if (customColor?.bg) tagPill.style.backgroundColor = customColor.bg;
-				if (customColor?.text) tagPill.style.color = customColor.text;
+				if (customColor?.bg || customColor?.text) {
+					tagPill.addClass('has-custom-color');
+					if (customColor.bg) tagPill.style.backgroundColor = customColor.bg;
+					if (customColor.text) tagPill.style.color = customColor.text;
+				}
 
 				// "N in view" badge when a filter is active
 				if (isRelated) {
@@ -4206,6 +4264,10 @@ export class CanvasImageHandler {
 			'is-active',
 			filtersActive || panelOpen
 		);
+
+		if (this.tagToolbarClearBtn) {
+			this.tagToolbarClearBtn.style.display = filtersActive ? '' : 'none';
+		}
 	}
 
 	private saveFilterState(file: TFile): void {
@@ -4582,13 +4644,11 @@ export class CanvasImageHandler {
 		const controls = container.querySelector<HTMLElement>('.canvas-controls');
 		if (!controls) return;
 
-		const groups = controls.querySelectorAll<HTMLElement>(
-			'.canvas-control-group'
-		);
-		const targetGroup =
-			groups.length > 0 ? groups[groups.length - 1] : controls;
+		const newGroup = controls.createDiv({
+			cls: 'canvas-control-group kambas-tag-toolbar-group',
+		});
 
-		const btn = targetGroup.createDiv({
+		const btn = newGroup.createDiv({
 			cls: 'canvas-control-item kambas-tag-toolbar-btn',
 			attr: { 'aria-label': getText().tagFilterPanel },
 		});
@@ -4598,6 +4658,24 @@ export class CanvasImageHandler {
 		btn.addEventListener('click', () => {
 			this.openTagFilterPanel(activeView);
 		});
+
+		const clearBtn = newGroup.createDiv({
+			cls: 'canvas-control-item kambas-tag-toolbar-clear-btn',
+			attr: { 'aria-label': getText().tagClearFilter ?? 'Clear filter' },
+		});
+		setIcon(clearBtn, 'x');
+		this.tagToolbarClearBtn = clearBtn;
+
+		clearBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			this.activeTagFilters.clear();
+			this.activeTagExcludes.clear();
+			this.activeColorFilters.clear();
+			this.activeColorExcludes.clear();
+			this.applyTagFilters(activeView, true);
+			this.refreshTagFilterPanel(activeView);
+		});
+
 		// Reflect current filter state immediately after injection
 		this.updateToolbarButtonState();
 	}
