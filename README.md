@@ -179,12 +179,6 @@ Hovering over a color row **outlines the matching canvas images** with an accent
 
 ---
 
-### Multi-Window & Popout Canvas Support
-
-Kambas provides full compatibility for Obsidian popout windows. Keyboard pan controls, Loupe inspector lenses, canvas hotkeys, filter panel overlays, and image transform state work reliably across popout canvas windows.
-
----
-
 ### Internationalization (i18n)
 
 Kambas includes complete native localization for **13 languages**, matching your Obsidian UI language setting automatically:

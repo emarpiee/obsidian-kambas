@@ -639,6 +639,25 @@ export async function compressAndOptimizeBase64(
 	const quality = options.quality ?? 0.82;
 	const targetMime = options.mimeType ?? 'image/webp';
 
+	if (typeof src === 'string') {
+		const lower = src.toLowerCase();
+		if (
+			lower.startsWith('data:image/gif') ||
+			lower.startsWith('data:image/svg')
+		) {
+			return Promise.reject(
+				new Error('GIF and SVG images are excluded from WebP optimization')
+			);
+		}
+	} else if (src instanceof Blob) {
+		const type = src.type.toLowerCase();
+		if (type === 'image/gif' || type === 'image/svg+xml') {
+			return Promise.reject(
+				new Error('GIF and SVG images are excluded from WebP optimization')
+			);
+		}
+	}
+
 	return new Promise((resolve, reject) => {
 		const img = new Image();
 		img.crossOrigin = 'Anonymous';

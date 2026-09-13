@@ -4849,6 +4849,13 @@ export class CanvasImageHandler {
 			const dataUrl = rawNode.url || rawNode.unknownData?.url;
 
 			if (dataUrl && dataUrl.startsWith('data:image/')) {
+				const lowerUrl = dataUrl.toLowerCase();
+				if (
+					lowerUrl.startsWith('data:image/gif') ||
+					lowerUrl.startsWith('data:image/svg')
+				) {
+					continue;
+				}
 				try {
 					const res = await compressAndOptimizeBase64(dataUrl, {
 						maxDimension: maxDim,
