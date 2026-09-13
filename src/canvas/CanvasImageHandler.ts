@@ -79,6 +79,7 @@ export class CanvasImageHandler {
 	private tagToolbarBtn: HTMLElement | null = null;
 	private tagFilterSelectionGuard: (() => void) | null = null;
 	private colorHighlightCleanup: (() => void) | null = null;
+	private tagHighlightCleanup: (() => void) | null = null;
 	private lazyExtractDebounceTimer: number | null = null;
 
 	constructor(app: App, plugin: import('../main').default) {
@@ -3032,6 +3033,8 @@ export class CanvasImageHandler {
 		// The user can clear them explicitly via the × button inside the search bar.
 		this.colorHighlightCleanup?.();
 		this.colorHighlightCleanup = null;
+		this.tagHighlightCleanup?.();
+		this.tagHighlightCleanup = null;
 		this.tagFilterPanelEl?.remove();
 		this.tagFilterPanelEl = null;
 		// Keep toolbar button lit when filters are still active
@@ -3756,6 +3759,85 @@ export class CanvasImageHandler {
 		// ── Tag list ────────────────────────────────────────────────────────────
 		const listEl = body.createDiv({ cls: 'kambas-tag-panel-list' });
 
+		// ── Cross-highlight setup ─────────────────────────────────────────────────
+		// Build tag → nodeEl[] map so row-hover can outline matching elements
+		const tagToNodes = new Map<string, HTMLElement[]>();
+		canvas.nodes.forEach((node) => {
+			const uData = (
+				node as unknown as { unknownData?: { kambasTags?: string[] } }
+			).unknownData;
+			const nodeEl = node.nodeEl;
+			if (!nodeEl) return;
+			const tags = uData?.kambasTags ?? [];
+			if (tags.length === 0) return;
+
+			for (const tag of new Set(tags)) {
+				if (!tag.trim()) continue;
+				let bucket = tagToNodes.get(tag);
+				if (!bucket) {
+					bucket = [];
+					tagToNodes.set(tag, bucket);
+				}
+				bucket.push(nodeEl);
+				const existing = nodeEl.getAttribute('data-kambas-tags') ?? '';
+				const tagList = existing ? existing.split(',') : [];
+				if (!tagList.includes(tag)) {
+					tagList.push(tag);
+					nodeEl.setAttribute('data-kambas-tags', tagList.join(','));
+				}
+			}
+		});
+
+		// Canvas-node hover → highlight matching panel tag rows
+		const canvasContainer = (
+			activeView as unknown as { containerEl?: HTMLElement }
+		).containerEl;
+		const clearTagRowHighlights = (): void => {
+			listEl.querySelectorAll('.is-related, .is-unrelated').forEach((el) => {
+				el.classList.remove('is-related', 'is-unrelated');
+			});
+		};
+		const onCanvasTagMouseOver = (e: Event): void => {
+			const target = e.target as HTMLElement;
+			const nodeEl = target.closest('[data-kambas-tags]');
+			if (!nodeEl) {
+				clearTagRowHighlights();
+				return;
+			}
+			const nodeTags = new Set(
+				(nodeEl.getAttribute('data-kambas-tags') ?? '')
+					.split(',')
+					.filter(Boolean)
+			);
+			if (nodeTags.size === 0) {
+				clearTagRowHighlights();
+				return;
+			}
+			listEl
+				.querySelectorAll<HTMLElement>('[data-tag-name]')
+				.forEach((row) => {
+					const tn = row.getAttribute('data-tag-name') ?? '';
+					row.classList.toggle('is-related', nodeTags.has(tn));
+					row.classList.toggle('is-unrelated', !nodeTags.has(tn));
+				});
+		};
+		const onCanvasTagMouseLeave = (): void => clearTagRowHighlights();
+
+		this.tagHighlightCleanup?.();
+		if (canvasContainer) {
+			canvasContainer.addEventListener('mouseover', onCanvasTagMouseOver);
+			canvasContainer.addEventListener('mouseleave', onCanvasTagMouseLeave);
+			this.tagHighlightCleanup = (): void => {
+				canvasContainer.removeEventListener('mouseover', onCanvasTagMouseOver);
+				canvasContainer.removeEventListener('mouseleave', onCanvasTagMouseLeave);
+				canvasContainer
+					.querySelectorAll('[data-kambas-tags]')
+					.forEach((el) => {
+						el.removeAttribute('data-kambas-tags');
+					});
+			};
+		}
+
 		const renderList = (query: string): void => {
 			listEl.empty();
 			const lower = query.toLowerCase();
@@ -3799,6 +3881,17 @@ export class CanvasImageHandler {
 					(isExcluded ? ' is-excluded' : '') +
 					(!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
 				const row = listEl.createDiv({ cls: rowCls });
+				row.setAttribute('data-tag-name', tag);
+
+				// Row hover → outline matching canvas nodes
+				row.addEventListener('mouseenter', () => {
+					const nodes = tagToNodes.get(tag) ?? [];
+					nodes.forEach((el) => el.classList.add('kambas-color-highlight'));
+				});
+				row.addEventListener('mouseleave', () => {
+					const nodes = tagToNodes.get(tag) ?? [];
+					nodes.forEach((el) => el.classList.remove('kambas-color-highlight'));
+				});
 
 				const checkEl = row.createSpan({ cls: 'kambas-tag-panel-check' });
 				setIcon(
