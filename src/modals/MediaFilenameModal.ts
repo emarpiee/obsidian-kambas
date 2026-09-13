@@ -12,6 +12,7 @@ export interface MediaFilenameResult {
 
 export class MediaFilenameModal extends Modal {
 	private defaultName: string;
+	private targetFolderPath: string;
 	private tags: string[];
 	private remainingCount: number;
 	private isCopy: boolean;
@@ -25,6 +26,7 @@ export class MediaFilenameModal extends Modal {
 	constructor(
 		app: App,
 		defaultName: string,
+		targetFolderPath: string,
 		tags: string[],
 		remainingCount: number,
 		isCopy: boolean,
@@ -32,6 +34,7 @@ export class MediaFilenameModal extends Modal {
 	) {
 		super(app);
 		this.defaultName = defaultName;
+		this.targetFolderPath = targetFolderPath;
 		this.tags = tags;
 		this.remainingCount = remainingCount;
 		this.isCopy = isCopy;
@@ -44,6 +47,11 @@ export class MediaFilenameModal extends Modal {
 
 		const actionTitle = this.isCopy ? 'Copy Media to Vault' : 'Move Media to Vault';
 		titleEl.setText(actionTitle);
+
+		const displayFolder = this.targetFolderPath === '/' || this.targetFolderPath === '' ? '/ (Vault root)' : this.targetFolderPath;
+		const folderNotice = contentEl.createDiv({ cls: 'kambas-target-folder-notice' });
+		folderNotice.createSpan({ text: 'Destination Folder: ' });
+		folderNotice.createEl('code', { text: displayFolder });
 
 		const descP = contentEl.createEl('p', { cls: 'kambas-modal-desc' });
 		descP.setText('Choose how the media file should be named in your vault:');

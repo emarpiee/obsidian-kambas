@@ -1190,6 +1190,7 @@ export class CanvasImageHandler {
 							const modal = new MediaFilenameModal(
 								this.app,
 								defaultName,
+								targetFolder.path,
 								tags,
 								remainingCount,
 								false,
@@ -1267,6 +1268,7 @@ export class CanvasImageHandler {
 						const modal = new MediaFilenameModal(
 							this.app,
 							defaultName,
+							targetFolder.path,
 							tags,
 							remainingCount,
 							false,
@@ -1438,6 +1440,7 @@ export class CanvasImageHandler {
 							const modal = new MediaFilenameModal(
 								this.app,
 								defaultName,
+								targetFolder.path,
 								tags,
 								remainingCount,
 								true,
@@ -1525,6 +1528,7 @@ export class CanvasImageHandler {
 						const modal = new MediaFilenameModal(
 							this.app,
 							defaultName,
+							targetFolder.path,
 							tags,
 							remainingCount,
 							true,
@@ -1587,7 +1591,7 @@ export class CanvasImageHandler {
 				const finalPath = targetFolder.path === '/' ? targetName : `${targetFolder.path}/${targetName}`;
 				await this.app.vault.createBinary(finalPath, u8arr.buffer);
 			}
-		}
+	}
 	}
 
 	public async convertSelectedVaultImagesToEmbed(
