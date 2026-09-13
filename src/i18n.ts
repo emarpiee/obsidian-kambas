@@ -129,6 +129,8 @@ export interface TranslationSchema {
 	autoOptimizeBase64Desc?: string;
 	base64MaxDimensionName?: string;
 	base64MaxDimensionDesc?: string;
+	base64QualityName?: string;
+	base64QualityDesc?: string;
 	optimizedNotice?: (count: number, kbSaved: number) => string;
 	noCompressibleNotice?: string;
 
@@ -333,6 +335,9 @@ const en: TranslationSchema = {
 	base64MaxDimensionName: 'Maximum image dimension (px)',
 	base64MaxDimensionDesc:
 		'Resize images exceeding this width/height before embedding in canvas (Default: 2048px).',
+	base64QualityName: 'WebP compression quality',
+	base64QualityDesc:
+		'Quality target for WebP image compression (0.10 to 1.00).',
 	optimizedNotice: (count: number, kbSaved: number) =>
 		`Optimized ${count} embedded image(s), saved ~${kbSaved} KB!`,
 	noCompressibleNotice: 'No compressible base64 images selected.',
@@ -540,6 +545,8 @@ const zh: TranslationSchema = {
 	base64MaxDimensionName: '最大图片尺寸 (px)',
 	base64MaxDimensionDesc:
 		'在嵌入画布前，将超过此宽度/高度的图片调整大小（默认：2048px）。',
+	base64QualityName: 'WebP 压缩质量',
+	base64QualityDesc: 'WebP 图片压缩质量目标 (0.10 至 1.00)。',
 	optimizedNotice: (count: number, kbSaved: number) =>
 		`已优化 ${count} 张嵌入图片，节省了约 ${kbSaved} KB！`,
 	noCompressibleNotice: '未选择可压缩的 base64 图片。',
@@ -747,6 +754,8 @@ const zhTW: TranslationSchema = {
 	autoOptimizeBase64Desc: '自動將貼上或拖放的 Base64 圖片壓縮為 WebP 格式（預設：停用）。',
 	base64MaxDimensionName: '最大圖片尺寸 (px)',
 	base64MaxDimensionDesc: '在嵌入畫布前，將超過此寬度/高度的圖片調整大小（預設：2048px）。',
+	base64QualityName: 'WebP 壓縮品質',
+	base64QualityDesc: 'WebP 圖片壓縮品質目標 (0.10 至 1.00)。',
 	optimizedNotice: (count: number, kbSaved: number) => `已優化 ${count} 張嵌入圖片，節省了約 ${kbSaved} KB！`,
 	noCompressibleNotice: '未選擇可壓縮的 base64 圖片。',
 
@@ -949,6 +958,9 @@ const es: TranslationSchema = {
 	base64MaxDimensionName: 'Dimensión máxima de imagen (px)',
 	base64MaxDimensionDesc:
 		'Redimensiona imágenes que superen este ancho/alto antes de incrustarlas en el lienzo (Predeterminado: 2048px).',
+	base64QualityName: 'Calidad de compresión WebP',
+	base64QualityDesc:
+		'Objetivo de calidad para la compresión de imágenes WebP (0,10 a 1,00).',
 	optimizedNotice: (count: number, kbSaved: number) =>
 		`¡${count} imagen(es) incrustada(s) optimizada(s), ~${kbSaved} KB guardados!`,
 	noCompressibleNotice: 'No se seleccionaron imágenes base64 compresibles.',
@@ -1165,6 +1177,9 @@ const fr: TranslationSchema = {
 	base64MaxDimensionName: 'Dimension maximale de l\'image (px)',
 	base64MaxDimensionDesc:
 		'Redimensionne les images dépassant cette largeur/hauteur avant l\'intégration sur le canevas (Par défaut : 2048px).',
+	base64QualityName: 'Qualité de compression WebP',
+	base64QualityDesc:
+		'Objectif de qualité pour la compression d’image WebP (0,10 à 1,00).',
 	optimizedNotice: (count: number, kbSaved: number) =>
 		`${count} image(s) intégrée(s) optimisée(s), ~${kbSaved} KO économisés !`,
 	noCompressibleNotice: 'Aucune image base64 compressible sélectionnée.',
@@ -1383,6 +1398,9 @@ const de: TranslationSchema = {
 	base64MaxDimensionName: 'Maximale Bildabmessung (px)',
 	base64MaxDimensionDesc:
 		'Skaliert Bilder neu, die diese Breite/Höhe überschreiten, bevor sie auf dem Canvas eingebettet werden (Standard: 2048px).',
+	base64QualityName: 'WebP-Komprimierungsqualität',
+	base64QualityDesc:
+		'Zielqualität für die WebP-Bildkomprimierung (0,10 bis 1,00).',
 	optimizedNotice: (count: number, kbSaved: number) =>
 		`${count} eingebettete(s) Bild(er) optimiert, ~${kbSaved} KB gespart!`,
 	noCompressibleNotice: 'Keine komprimierbaren Base64-Bilder ausgewählt.',
@@ -1598,6 +1616,8 @@ const ja: TranslationSchema = {
 	base64MaxDimensionName: '最大画像寸法 (px)',
 	base64MaxDimensionDesc:
 		'キャンバスに埋め込む前に、この幅/高さを超える画像をリサイズします（デフォルト: 2048px）。',
+	base64QualityName: 'WebP圧縮品質',
+	base64QualityDesc: 'WebP画像圧縮の品質目標（0.10〜1.00）。',
 	optimizedNotice: (count: number, kbSaved: number) =>
 		`${count}件の埋め込み画像を最適化し、約${kbSaved}KB削減しました！`,
 	noCompressibleNotice: '圧縮可能なBase64画像が選択されていません。',
@@ -1813,6 +1833,8 @@ const ko: TranslationSchema = {
 	base64MaxDimensionName: '최대 이미지 크기 (px)',
 	base64MaxDimensionDesc:
 		'캔버스에 임베드하기 전에 이 너비/높이를 초과하는 이미지의 크기를 조정합니다 (기본값: 2048px).',
+	base64QualityName: 'WebP 압축 품질',
+	base64QualityDesc: 'WebP 이미지 압축 품질 목표 (0.10 ~ 1.00).',
 	optimizedNotice: (count: number, kbSaved: number) =>
 		`${count}개의 임베디드 이미지가 최적화되었으며, 약 ${kbSaved} KB를 절약했습니다!`,
 	noCompressibleNotice: '압축 가능한 base64 이미지가 선택되지 않았습니다.',

@@ -229,6 +229,23 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl)
+			.setName(t.base64QualityName ?? 'WebP compression quality')
+			.setDesc(
+				t.base64QualityDesc ??
+					'Quality target for WebP image compression (0.10 to 1.00).'
+			)
+			.addSlider((slider) =>
+				slider
+					.setLimits(0.1, 1.0, 0.05)
+					.setValue(this.plugin.settings.base64Quality ?? 0.82)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.base64Quality = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
 		// Visual Inspection Section
 		new Setting(containerEl).setName(t.loupeHeading).setHeading();
 
