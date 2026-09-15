@@ -1,7 +1,8 @@
-import { App, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
+import { App, ItemView, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
 
 import { getText } from './i18n';
 import type KambasPlugin from './main';
+import { CanvasItemView } from './canvas/CanvasTypes';
 
 import {
 	CanvasKeyboardPanSettings,
@@ -20,6 +21,7 @@ export interface FilterPreset {
 
 export interface KambasSettings {
 	hideImageLabel: boolean;
+	enableGifTools?: boolean; // Enable GIF playback and extraction tool
 	tagBadgePosition: 'outside' | 'inside';
 	tagZoomOnSelect: boolean;
 	tagPanelAutoClose: boolean; // Auto-close filter panel when canvas/panel loses focus
@@ -45,6 +47,7 @@ export interface KambasSettings {
 
 export const DEFAULT_SETTINGS: KambasSettings = {
 	hideImageLabel: true,
+	enableGifTools: true,
 	tagBadgePosition: 'outside',
 	tagZoomOnSelect: true,
 	tagPanelAutoClose: true,
@@ -108,6 +111,31 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		// Display & Canvas Section Header
 		new Setting(containerEl).setName(t.settingsHeading).setHeading();
+
+		new Setting(containerEl)
+			.setName(t.gifEnableSettingName || 'Enable GIF controls')
+			.setDesc(
+				t.gifEnableSettingDesc ||
+					'Show GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes.'
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableGifTools ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.enableGifTools = value;
+						await this.plugin.saveSettings();
+						if (value) {
+							const activeView = this.app.workspace.getActiveViewOfType(
+								ItemView
+							) as unknown as CanvasItemView | null;
+							if (activeView && activeView.getViewType() === 'canvas') {
+								this.plugin.canvasImageHandler.scanAndRestoreTransforms(activeView);
+							}
+						} else {
+							this.plugin.canvasImageHandler.gifHandler.detachAll();
+						}
+					})
+			);
 
 		new Setting(containerEl)
 			.setName(t.hideImageLabelName)

@@ -19,6 +19,9 @@ export interface CanvasNodeData {
 	kambasPalette?: boolean;
 	kambasOpacity?: number; // 0–1, default 1 (fully opaque)
 	kambasTags?: string[]; // canvas-local tags for this node
+	kambasGifPaused?: boolean; // persistent paused state for GIF playback
+	kambasGifFrame?: number; // persistent frame index for paused GIF
+	kambasGifSpeed?: number; // persistent speed for GIF playback
 	originalWidth?: number;
 	originalHeight?: number;
 	isLocked?: boolean;

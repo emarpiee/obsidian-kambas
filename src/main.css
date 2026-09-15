@@ -78,8 +78,8 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	left: 0;
 	top: 0;
 	transform: translate3d(var(--kambas-loupe-left, 0px), var(--kambas-loupe-top, 0px), 0);
-	border: 3px solid var(--interactive-accent);
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 12px rgba(255, 255, 255, 0.3);
+	border: var(--border-width, 3px) solid var(--interactive-accent);
+	box-shadow: var(--shadow-l, 0 8px 24px rgba(0, 0, 0, 0.4)), inset 0 0 12px rgba(255, 255, 255, 0.3);
 	pointer-events: none;
 	z-index: 9999;
 	overflow: hidden;
@@ -93,11 +93,11 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 }
 
 .kambas-loupe-shape-rounded {
-	border-radius: 20px;
+	border-radius: var(--radius-l, 20px);
 }
 
 .kambas-loupe-shape-square {
-	border-radius: 4px;
+	border-radius: var(--radius-s, 4px);
 }
 
 .kambas-loupe-inner {
@@ -158,7 +158,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	padding: var(--size-4-2, 6px) var(--size-4-1, 4px);
 	background-color: var(--background-secondary);
 	border: var(--border-width, 1px) solid var(--background-modifier-border);
-	border-radius: var(--radius-xl, 20px);
+	border-radius: var(--radius-l, 20px);
 	z-index: 10;
 	pointer-events: auto;
 	box-shadow: var(--shadow-s);
@@ -168,7 +168,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 .kambas-palette-swatch {
 	width: var(--size-4-6, 24px);
 	height: var(--size-4-6, 24px);
-	border-radius: var(--radius-max, 50%);
+	border-radius: 50%;
 	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	cursor: pointer;
 	box-shadow: var(--shadow-s);
@@ -184,7 +184,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 .kambas-palette-copy-btn {
 	width: var(--size-4-6, 24px);
 	height: var(--size-4-6, 24px);
-	border-radius: var(--radius-max, 50%);
+	border-radius: 50%;
 	background-color: var(--background-primary);
 	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	cursor: pointer;
@@ -238,7 +238,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	gap: 6px;
 	padding: 4px 8px;
 	background: var(--background-secondary-alt);
-	border: 1px solid var(--background-modifier-border);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	border-radius: var(--radius-s, 4px);
 	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-muted);
@@ -263,7 +263,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	align-items: flex-start;
 	gap: 10px;
 	padding: 10px 12px;
-	border: 1px solid var(--background-modifier-border);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	border-radius: var(--radius-m, 6px);
 	background: var(--background-primary);
 	cursor: pointer;
@@ -323,7 +323,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	align-items: center;
 	gap: 6px;
 	cursor: pointer;
-	font-size: 13px;
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-normal);
 	user-select: none;
 }
@@ -348,7 +348,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	margin-bottom: 16px;
 	padding: 12px 16px;
 	background-color: var(--background-secondary-alt);
-	border-radius: 8px;
+	border-radius: var(--radius-m, 8px);
 }
 
 .pan-kb-section {
@@ -358,8 +358,8 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 }
 
 .pan-kb-section-title {
-	font-weight: 600;
-	font-size: 13px;
+	font-weight: var(--font-semibold, 600);
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-muted);
 }
 
@@ -404,9 +404,9 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	border-radius: 6px;
+	border-radius: var(--radius-s, 6px);
 	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	transition: all 0.2s ease;
 }
 
@@ -423,27 +423,27 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	font-size: 12px;
-	font-weight: 500;
+	font-size: var(--font-ui-smaller, 12px);
+	font-weight: var(--font-medium, 500);
 	color: var(--text-muted);
 }
 
 .pan-kb.active {
 	background-color: var(--interactive-accent);
 	border-color: var(--interactive-accent);
-	color: var(--text-on-accent, #ffffff);
-	box-shadow: 0 0 8px var(--interactive-accent);
+	color: var(--text-on-accent);
+	box-shadow: var(--shadow-s, 0 0 8px var(--interactive-accent));
 	transform: scale(1.1);
 }
 
 .pan-kb.active svg.svg-icon {
-	color: var(--text-on-accent, #ffffff);
-	stroke: var(--text-on-accent, #ffffff);
+	color: var(--text-on-accent);
+	stroke: var(--text-on-accent);
 }
 
 .pan-kb-label.active {
 	color: var(--interactive-accent);
-	font-weight: bold;
+	font-weight: var(--font-bold, 700);
 	animation: kambas-pulse 1.2s infinite alternate ease-in-out;
 }
 
@@ -480,12 +480,12 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 
 .kambas-swap-tabs {
 	display: flex; gap: 4px; padding: 16px 16px 0;
-	border-bottom: 1px solid var(--background-modifier-border); margin-bottom: 0;
+	border-bottom: var(--border-width, 1px) solid var(--background-modifier-border); margin-bottom: 0;
 }
 .kambas-swap-tab {
-	flex: 1; padding: 8px 12px; border: none; border-radius: 6px 6px 0 0;
+	flex: 1; padding: 8px 12px; border: none; border-radius: var(--radius-s, 6px) var(--radius-s, 6px) 0 0;
 	background: transparent; color: var(--text-muted);
-	font-size: 13px; font-weight: 500; cursor: pointer;
+	font-size: var(--font-ui-small, 13px); font-weight: var(--font-medium, 500); cursor: pointer;
 	transition: color 0.15s, background 0.15s;
 }
 .kambas-swap-tab:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
@@ -500,43 +500,43 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 .kambas-swap-search-wrap {
 	display: flex; align-items: center; gap: 8px;
 	background: var(--background-modifier-form-field);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px; padding: 6px 10px;
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px); padding: 6px 10px;
 }
 .kambas-swap-search-icon { color: var(--text-muted); display: flex; align-items: center; flex-shrink: 0; }
 .kambas-swap-search-input {
 	flex: 1; border: none; background: transparent; outline: none;
-	font-size: 13px; color: var(--text-normal);
+	font-size: var(--font-ui-small, 13px); color: var(--text-normal);
 }
 .kambas-swap-search-input::placeholder { color: var(--text-muted); }
 
 .kambas-swap-results {
 	max-height: 180px; overflow-y: auto;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px; background: var(--background-secondary);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px); background: var(--background-secondary);
 }
 .kambas-swap-result-item {
 	display: flex; align-items: center; gap: 8px;
-	padding: 7px 10px; cursor: pointer; transition: background 0.1s; border-radius: 4px;
+	padding: 7px 10px; cursor: pointer; transition: background 0.1s; border-radius: var(--radius-s, 4px);
 }
 .kambas-swap-result-item:hover { background: var(--background-modifier-hover); }
 .kambas-swap-result-item--selected { background: var(--background-modifier-active-hover); color: var(--text-accent); }
 .kambas-swap-result-icon { color: var(--text-muted); display: flex; align-items: center; flex-shrink: 0; }
-.kambas-swap-result-name { font-size: 13px; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kambas-swap-result-path { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
-.kambas-swap-no-results { padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+.kambas-swap-result-name { font-size: var(--font-ui-small, 13px); font-weight: var(--font-medium, 500); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kambas-swap-result-path { font-size: var(--font-ui-smaller, 11px); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.kambas-swap-no-results { padding: 16px; text-align: center; color: var(--text-muted); font-size: var(--font-ui-small, 13px); }
 
 .kambas-swap-preview {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px; background: var(--background-secondary);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px); background: var(--background-secondary);
 	display: flex; flex-direction: column; align-items: center; justify-content: center;
 	min-height: 100px; padding: 8px; gap: 6px;
 }
-.kambas-swap-preview-media { max-height: 120px; max-width: 100%; object-fit: contain; border-radius: 4px; }
-.kambas-swap-preview-name { font-size: 11px; color: var(--text-muted); text-align: center; word-break: break-all; }
+.kambas-swap-preview-media { max-height: 120px; max-width: 100%; object-fit: contain; border-radius: var(--radius-s, 4px); }
+.kambas-swap-preview-name { font-size: var(--font-ui-smaller, 11px); color: var(--text-muted); text-align: center; word-break: break-all; }
 
 .kambas-swap-dropzone {
-	border: 2px dashed var(--background-modifier-border); border-radius: 8px;
+	border: 2px dashed var(--background-modifier-border); border-radius: var(--radius-m, 8px);
 	padding: 24px 16px; text-align: center; cursor: pointer;
 	transition: border-color 0.15s, background 0.15s;
 	display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -546,25 +546,25 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 }
 .kambas-swap-dropzone--has-file { border-style: solid; border-color: var(--color-green); }
 .kambas-swap-dropzone-icon { color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
-.kambas-swap-dropzone-hint { font-size: 13px; color: var(--text-muted); margin: 0; }
+.kambas-swap-dropzone-hint { font-size: var(--font-ui-small, 13px); color: var(--text-muted); margin: 0; }
 .kambas-swap-dropzone-btns { display: flex; gap: 8px; align-items: center; justify-content: center; }
 .kambas-swap-browse-btn {
-	font-size: 13px; padding: 5px 14px; border-radius: 5px;
+	font-size: var(--font-ui-small, 13px); padding: 5px 14px; border-radius: var(--radius-s, 5px);
 	background: var(--interactive-normal); color: var(--text-normal);
-	border: 1px solid var(--background-modifier-border); cursor: pointer; transition: background 0.15s;
+	border: var(--border-width, 1px) solid var(--background-modifier-border); cursor: pointer; transition: background 0.15s;
 }
 .kambas-swap-browse-btn:hover { background: var(--interactive-hover); }
 
 
 .kambas-swap-btn-row { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px 16px; }
 .kambas-swap-cancel-btn {
-	padding: 7px 18px; border-radius: 6px;
-	border: 1px solid var(--background-modifier-border);
+	padding: 7px 18px; border-radius: var(--radius-s, 6px);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	background: transparent; color: var(--text-muted); cursor: pointer;
-	font-size: 13px; transition: background 0.15s;
+	font-size: var(--font-ui-small, 13px); transition: background 0.15s;
 }
 .kambas-swap-cancel-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.kambas-swap-action-btn { padding: 7px 22px; font-size: 13px; font-weight: 600; }
+.kambas-swap-action-btn { padding: 7px 22px; font-size: var(--font-ui-small, 13px); font-weight: var(--font-semibold, 600); }
 .kambas-swap-action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -608,14 +608,14 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	display: inline-flex;
 	align-items: center;
 	padding: 2px 8px;
-	border-radius: 12px;
-	font-size: 11px;
-	font-weight: 500;
+	border-radius: var(--radius-l, 12px);
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: var(--font-medium, 500);
 	line-height: 1.4;
 	white-space: nowrap;
 	background-color: var(--tag-background, rgba(var(--color-accent-hsl), 0.15));
 	color: var(--tag-color, var(--text-accent));
-	border: 1px solid var(--tag-border-color, transparent);
+	border: var(--border-width, 1px) solid var(--tag-border-color, transparent);
 	user-select: none;
 	cursor: pointer;
 	transition: outline 0.1s ease, outline-offset 0.1s ease;
@@ -632,7 +632,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 .kambas-tag-suggest-label .kambas-tag-ns {
 	opacity: 0.65;
 	margin-right: 1px;
-	font-weight: 400;
+	font-weight: var(--font-normal, 400);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -648,9 +648,9 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	max-width: calc(100% - 24px);
 	min-height: 160px;
 	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
-	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18), 0 1px 4px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--shadow-l, 0 4px 24px rgba(0, 0, 0, 0.18));
 	z-index: 100;
 	overflow: hidden;
 	display: flex;
@@ -665,7 +665,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	align-items: center;
 	justify-content: space-between;
 	padding: 10px 12px 6px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: var(--border-width, 1px) solid var(--background-modifier-border);
 	background: var(--background-secondary);
 	cursor: grab;
 	user-select: none;
@@ -677,8 +677,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	gap: 4px;
 	background: var(--background-primary);
 	padding: 2px;
-	border-radius: 6px;
-	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 }
 
 .kambas-tag-panel-tab {
@@ -687,10 +687,10 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	align-items: center;
 	gap: 4px;
 	padding: 3px 8px;
-	font-size: 11px;
-	font-weight: 600;
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: var(--font-semibold, 600);
 	color: var(--text-muted);
-	border-radius: 4px;
+	border-radius: var(--radius-s, 4px);
 	cursor: pointer;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
@@ -725,7 +725,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	border-radius: 50%;
 	display: inline-block;
 	flex-shrink: 0;
-	border: 1px solid rgba(0, 0, 0, 0.15);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 }
 
 .kambas-tag-panel-item.is-active .kambas-color-dot {
@@ -742,7 +742,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 /* ── Panel row highlights (node hover → row glow / dim) ─────────────────── */
 .kambas-tag-panel-item.is-related {
-	background: rgba(var(--interactive-accent-rgb, 99, 102, 241), 0.1);
+	background: rgba(var(--color-accent-hsl), 0.1);
 	border-left: 2.5px solid var(--interactive-accent);
 	padding-left: calc(10px - 2.5px); /* compensate for the border */
 }
@@ -766,7 +766,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	border-radius: var(--radius-s, 4px);
 	color: var(--text-muted);
 	cursor: pointer;
-	border: 1px solid transparent;
+	border: var(--border-width, 1px) solid transparent;
 	transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
@@ -789,8 +789,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	padding: 6px 10px;
 	margin: 6px 8px;
 	background: var(--background-modifier-form-field);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px);
 	flex-shrink: 0;
 	transition: border-color 0.15s ease;
 }
@@ -816,7 +816,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	background: transparent;
 	border: none;
 	padding: 4px 4px 4px 0;
-	font-size: 12px;
+	font-size: var(--font-ui-smaller, 12px);
 	color: var(--text-normal);
 	outline: none;
 	min-width: 0;
@@ -834,7 +834,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	flex-shrink: 0;
 	width: 22px;
 	height: 22px;
-	border: 1px solid var(--background-modifier-border);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	background: var(--background-primary);
 	color: var(--text-muted);
 	cursor: pointer;
@@ -852,7 +852,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 .kambas-tag-search-clear:hover {
-	color: var(--text-on-accent, #ffffff);
+	color: var(--text-on-accent);
 	background: var(--interactive-accent);
 	border-color: var(--interactive-accent);
 }
@@ -883,7 +883,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	align-items: center;
 	padding: 6px 12px;
 	cursor: pointer;
-	border-radius: 5px;
+	border-radius: var(--radius-s, 5px);
 	margin: 1px 6px;
 	transition: background 0.1s ease;
 	gap: 7px;
@@ -910,26 +910,28 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 /* ── Excluded state (red) ─────────────────────────────────────────────────── */
 .kambas-tag-panel-item.is-excluded {
-	background: rgba(255, 80, 80, 0.12);
+	background: var(--background-modifier-error-hover, rgba(255, 80, 80, 0.12));
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-pill,
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-check {
-	color: var(--text-error, #e53935);
+	color: var(--text-error);
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-count {
-	background: rgba(255, 80, 80, 0.18);
-	color: var(--text-error, #e53935);
+	background: var(--background-modifier-error);
+	color: var(--text-error);
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-delete {
-	color: rgba(229, 57, 53, 0.5);
+	color: var(--text-error);
+	opacity: 0.6;
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-delete:hover {
-	color: #e53935;
-	background: rgba(255, 80, 80, 0.2);
+	color: var(--text-error);
+	background: var(--background-modifier-error-hover);
+	opacity: 1;
 }
 
 .kambas-tag-panel-check {
@@ -947,22 +949,22 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 .kambas-tag-panel-pill {
 	display: inline-flex;
 	align-items: center;
-	font-size: 13px;
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-normal);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	max-width: 140px;
-	border-radius: 12px;
+	border-radius: var(--radius-l, 12px);
 	transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .kambas-tag-panel-pill.has-custom-color {
 	padding: 2px 8px;
-	font-size: 11px;
-	font-weight: 500;
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: var(--font-medium, 500);
 	line-height: 1.4;
-	border: 1px solid var(--tag-border-color, transparent);
+	border: var(--border-width, 1px) solid var(--tag-border-color, transparent);
 }
 
 .kambas-tag-panel-counts {
@@ -974,23 +976,23 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 .kambas-tag-panel-count {
-	font-size: 11px;
+	font-size: var(--font-ui-smaller, 11px);
 	color: var(--text-muted);
 	background: var(--background-modifier-border);
-	border-radius: 10px;
+	border-radius: var(--radius-l, 10px);
 	padding: 1px 7px;
 	flex-shrink: 0;
-	font-weight: 500;
+	font-weight: var(--font-medium, 500);
 }
 
 /* "N in view" amber badge — appears when filter is active */
 .kambas-in-view-count {
-	background: rgba(245, 158, 11, 0.18);
-	color: #b45309;
+	background: rgba(var(--color-yellow-hsl, 45, 100%, 50%), 0.18);
+	color: var(--text-warning, var(--color-yellow));
 }
 .theme-dark .kambas-in-view-count {
-	background: rgba(245, 158, 11, 0.22);
-	color: #fbbf24;
+	background: rgba(var(--color-yellow-hsl, 45, 100%, 50%), 0.22);
+	color: var(--text-warning, var(--color-yellow));
 }
 
 /* Divider between related and unrelated color rows */
@@ -1002,8 +1004,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	margin-top: 2px;
 }
 .kambas-color-divider span {
-	font-size: 10px;
-	font-weight: 600;
+	font-size: var(--font-ui-smaller, 10px);
+	font-weight: var(--font-semibold, 600);
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	color: var(--text-faint);
@@ -1025,7 +1027,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 .kambas-tag-panel-empty {
 	padding: 16px 14px;
-	font-size: 13px;
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-muted);
 	text-align: center;
 }
@@ -1041,7 +1043,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	height: 22px;
 	color: transparent;
 	cursor: pointer;
-	border-radius: 4px;
+	border-radius: var(--radius-s, 4px);
 	padding: 3px;
 	transition: color 0.1s ease, background 0.1s ease;
 }
@@ -1058,8 +1060,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 .kambas-tag-panel-item:hover .kambas-tag-panel-delete:hover {
-	color: var(--text-error, var(--color-red));
-	background: rgba(255, 80, 80, 0.15);
+	color: var(--text-error);
+	background: var(--background-modifier-error-hover);
 }
 
 .kambas-tag-panel-item:hover .kambas-tag-panel-menu-btn:hover {
@@ -1069,12 +1071,14 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 .kambas-tag-panel-item.is-active .kambas-tag-panel-delete,
 .kambas-tag-panel-item.is-active .kambas-tag-panel-menu-btn {
-	color: rgba(255, 255, 255, 0.7);
+	color: var(--text-on-accent);
+	opacity: 0.75;
 }
 
 .kambas-tag-panel-item.is-active .kambas-tag-panel-delete:hover,
 .kambas-tag-panel-item.is-active .kambas-tag-panel-menu-btn:hover {
-	color: #fff;
+	color: var(--text-on-accent);
+	opacity: 1;
 	background: rgba(255, 255, 255, 0.25);
 }
 
@@ -1089,18 +1093,18 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	gap: 12px;
 	padding: 12px;
 	background: var(--background-secondary);
-	border-radius: 8px;
+	border-radius: var(--radius-m, 8px);
 	margin-top: 8px;
 }
 
 .kambas-tag-color-preview-label {
-	font-size: 12px;
-	font-weight: 500;
+	font-size: var(--font-ui-smaller, 12px);
+	font-weight: var(--font-medium, 500);
 	color: var(--text-muted);
 }
 
 .kambas-tag-color-preview-pill {
-	font-size: 12px;
+	font-size: var(--font-ui-smaller, 12px);
 	padding: 4px 10px;
 }
 
@@ -1116,7 +1120,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	height: 32px;
 	padding: 0;
 	border: none;
-	border-radius: 6px;
+	border-radius: var(--radius-s, 6px);
 	background: none;
 	cursor: pointer;
 	margin-left: 8px;
@@ -1124,7 +1128,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 /* ── Opacity slider footer ────────────────────────────────────────────────── */
 .kambas-tag-panel-footer {
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: var(--border-width, 1px) solid var(--background-modifier-border);
 	padding: 10px 14px;
 	flex-shrink: 0;
 	background: var(--background-secondary);
@@ -1139,7 +1143,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 .kambas-tag-slider-label-text {
 	display: block;
-	font-size: 11px;
+	font-size: var(--font-ui-smaller, 11px);
 	color: var(--text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
@@ -1169,7 +1173,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	width: 22px;
 	height: 22px;
 	padding: 0;
-	border-radius: 5px;
+	border-radius: var(--radius-s, 5px);
 	border: none;
 	background: transparent;
 	color: var(--text-muted);
@@ -1241,12 +1245,12 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 .kambas-tag-preset-row {
 	margin-top: 12px;
 	padding-top: 8px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: var(--border-width, 1px) solid var(--background-modifier-border);
 }
 
 .kambas-tag-preset-header {
-	font-size: 11px;
-	font-weight: 600;
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: var(--font-semibold, 600);
 	color: var(--text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
@@ -1263,14 +1267,14 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	display: inline-flex;
 	align-items: center;
 	padding: 2px 8px;
-	border-radius: 12px;
-	font-size: 11px;
-	font-weight: 500;
+	border-radius: var(--radius-l, 12px);
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: var(--font-medium, 500);
 	cursor: pointer;
 	user-select: none;
 	background: var(--tag-background, rgba(var(--color-accent-hsl), 0.08));
 	color: var(--tag-color, var(--text-muted));
-	border: 1px solid var(--tag-border-color, transparent);
+	border: var(--border-width, 1px) solid var(--tag-border-color, transparent);
 	transition: transform 0.1s ease, background 0.1s ease, color 0.1s ease;
 }
 
@@ -1294,10 +1298,10 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 }
 
 .kambas-tag-count-badge {
-	font-size: 10px;
+	font-size: var(--font-ui-smaller, 10px);
 	opacity: 0.7;
 	margin-left: 3px;
-	font-weight: 400;
+	font-weight: var(--font-normal, 400);
 }
 
 /* Chip input wrapper — column layout so chips and input are in separate rows */
@@ -1306,8 +1310,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	flex-direction: column;
 	gap: 6px;
 	padding: 8px 10px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 8px);
 	background: var(--background-modifier-form-field);
 	min-height: 42px;
 	cursor: text;
@@ -1346,12 +1350,12 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	align-items: center;
 	gap: 4px;
 	padding: 2px 6px 2px 8px;
-	border-radius: 12px;
-	font-size: 12px;
-	font-weight: 500;
+	border-radius: var(--radius-l, 12px);
+	font-size: var(--font-ui-smaller, 12px);
+	font-weight: var(--font-medium, 500);
 	background: rgba(var(--color-accent-hsl), 0.15);
 	color: var(--text-accent);
-	border: 1px solid rgba(var(--color-accent-hsl), 0.3);
+	border: var(--border-width, 1px) solid rgba(var(--color-accent-hsl), 0.3);
 	white-space: nowrap;
 	user-select: none;
 }
@@ -1373,7 +1377,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 .kambas-tag-chip-remove:hover {
 	color: var(--text-error);
-	background: rgba(var(--color-red-hsl), 0.15);
+	background: rgba(var(--color-red-hsl, 255, 80, 80), 0.15);
 }
 
 .kambas-tag-chip-remove svg.svg-icon {
@@ -1388,7 +1392,7 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	border: none;
 	background: transparent;
 	outline: none;
-	font-size: 13px;
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-normal);
 	padding: 2px 0;
 }
@@ -1400,10 +1404,10 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 /* Autocomplete dropdown */
 .kambas-tag-dropdown {
 	margin-top: 4px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 7px;
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 7px);
 	background: var(--background-primary);
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+	box-shadow: var(--shadow-s, 0 4px 16px rgba(0, 0, 0, 0.15));
 	overflow: hidden;
 }
 
@@ -1412,10 +1416,10 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	align-items: center;
 	justify-content: space-between;
 	padding: 7px 12px;
-	font-size: 13px;
+	font-size: var(--font-ui-small, 13px);
 	color: var(--text-normal);
 	cursor: pointer;
-	border-radius: 4px;
+	border-radius: var(--radius-s, 4px);
 	margin: 2px 4px;
 	transition: background 0.1s ease;
 	outline: none;
@@ -1435,16 +1439,16 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 .kambas-tag-suggest-badge {
 	display: inline-flex;
 	align-items: center;
-	font-size: 10px;
+	font-size: var(--font-ui-smaller, 10px);
 	padding: 2px 6px;
-	border-radius: 4px;
+	border-radius: var(--radius-s, 4px);
 	background: var(--tag-background, rgba(var(--color-accent-hsl), 0.12));
 	color: var(--text-accent);
-	font-weight: 500;
+	font-weight: var(--font-medium, 500);
 	margin-left: 12px;
 	white-space: nowrap;
 	flex-shrink: 0;
-	border: 1px solid var(--tag-border-color, transparent);
+	border: var(--border-width, 1px) solid var(--tag-border-color, transparent);
 }
 
 /* Button row in tag modal */
@@ -1457,12 +1461,12 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 .kambas-tag-cancel-btn {
 	padding: 7px 18px;
-	border-radius: 6px;
-	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
 	background: transparent;
 	color: var(--text-muted);
 	cursor: pointer;
-	font-size: 13px;
+	font-size: var(--font-ui-small, 13px);
 	transition: background 0.15s;
 }
 
@@ -1473,8 +1477,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 .kambas-tag-apply-btn {
 	padding: 7px 22px;
-	font-size: 13px;
-	font-weight: 600;
+	font-size: var(--font-ui-small, 13px);
+	font-weight: var(--font-semibold, 600);
 }
 
 /* Color Filter Controls Toggles Wrapper */
@@ -1484,14 +1488,14 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	flex-wrap: wrap;
 	gap: 12px;
 	padding: 4px 12px 6px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: var(--border-width, 1px) solid var(--background-modifier-border);
 }
 
 .kambas-accent-toggle-label {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	font-size: 11px;
+	font-size: var(--font-ui-smaller, 11px);
 	color: var(--text-muted);
 	cursor: pointer;
 	user-select: none;
@@ -1506,5 +1510,127 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	margin: 0;
 	accent-color: var(--interactive-accent);
 }
+
+/* GIF Controls & Canvas Overlay */
+.kambas-gif-canvas-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	pointer-events: none;
+	user-select: none;
+	z-index: 2;
+}
+
+.kambas-gif-toolbar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: var(--background-secondary-alt);
+	backdrop-filter: blur(12px);
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-l, 20px);
+	box-shadow: var(--shadow-l, 0 6px 18px rgba(0, 0, 0, 0.35));
+	z-index: 1000;
+	pointer-events: auto;
+	user-select: none;
+	font-size: var(--font-ui-smaller, 12px);
+	color: var(--text-normal);
+	will-change: transform;
+	transition: opacity 0.15s ease;
+}
+
+.kambas-gif-toolbar-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 4px 6px;
+	border-radius: var(--radius-s, 6px);
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.kambas-gif-toolbar-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.kambas-gif-play-btn {
+	color: var(--interactive-accent);
+}
+
+.kambas-gif-extract-btn {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 3px 10px;
+	border-radius: var(--radius-l, 12px);
+	font-weight: var(--font-medium, 500);
+}
+
+.kambas-gif-extract-btn:hover {
+	opacity: 0.9;
+	color: var(--text-on-accent);
+}
+
+.kambas-gif-btn-text {
+	font-size: var(--font-ui-smaller, 11px);
+	margin-left: 2px;
+}
+
+.kambas-gif-scrubber {
+	width: 110px;
+	height: 4px;
+	appearance: none;
+	-webkit-appearance: none;
+	background: var(--background-modifier-border);
+	border-radius: var(--radius-s, 2px);
+	outline: none;
+	cursor: pointer;
+}
+
+.kambas-gif-scrubber::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	cursor: pointer;
+	box-shadow: var(--shadow-s);
+}
+
+.kambas-gif-frame-counter {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller, 11px);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+	min-width: 60px;
+	text-align: center;
+	display: inline-block;
+	flex-shrink: 0;
+}
+
+.kambas-gif-speed-select {
+	background: transparent;
+	border: var(--border-width, 1px) solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller, 11px);
+	padding: 2px 4px;
+	cursor: pointer;
+}
+
+.kambas-gif-speed-select:hover {
+	color: var(--text-normal);
+}
+
 
 

@@ -1,4 +1,4 @@
-import { ItemView, Menu, Plugin, TFile } from 'obsidian';
+import { ItemView, Menu, Notice, Plugin, TFile } from 'obsidian';
 
 import { getText } from './i18n';
 import './main.css';
@@ -14,7 +14,7 @@ import { OpacityModal } from './modals/OpacityModal';
 
 export default class KambasPlugin extends Plugin {
 	public settings!: KambasSettings;
-	private canvasImageHandler!: CanvasImageHandler;
+	public canvasImageHandler!: CanvasImageHandler;
 	public canvasKeyboardPan!: CanvasKeyboardPan;
 	private canvasSelectionZoom!: CanvasSelectionZoom;
 	private canvasLoupeInspector!: CanvasLoupeInspector;
@@ -43,7 +43,10 @@ export default class KambasPlugin extends Plugin {
 		// Restore saved transforms & mount embedded link images on active leaf or layout changes
 		const updateActiveCanvas = (): void => {
 			const activeView = this.app.workspace.getActiveViewOfType(ItemView);
-			if (activeView?.getViewType() !== 'canvas') return;
+			if (activeView?.getViewType() !== 'canvas') {
+				this.canvasImageHandler?.unregisterEvents();
+				return;
+			}
 			const canvasView = activeView as unknown as CanvasItemView;
 			window.setTimeout(() => {
 				this.canvasImageHandler.scanAndRestoreTransforms(canvasView);
@@ -553,6 +556,36 @@ export default class KambasPlugin extends Plugin {
 					return true;
 				}
 				return false;
+			},
+		});
+
+		// Register command: Toggle GIF controls on/off
+		this.addCommand({
+			id: 'toggle-gif-controls',
+			name: getText().gifToggleCommandName || 'Toggle GIF controls on/off',
+			icon: 'film',
+			callback: async () => {
+				const newValue = !(this.settings.enableGifTools ?? true);
+				this.settings.enableGifTools = newValue;
+				await this.saveSettings();
+
+				const t = getText();
+				const msg = newValue
+					? t.gifControlsEnabledNotice || 'GIF controls enabled'
+					: t.gifControlsDisabledNotice || 'GIF controls disabled';
+				new Notice(msg);
+
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
+
+				if (newValue) {
+					if (activeView && activeView.getViewType() === 'canvas') {
+						this.canvasImageHandler.scanAndRestoreTransforms(activeView);
+					}
+				} else {
+					this.canvasImageHandler.gifHandler.detachAll();
+				}
 			},
 		});
 	}

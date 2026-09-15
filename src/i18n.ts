@@ -214,9 +214,42 @@ export interface TranslationSchema {
 	numberFormatRomanLower?: string;
 	numberFormatLetterUpper?: string;
 	numberFormatLetterLower?: string;
+
+	// GIF Tool
+	gifHeading?: string;
+	gifPlayPauseTooltip?: string;
+	gifStepPrevTooltip?: string;
+	gifStepNextTooltip?: string;
+	gifSpeedLabel?: string;
+	gifExtractFrameTooltip?: string;
+	gifExtractFrameLabel?: string;
+	gifExtractSuccess?: (frame: number) => string;
+	gifExtractSuccessEmbed?: (frame: number) => string;
+	gifExtractError?: string;
+	gifEnableSettingName?: string;
+	gifEnableSettingDesc?: string;
+	gifToggleCommandName?: string;
+	gifControlsEnabledNotice?: string;
+	gifControlsDisabledNotice?: string;
 }
 
 const en: TranslationSchema = {
+	gifHeading: 'GIF Controls',
+	gifPlayPauseTooltip: 'Play / Pause (Space)',
+	gifStepPrevTooltip: 'Previous frame',
+	gifStepNextTooltip: 'Next frame',
+	gifSpeedLabel: 'Playback speed',
+	gifExtractFrameTooltip: 'Extract current frame to canvas',
+	gifExtractFrameLabel: 'Extract',
+	gifExtractSuccess: (frame: number) => `Extracted frame ${frame} to vault!`,
+	gifExtractSuccessEmbed: (frame: number) => `Extracted frame ${frame} into canvas file!`,
+	gifExtractError: 'Failed to extract GIF frame',
+	gifEnableSettingName: 'Enable GIF controls',
+	gifEnableSettingDesc: 'Show GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes.',
+	gifToggleCommandName: 'Toggle GIF controls on/off',
+	gifControlsEnabledNotice: 'GIF controls enabled',
+	gifControlsDisabledNotice: 'GIF controls disabled',
+
 	settingsHeading: 'Display & canvas',
 	hideImageLabelName: 'Hide media label',
 	hideImageLabelDesc:
@@ -449,6 +482,21 @@ const en: TranslationSchema = {
 };
 
 const zh: TranslationSchema = {
+	gifHeading: 'GIF 控制',
+	gifPlayPauseTooltip: '播放 / 暂停 (空格)',
+	gifStepPrevTooltip: '上一帧',
+	gifStepNextTooltip: '下一帧',
+	gifSpeedLabel: '播放速度',
+	gifExtractFrameTooltip: '提取当前帧到画布',
+	gifExtractFrameLabel: '提取帧',
+	gifExtractSuccess: (frame: number) => `已将第 ${frame} 帧提取到 Vault!`,
+	gifExtractSuccessEmbed: (frame: number) => `已将第 ${frame} 帧嵌入到画布文件!`,
+	gifExtractError: '提取 GIF 帧失败',
+	gifEnableSettingName: '启用 GIF 控制工具',
+	gifEnableSettingDesc: '在 GIF 节点上显示 GIF 播放工具栏、时间轴进度条和帧提取功能。',
+	gifToggleCommandName: '切换 GIF 控制工具显示/隐藏',
+	gifControlsEnabledNotice: '已启用 GIF 控制工具',
+	gifControlsDisabledNotice: '已禁用 GIF 控制工具',
 	settingsHeading: '显示与画布',
 	hideImageLabelName: '隐藏媒体标签',
 	hideImageLabelDesc:
@@ -678,6 +726,21 @@ const zh: TranslationSchema = {
 };
 
 const zhTW: TranslationSchema = {
+	gifHeading: 'GIF 控制',
+	gifPlayPauseTooltip: '播放 / 暫停 (空格)',
+	gifStepPrevTooltip: '上一幀',
+	gifStepNextTooltip: '下一幀',
+	gifSpeedLabel: '播放速度',
+	gifExtractFrameTooltip: '擷取當前幀到畫布',
+	gifExtractFrameLabel: '擷取幀',
+	gifExtractSuccess: (frame: number) => `已將第 ${frame} 幀擷取到 Vault!`,
+	gifExtractSuccessEmbed: (frame: number) => `已將第 ${frame} 幀嵌入至畫布檔案!`,
+	gifExtractError: '擷取 GIF 幀失敗',
+	gifEnableSettingName: '啟用 GIF 控制工具',
+	gifEnableSettingDesc: '在 GIF 節點上顯示 GIF 播放工具列、時間軸進度條和幀擷取功能。',
+	gifToggleCommandName: '切換 GIF 控制工具顯示/隱藏',
+	gifControlsEnabledNotice: '已啟用 GIF 控制工具',
+	gifControlsDisabledNotice: '已禁用 GIF 控制工具',
 	settingsHeading: '顯示與畫布',
 	hideImageLabelName: '隱藏媒體標籤',
 	hideImageLabelDesc:
@@ -887,6 +950,21 @@ const zhTW: TranslationSchema = {
 };
 
 const es: TranslationSchema = {
+	gifHeading: 'Controles de GIF',
+	gifPlayPauseTooltip: 'Reproducir / Pausar',
+	gifStepPrevTooltip: 'Fotograma anterior',
+	gifStepNextTooltip: 'Fotograma siguiente',
+	gifSpeedLabel: 'Velocidad de reproducción',
+	gifExtractFrameTooltip: 'Extraer fotograma actual al lienzo',
+	gifExtractFrameLabel: 'Extraer',
+	gifExtractSuccess: (frame: number) => `¡Fotograma ${frame} extraído a la bóveda!`,
+	gifExtractSuccessEmbed: (frame: number) => `¡Fotograma ${frame} incrustado en el archivo de lienzo!`,
+	gifExtractError: 'Error al extraer el fotograma GIF',
+	gifEnableSettingName: 'Habilitar controles de GIF',
+	gifEnableSettingDesc: 'Muestra la barra de herramientas de reproducción de GIF, la línea de tiempo y la extracción de fotogramas.',
+	gifToggleCommandName: 'Activar/desactivar controles de GIF',
+	gifControlsEnabledNotice: 'Controles de GIF habilitados',
+	gifControlsDisabledNotice: 'Controles de GIF desactivados',
 	settingsHeading: 'Visualización y lienzo',
 	hideImageLabelName: 'Ocultar etiqueta de medios',
 	hideImageLabelDesc:
@@ -1122,6 +1200,21 @@ const es: TranslationSchema = {
 };
 
 const fr: TranslationSchema = {
+	gifHeading: 'Contrôles GIF',
+	gifPlayPauseTooltip: 'Lecture / Pause',
+	gifStepPrevTooltip: 'Image précédente',
+	gifStepNextTooltip: 'Image suivante',
+	gifSpeedLabel: 'Vitesse de lecture',
+	gifExtractFrameTooltip: 'Extraire l’image actuelle sur le canevas',
+	gifExtractFrameLabel: 'Extraire',
+	gifExtractSuccess: (frame: number) => `Image ${frame} extraite dans le coffre !`,
+	gifExtractSuccessEmbed: (frame: number) => `Image ${frame} intégrée dans le fichier de canevas !`,
+	gifExtractError: 'Échec de l’extraction de l’image GIF',
+	gifEnableSettingName: 'Activer les contrôles GIF',
+	gifEnableSettingDesc: 'Afficher la barre d’outils de lecture GIF, la chronologie et l’extraction d’images.',
+	gifToggleCommandName: 'Activer/désactiver les contrôles GIF',
+	gifControlsEnabledNotice: 'Contrôles GIF activés',
+	gifControlsDisabledNotice: 'Contrôles GIF désactivés',
 	settingsHeading: 'Affichage et canevas',
 	hideImageLabelName: 'Masquer l’étiquette des médias',
 	hideImageLabelDesc:
@@ -1359,6 +1452,21 @@ const fr: TranslationSchema = {
 };
 
 const de: TranslationSchema = {
+	gifHeading: 'GIF-Steuerung',
+	gifPlayPauseTooltip: 'Wiedergabe / Pause',
+	gifStepPrevTooltip: 'Vorheriger Frame',
+	gifStepNextTooltip: 'Nächster Frame',
+	gifSpeedLabel: 'Wiedergabegeschwindigkeit',
+	gifExtractFrameTooltip: 'Aktuellen Frame auf Canvas extrahieren',
+	gifExtractFrameLabel: 'Extrahieren',
+	gifExtractSuccess: (frame: number) => `Frame ${frame} erfolgreich im Vault gespeichert!`,
+	gifExtractSuccessEmbed: (frame: number) => `Frame ${frame} in Canvas-Datei eingebettet!`,
+	gifExtractError: 'Fehler beim Extrahieren des GIF-Frames',
+	gifEnableSettingName: 'GIF-Steuerung aktivieren',
+	gifEnableSettingDesc: 'Zeigt die GIF-Wiedergabeleiste, Zeitleiste und Frame-Extraktion an.',
+	gifToggleCommandName: 'GIF-Steuerung ein-/ausschalten',
+	gifControlsEnabledNotice: 'GIF-Steuerung aktiviert',
+	gifControlsDisabledNotice: 'GIF-Steuerung deaktiviert',
 	settingsHeading: 'Anzeige & Canvas',
 	hideImageLabelName: 'Medienbeschriftung ausblenden',
 	hideImageLabelDesc:
@@ -1597,6 +1705,21 @@ const de: TranslationSchema = {
 };
 
 const ja: TranslationSchema = {
+	gifHeading: 'GIF コントロール',
+	gifPlayPauseTooltip: '再生 / 一時停止',
+	gifStepPrevTooltip: '前のフレーム',
+	gifStepNextTooltip: '次のフレーム',
+	gifSpeedLabel: '再生速度',
+	gifExtractFrameTooltip: '現在のフレームをキャンバスに抽出',
+	gifExtractFrameLabel: '抽出',
+	gifExtractSuccess: (frame: number) => `フレーム ${frame} を保管庫に抽出しました！`,
+	gifExtractSuccessEmbed: (frame: number) => `フレーム ${frame} をキャンバスファイルに埋め込みました！`,
+	gifExtractError: 'GIF フレームの抽出に失敗しました',
+	gifEnableSettingName: 'GIF コントロールを有効化',
+	gifEnableSettingDesc: 'GIF ノードに再生ツールバー、タイムライン、フレーム抽出機能を表示します。',
+	gifToggleCommandName: 'GIF コントロールの有効/無効を切り替え',
+	gifControlsEnabledNotice: 'GIF コントロールが有効になりました',
+	gifControlsDisabledNotice: 'GIF コントロールが無効になりました',
 	settingsHeading: '表示とキャンバス',
 	hideImageLabelName: 'メディアラベルを非表示',
 	hideImageLabelDesc:
@@ -1833,6 +1956,21 @@ const ja: TranslationSchema = {
 };
 
 const ko: TranslationSchema = {
+	gifHeading: 'GIF 제어',
+	gifPlayPauseTooltip: '재생 / 일시정지',
+	gifStepPrevTooltip: '이전 프레임',
+	gifStepNextTooltip: '다음 프레임',
+	gifSpeedLabel: '재생 속도',
+	gifExtractFrameTooltip: '현재 프레임을 캔버스로 추출',
+	gifExtractFrameLabel: '추출',
+	gifExtractSuccess: (frame: number) => `프레임 ${frame}을(를) 보관소로 추출했습니다!`,
+	gifExtractSuccessEmbed: (frame: number) => `프레임 ${frame}을(를) 캔버스 파일에 임베드했습니다!`,
+	gifExtractError: 'GIF 프레임 추출 실패',
+	gifEnableSettingName: 'GIF 제어 도구 활성화',
+	gifEnableSettingDesc: 'GIF 노드에 재생 도구 모음, 타임라인 및 프레임 추출 기능을 표시합니다.',
+	gifToggleCommandName: 'GIF 제어 도구 켜기/끄기',
+	gifControlsEnabledNotice: 'GIF 제어 도구가 활성화되었습니다',
+	gifControlsDisabledNotice: 'GIF 제어 도구가 비활성화되었습니다',
 	settingsHeading: '표시 및 캔버스',
 	hideImageLabelName: '미디어 레이블 숨기기',
 	hideImageLabelDesc:
@@ -2060,6 +2198,21 @@ const ko: TranslationSchema = {
 };
 
 const ru: TranslationSchema = {
+	gifHeading: 'Управление GIF',
+	gifPlayPauseTooltip: 'Воспроизведение / Пауза',
+	gifStepPrevTooltip: 'Предыдущий кадр',
+	gifStepNextTooltip: 'Следующий кадр',
+	gifSpeedLabel: 'Скорость воспроизведения',
+	gifExtractFrameTooltip: 'Извлечь текущий кадр на холст',
+	gifExtractFrameLabel: 'Извлечь',
+	gifExtractSuccess: (frame: number) => `Кадр ${frame} успешно извлечен в хранилище!`,
+	gifExtractSuccessEmbed: (frame: number) => `Кадр ${frame} успешно встроен в файл холста!`,
+	gifExtractError: 'Ошибка извлечения кадра GIF',
+	gifEnableSettingName: 'Включить элементы управления GIF',
+	gifEnableSettingDesc: 'Отображать панель воспроизведения GIF, временную шкалу и извлечение кадров.',
+	gifToggleCommandName: 'Включить/выключить управление GIF',
+	gifControlsEnabledNotice: 'Элементы управления GIF включены',
+	gifControlsDisabledNotice: 'Элементы управления GIF отключены',
 	settingsHeading: 'Отображение и холст',
 	hideImageLabelName: 'Скрыть метку медиа',
 	hideImageLabelDesc:
@@ -2293,6 +2446,21 @@ const ru: TranslationSchema = {
 };
 
 const pt: TranslationSchema = {
+	gifHeading: 'Controles GIF',
+	gifPlayPauseTooltip: 'Reproduzir / Pausar',
+	gifStepPrevTooltip: 'Quadro anterior',
+	gifStepNextTooltip: 'Próximo quadro',
+	gifSpeedLabel: 'Velocidade de reprodução',
+	gifExtractFrameTooltip: 'Extrair quadro atual para a tela',
+	gifExtractFrameLabel: 'Extrair',
+	gifExtractSuccess: (frame: number) => `Quadro ${frame} extraído para o cofre!`,
+	gifExtractSuccessEmbed: (frame: number) => `Quadro ${frame} incorporado no arquivo de tela!`,
+	gifExtractError: 'Falha ao extrair quadro GIF',
+	gifEnableSettingName: 'Ativar controles GIF',
+	gifEnableSettingDesc: 'Exibir barra de ferramentas de reprodução GIF, linha do tempo e extração de quadros.',
+	gifToggleCommandName: 'Alternar controles GIF',
+	gifControlsEnabledNotice: 'Controles GIF ativados',
+	gifControlsDisabledNotice: 'Controles GIF desativados',
 	settingsHeading: 'Exibição e tela',
 	hideImageLabelName: 'Ocultar rótulo de mídia',
 	hideImageLabelDesc:
@@ -2521,6 +2689,21 @@ const pt: TranslationSchema = {
 };
 
 const it: TranslationSchema = {
+	gifHeading: 'Controlli GIF',
+	gifPlayPauseTooltip: 'Riproduci / Pausa',
+	gifStepPrevTooltip: 'Fotogramma precedente',
+	gifStepNextTooltip: 'Fotogramma successivo',
+	gifSpeedLabel: 'Velocità di riproduzione',
+	gifExtractFrameTooltip: 'Estrai fotogramma corrente sulla tela',
+	gifExtractFrameLabel: 'Estrai',
+	gifExtractSuccess: (frame: number) => `Fotogramma ${frame} estratto nella cassaforte!`,
+	gifExtractSuccessEmbed: (frame: number) => `Fotogramma ${frame} incorporato nel file della tela!`,
+	gifExtractError: 'Impossibile estrarre il fotogramma GIF',
+	gifEnableSettingName: 'Abilita controlli GIF',
+	gifEnableSettingDesc: 'Mostra barra degli strumenti di riproduzione GIF, timeline ed estrazione fotogrammi.',
+	gifToggleCommandName: 'Attiva/disattiva controlli GIF',
+	gifControlsEnabledNotice: 'Controlli GIF abilitati',
+	gifControlsDisabledNotice: 'Controlli GIF disabilitati',
 	settingsHeading: 'Visualizzazione e Tela',
 	hideImageLabelName: 'Nascondi etichetta media',
 	hideImageLabelDesc:
@@ -2754,6 +2937,21 @@ const it: TranslationSchema = {
 };
 
 const ar: TranslationSchema = {
+	gifHeading: 'عناصر التحكم في GIF',
+	gifPlayPauseTooltip: 'تشغيل / إيقاف مؤقت',
+	gifStepPrevTooltip: 'الإطار السابق',
+	gifStepNextTooltip: 'الإطار التالي',
+	gifSpeedLabel: 'سرعة التشغيل',
+	gifExtractFrameTooltip: 'استخراج الإطار الحالي إلى اللوحة',
+	gifExtractFrameLabel: 'استخراج',
+	gifExtractSuccess: (frame: number) => `تم استخراج الإطار ${frame} بنجاح!`,
+	gifExtractSuccessEmbed: (frame: number) => `تم تضمين الإطار ${frame} في ملف اللوحة!`,
+	gifExtractError: 'فشل استخراج إطار GIF',
+	gifEnableSettingName: 'تمكين أدوات التحكم في GIF',
+	gifEnableSettingDesc: 'عرض شريط أدوات تشغيل GIF والجدول الزمني واستخراج الإطارات.',
+	gifToggleCommandName: 'تبديل أدوات التحكم في GIF',
+	gifControlsEnabledNotice: 'تم تمكين أدوات التحكم في GIF',
+	gifControlsDisabledNotice: 'تم تعطيل أدوات التحكم في GIF',
 	settingsHeading: 'العرض واللوحة',
 	hideImageLabelName: 'إخفاء تسمية الوسائط',
 	hideImageLabelDesc:
@@ -2895,6 +3093,21 @@ const ar: TranslationSchema = {
 };
 
 const he: TranslationSchema = {
+	gifHeading: 'בקרת GIF',
+	gifPlayPauseTooltip: 'הפעל / השהה',
+	gifStepPrevTooltip: 'פריים קודם',
+	gifStepNextTooltip: 'פריים הבא',
+	gifSpeedLabel: 'מהירות הפעלה',
+	gifExtractFrameTooltip: 'חלץ פריים נוכחי לקנבס',
+	gifExtractFrameLabel: 'חלץ',
+	gifExtractSuccess: (frame: number) => `פריים ${frame} חולץ בהצלחה בכספת!`,
+	gifExtractSuccessEmbed: (frame: number) => `פריים ${frame} הוטמע בקובץ הקנבס!`,
+	gifExtractError: 'חילוץ פריים ה-GIF נכשל',
+	gifEnableSettingName: 'אפשר בקרת GIF',
+	gifEnableSettingDesc: 'הצג סרגל כלים להפעלת GIF, ציר זמן וחילוץ פריימים.',
+	gifToggleCommandName: 'הפעל/כבה בקרת GIF',
+	gifControlsEnabledNotice: 'בקרת GIF הופעלה',
+	gifControlsDisabledNotice: 'בקרת GIF הושבתה',
 	settingsHeading: 'תצוגה וקנבס',
 	hideImageLabelName: 'הסתר תווית מדיה',
 	hideImageLabelDesc:

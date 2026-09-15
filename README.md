@@ -73,6 +73,17 @@ Right-click any canvas node to access enhanced controls:
 
 ---
 
+### GIF Playback & Frame Extraction Controls
+
+Take complete control over animated GIF files directly on the canvas without external tools:
+
+- **Interactive Timeline & Scrubber**: Play/pause, step forward/backward frame-by-frame, scrub through frames, or adjust playback speeds (`0.25x`, `0.5x`, `1.0x`, `1.5x`, `2.0x`).
+- **Frame Extraction**: Extract any single frame from an animated GIF as a static image saved directly to your vault or embedded in the canvas.
+- **Multi-Select Synchronization**: Control playback, stepping, or seeking across multiple selected GIF nodes simultaneously.
+- **Instant Toggle & Command Palette**: Enable or disable GIF controls at any time via plugin settings or the Command Palette (`Toggle GIF controls on/off`).
+
+---
+
 ### Loupe Inspector Tool
 
 Inspect fine image details and artwork without changing canvas zoom levels:
@@ -162,6 +173,7 @@ Native localization support for **14 languages**, matching Obsidian UI automatic
 - **Zoom In / Out**: `+` / `-`
 - **Selection Zoom to Fit**: `Space`
 - **Loupe Inspector Lens**: `Q`
+- **Toggle GIF Controls**: Command Palette (`Toggle GIF controls on/off`)
 - **Toggle Tag Visibility**: Command Palette
 
 ---
@@ -172,6 +184,7 @@ Access settings in **Obsidian Settings > Kambas**:
 
 | Setting | Description |
 | :--- | :--- |
+| **Enable GIF controls** | Show or hide the GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes (default: `true`). |
 | **Hide media label** | Hides raw data URI header text above embedded image cards. |
 | **Color palette swatches** | Number of dominant colors to extract (3–10). |
 | **Palette color separator** | Delimiter used when copying palette colors (e.g. `, `, `\n`). |
