@@ -9,13 +9,6 @@ Kambas transforms Obsidian Canvas into a self-contained, portable reference envi
 
 
 
-https://github.com/user-attachments/assets/4b6e2661-50bb-4cc6-9e38-4e62132822d9
-
-
-
-
-
-
 ---
 
 ## The Problem Kambas Solves
@@ -62,9 +55,17 @@ The result is a **single portable `.canvas` file** — no attachments folder, no
 Right-click any canvas node to access enhanced controls:
 
 - **Flip horizontal / vertical**: Mirror the image along its X or Y axis (persisted across canvas re-renders).
+  <img width="800" height="435" alt="obsidian-kambas-flip" src="https://github.com/user-attachments/assets/0273c5d9-b137-4ef8-ae64-71e66439f6c9" />
+  
 - **Toggle grayscale**: Apply a CSS grayscale filter to evaluate light values, structure, and contrast without color distraction.
+  <img width="800" height="435" alt="obsidian-kambas-grayscale" src="https://github.com/user-attachments/assets/c2e95821-92e2-4007-ab3e-c4f2eea08203" />
+
 - **Toggle color palette**: Extract and display dominant color swatches overlaying the image (3–10 swatches, configurable) with a one-click **Copy all palette colors** button.
+  <img width="800" height="435" alt="obsidian-kambas-color-palette" src="https://github.com/user-attachments/assets/ec8c4a50-6441-442f-aab0-dff46fd4fe75" />
+
 - **Change opacity**: Set transparency (0–100%) on any node type — images, text cards, file embeds, or groups.
+  <img width="800" height="435" alt="obsidian-kambas-opacity" src="https://github.com/user-attachments/assets/3a1a3b8f-f53a-4211-81b1-e3b0461ebc0d" />
+
 - **Reset to original size**: Restore a scaled node to its native pixel dimensions.
 - **Copy media to clipboard**: Copy raw image data directly to system clipboard.
 - **Swap media…**: Replace an existing image or video with another from your vault, local disk, or clipboard — preserving node position and aspect ratio.
@@ -74,6 +75,9 @@ Right-click any canvas node to access enhanced controls:
 ---
 
 ### GIF Playback & Frame Extraction Controls
+
+<img width="800" height="529" alt="obsidian-kambas-gif-control" src="https://github.com/user-attachments/assets/2e22fe28-885f-45b0-9d1f-d32b9f1b26d5" />
+
 
 Take complete control over animated GIF files directly on the canvas without external tools:
 
@@ -85,6 +89,9 @@ Take complete control over animated GIF files directly on the canvas without ext
 ---
 
 ### Loupe Inspector Tool
+
+<img width="800" height="435" alt="obsidian-kambas-loupe-tool" src="https://github.com/user-attachments/assets/cd49f976-de5d-4627-920f-b806e5abc8c6" />
+
 
 Inspect fine image details and artwork without changing canvas zoom levels:
 
@@ -122,6 +129,9 @@ When moving or copying media assets within your vault:
 
 ### Filter Panel (Tags & Colors)
 
+<img width="1106" height="877" alt="image" src="https://github.com/user-attachments/assets/d84518d1-d41a-45cc-88dd-76496fab636a" />
+
+
 A floating, resizable, position-remembered panel accessed from the **Tags** button in the canvas toolbar.
 
 #### How Filtering Works
@@ -154,13 +164,6 @@ Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab:
 - **Dominant Color Extraction**: HSV color classification into up to 13 color categories: Black, Gray, White, Red, Orange, Yellow, Green, Teal, Cyan, Blue, Indigo, Purple, Pink.
 - **Canvas Card Color Filtering**: Filter by Obsidian node border/background colors.
 - **Extraction Modes**: Configurable to **Auto** (on tab open), **Manual** ("Scan canvas colors" button), or **Disabled**.
-
----
-
-### Internationalization (i18n)
-
-Native localization support for **14 languages**, matching Obsidian UI automatically:
-- English, Deutsch, Français, Español, 日本語, 简体中文, 繁體中文, 한국어, Русский, Italiano, Português, Nederlands, العربية, עברית.
 
 ---
 
