@@ -244,13 +244,13 @@ export class CanvasImageHandler {
 		}
 		const activeLeaf = this.app.workspace.getActiveViewOfType(ItemView);
 		if (activeLeaf && activeLeaf.getViewType() === 'canvas') {
-			return activeLeaf as unknown as CanvasItemView;
+			return activeLeaf;
 		}
 		let foundCanvas: CanvasItemView | null = null;
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (foundCanvas) return;
 			if (leaf.view?.getViewType() === 'canvas') {
-				foundCanvas = leaf.view as unknown as CanvasItemView;
+				foundCanvas = leaf.view;
 			}
 		});
 		return foundCanvas;
@@ -304,7 +304,7 @@ export class CanvasImageHandler {
 		this.positionUpdateUntil = performance.now() + 350;
 		if (this.positionRafId !== null) return;
 
-		const loop = () => {
+		const loop = (): void => {
 			this.gifHandler.updatePositions(activeView.containerEl);
 			if (performance.now() < this.positionUpdateUntil) {
 				this.positionRafId = window.requestAnimationFrame(loop);
@@ -717,7 +717,7 @@ export class CanvasImageHandler {
 
 				if (isGif && nodeId && targetImg) {
 					// Synchronously suppress native <img> immediately to prevent native playback flicker during DOM re-renders!
-					targetImg.style.display = 'none';
+					targetImg.setCssProps({ display: 'none' });
 
 					let fileObj: TFile | undefined;
 					if (rawFile instanceof TFile) {
@@ -2730,7 +2730,7 @@ export class CanvasImageHandler {
 		if (targetImg && targetImg.src) {
 			const srcLower = targetImg.src.toLowerCase();
 			if (srcLower.includes('.gif') || srcLower.startsWith('data:image/gif')) {
-				targetImg.style.display = 'none';
+				targetImg.setCssProps({ display: 'none' });
 			}
 		}
 

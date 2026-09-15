@@ -1,4 +1,4 @@
-import { App, Notice, TFile } from 'obsidian';
+import { App, Notice, TFile, requestUrl } from 'obsidian';
 import { CanvasGifDecoder } from './CanvasGifDecoder';
 import { CanvasGifToolbar } from '../views/CanvasGifToolbar';
 import { CanvasElement } from './CanvasTypes';
@@ -136,30 +136,32 @@ export class CanvasGifHandler {
 			existingSession.nodeEl = nodeEl;
 			existingSession.imgEl = imgEl;
 
-			if (!existingSession.canvasEl.isConnected && imgEl.parentElement) {
-				imgEl.parentElement.appendChild(existingSession.canvasEl);
-			}
+			if (existingSession) {
+				if (!existingSession.canvasEl.isConnected && imgEl.parentElement) {
+					imgEl.parentElement.appendChild(existingSession.canvasEl);
+				}
 
-			imgEl.style.display = 'none';
+				imgEl.setCssProps({ display: 'none' });
 
-			if (existingSession.isPlaying && existingSession.animFrameId === null) {
-				this.startAnimationLoop(existingSession);
-			}
+				if (existingSession.isPlaying && existingSession.animFrameId === null) {
+					this.startAnimationLoop(existingSession);
+				}
 
-			if (containerEl && this.activeToolbarNodeIds.includes(nodeId)) {
-				this.syncToolbar(canvas, containerEl, this.activeToolbarNodeIds);
-				this.startToolbarPositionLoop(containerEl);
+				if (containerEl && this.activeToolbarNodeIds.includes(nodeId)) {
+					this.syncToolbar(canvas, containerEl, this.activeToolbarNodeIds);
+					this.startToolbarPositionLoop(containerEl);
+				}
+				return;
 			}
-			return;
 		}
 
 		if (this.pendingSessions.has(nodeId)) {
-			imgEl.style.display = 'none';
+			imgEl.setCssProps({ display: 'none' });
 			return;
 		}
 
 		this.pendingSessions.add(nodeId);
-		imgEl.style.display = 'none';
+		imgEl.setCssProps({ display: 'none' });
 
 		try {
 			// Read binary buffer of GIF
@@ -185,18 +187,18 @@ export class CanvasGifHandler {
 						}
 						buffer = bytes.buffer;
 					} else {
-						const res = await fetch(imgEl.src);
-						buffer = await res.arrayBuffer();
+						const res = await requestUrl({ url: imgEl.src });
+						buffer = res.arrayBuffer;
 					}
 				} catch (err) {
 					console.error('Failed to fetch GIF ArrayBuffer from imgEl.src:', err);
-					imgEl.style.display = '';
+					imgEl.setCssProps({ display: '' });
 					return;
 				}
 			}
 
 			if (!buffer) {
-				imgEl.style.display = '';
+				imgEl.setCssProps({ display: '' });
 				return;
 			}
 
@@ -204,7 +206,7 @@ export class CanvasGifHandler {
 			const success = await decoder.init(buffer);
 			if (!success || decoder.getFrameCount() === 0) {
 				decoder.destroy();
-				imgEl.style.display = '';
+				imgEl.setCssProps({ display: '' });
 				return;
 			}
 
@@ -216,7 +218,7 @@ export class CanvasGifHandler {
 			) {
 				this.canceledSessions.delete(nodeId);
 				decoder.destroy();
-				imgEl.style.display = '';
+				imgEl.setCssProps({ display: '' });
 				return;
 			}
 
@@ -226,9 +228,6 @@ export class CanvasGifHandler {
 			canvasEl.width = dimensions.width || imgEl.naturalWidth || 300;
 			canvasEl.height = dimensions.height || imgEl.naturalHeight || 300;
 			canvasEl.classList.add('kambas-gif-canvas-overlay');
-			canvasEl.style.width = '100%';
-			canvasEl.style.height = '100%';
-			canvasEl.style.objectFit = 'contain';
 
 			const ctx = canvasEl.getContext('2d');
 			if (!ctx) {
@@ -237,7 +236,7 @@ export class CanvasGifHandler {
 			}
 
 			// Hide imgEl and replace visually with canvasEl
-			imgEl.style.display = 'none';
+			imgEl.setCssProps({ display: 'none' });
 			imgEl.parentElement?.appendChild(canvasEl);
 
 			const rawNodeObj = (canvas?.nodes?.get(nodeId) ?? {}) as unknown as {
@@ -320,14 +319,14 @@ export class CanvasGifHandler {
 	public startToolbarPositionLoop(containerEl: HTMLElement): void {
 		if (this.toolbarPositionRafId !== null) return;
 
-		const loop = () => {
+		const loop = (): void => {
 			if (this.activeToolbar && this.activeToolbarNodeIds.length > 0) {
 				const selectedNodeEls = this.activeToolbarNodeIds
 					.map((id) => this.activeSessions.get(id)?.nodeEl)
 					.filter((el): el is HTMLElement => Boolean(el) && el.isConnected);
 
 				if (selectedNodeEls.length > 0) {
-					const targetContainer = containerEl || (selectedNodeEls[0].closest('.canvas') as HTMLElement);
+					const targetContainer = containerEl || (selectedNodeEls[0].closest('.canvas'));
 					this.activeToolbar.updatePosition(selectedNodeEls, targetContainer);
 					this.toolbarPositionRafId = window.requestAnimationFrame(loop);
 					return;
@@ -487,7 +486,7 @@ export class CanvasGifHandler {
 				.filter((el): el is HTMLElement => Boolean(el) && el.isConnected);
 
 			if (selectedNodeEls.length > 0) {
-				const targetContainer = containerEl || (selectedNodeEls[0].closest('.canvas') as HTMLElement);
+				const targetContainer = containerEl || (selectedNodeEls[0].closest('.canvas'));
 				this.activeToolbar.updatePosition(selectedNodeEls, targetContainer);
 			} else {
 				this.destroyToolbar();
@@ -541,7 +540,7 @@ export class CanvasGifHandler {
 
 		// Full cleanup & disposal
 		session.canvasEl.remove();
-		session.imgEl.style.display = '';
+		session.imgEl.setCssProps({ display: '' });
 		session.decoder.destroy();
 
 		this.activeSessions.delete(nodeId);
@@ -739,13 +738,17 @@ export class CanvasGifHandler {
 			}
 
 			if (!session.isDisposed && session.isPlaying && session.loopId === currentLoopId) {
-				session.animFrameId = window.requestAnimationFrame(loop);
+				session.animFrameId = window.requestAnimationFrame((time) => {
+					void loop(time);
+				});
 			} else {
 				session.animFrameId = null;
 			}
 		};
 
-		session.animFrameId = window.requestAnimationFrame(loop);
+		session.animFrameId = window.requestAnimationFrame((time) => {
+			void loop(time);
+		});
 	}
 
 	private async renderFrame(session: ActiveGifSession, frameIndex: number): Promise<void> {
