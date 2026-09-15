@@ -119,15 +119,21 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 
 
 /* Image Transformation utility classes */
-.canvas-node.kambas-img-flip-h img {
+.canvas-node.kambas-img-flip-h img,
+.canvas-node.kambas-img-flip-h canvas,
+.canvas-node.kambas-img-flip-h .kambas-gif-canvas-overlay {
 	transform: scaleX(-1);
 }
 
-.canvas-node.kambas-img-flip-v img {
+.canvas-node.kambas-img-flip-v img,
+.canvas-node.kambas-img-flip-v canvas,
+.canvas-node.kambas-img-flip-v .kambas-gif-canvas-overlay {
 	transform: scaleY(-1);
 }
 
-.canvas-node.kambas-img-flip-h.kambas-img-flip-v img {
+.canvas-node.kambas-img-flip-h.kambas-img-flip-v img,
+.canvas-node.kambas-img-flip-h.kambas-img-flip-v canvas,
+.canvas-node.kambas-img-flip-h.kambas-img-flip-v .kambas-gif-canvas-overlay {
 	transform: scale(-1, -1);
 }
 
@@ -136,7 +142,9 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 .canvas-node.kambas-node-grayscale .canvas-node-container,
 .canvas-node.kambas-node-grayscale .canvas-node-content,
 .canvas-node.kambas-node-grayscale iframe,
-.canvas-node.kambas-node-grayscale img {
+.canvas-node.kambas-node-grayscale img,
+.canvas-node.kambas-node-grayscale canvas,
+.canvas-node.kambas-node-grayscale .kambas-gif-canvas-overlay {
 	filter: grayscale(100%);
 }
 

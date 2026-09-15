@@ -34,6 +34,35 @@ export function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
+ * Converts a hex color string (e.g. "#FF5733") to its grayscale equivalent hex string using standard Rec. 709 luma weights.
+ */
+export function hexToGrayscale(hex: string): string {
+	const cleaned = hex.replace(/^#/, '');
+	let r: number;
+	let g: number;
+	let b: number;
+
+	if (cleaned.length === 3) {
+		r = parseInt(cleaned[0] + cleaned[0], 16);
+		g = parseInt(cleaned[1] + cleaned[1], 16);
+		b = parseInt(cleaned[2] + cleaned[2], 16);
+	} else if (cleaned.length === 6) {
+		r = parseInt(cleaned.substring(0, 2), 16);
+		g = parseInt(cleaned.substring(2, 4), 16);
+		b = parseInt(cleaned.substring(4, 6), 16);
+	} else {
+		return hex;
+	}
+
+	if (isNaN(r) || isNaN(g) || isNaN(b)) return hex;
+
+	// Rec. 709 luma luminance weights
+	const gray = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+	const hexGray = gray.toString(16).padStart(2, '0');
+	return `#${hexGray}${hexGray}${hexGray}`;
+}
+
+/**
  * Reads natural pixel dimensions (width & height) from a Blob/File or Data URL.
  */
 export function getImageDimensions(

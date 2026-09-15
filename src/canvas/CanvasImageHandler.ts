@@ -43,6 +43,7 @@ import {
 	extractImagePalette,
 	getImageDimensions,
 	getNodeDominantColorName,
+	hexToGrayscale,
 	saveFileToVault,
 } from '../utils/imageUtils';
 import {
@@ -580,26 +581,34 @@ export class CanvasImageHandler {
 						paletteEl.dataset.count = String(count);
 
 						const targetPaletteEl = paletteEl;
+
 						const loadAndRenderPalette = (src: string): void => {
 							void extractImagePalette(src, count).then((swatches) => {
 								if (!targetPaletteEl || !targetPaletteEl.isConnected) return;
 								targetPaletteEl.empty();
+
+								const getCopiedHex = (rawHex: string): string =>
+									unknownData.kambasGrayscale ? hexToGrayscale(rawHex) : rawHex;
 
 								for (const hex of swatches) {
 									const swatch = targetPaletteEl.createDiv({
 										cls: 'kambas-palette-swatch',
 									});
 									swatch.style.backgroundColor = hex;
-									swatch.setAttribute('aria-label', `${hex} (Click to copy)`);
+									swatch.setAttribute(
+										'aria-label',
+										`${hex} (Click to copy)`
+									);
 									swatch.addEventListener('click', (e) => {
 										e.stopPropagation();
 										e.preventDefault();
-										void navigator.clipboard.writeText(hex);
+										const effectiveHex = getCopiedHex(hex);
+										void navigator.clipboard.writeText(effectiveHex);
 										const t = getText();
 										new Notice(
 											t.copyHexNotice
-												? t.copyHexNotice(hex)
-												: `Copied ${hex} to clipboard!`
+												? t.copyHexNotice(effectiveHex)
+												: `Copied ${effectiveHex} to clipboard!`
 										);
 									});
 								}
@@ -620,7 +629,9 @@ export class CanvasImageHandler {
 										e.preventDefault();
 										const sep =
 											this.plugin?.settings?.paletteCopySeparator ?? ', ';
-										const textToCopy = swatches.join(sep);
+										const textToCopy = swatches
+											.map((h) => getCopiedHex(h))
+											.join(sep);
 										void navigator.clipboard.writeText(textToCopy);
 										const currentT = getText();
 										new Notice(
@@ -745,6 +756,18 @@ export class CanvasImageHandler {
 			});
 
 			this.gifHandler.syncToolbar(canvas, activeView.containerEl, selectedGifNodeIds);
+		} else {
+			this.gifHandler.detachAll();
+			canvas.nodes.forEach((canvasNode) => {
+				const nodeEl = canvasNode.nodeEl;
+				if (!nodeEl) return;
+				const targetImg =
+					this.getNativeImageElement(nodeEl) ??
+					nodeEl.querySelector<HTMLImageElement>('img');
+				if (targetImg) {
+					targetImg.setCssProps({ display: '' });
+				}
+			});
 		}
 
 		// Apply individual edge stored opacity
@@ -1208,6 +1231,9 @@ export class CanvasImageHandler {
 		const selectedNodeEls: HTMLElement[] = [];
 		const selectedNodeIds: string[] = [];
 
+		const canvasObj = canvas as unknown as { selection?: Set<unknown> };
+		const hasSelectionObject = Boolean(canvasObj.selection);
+
 		canvas.nodes.forEach((node, id) => {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
@@ -1215,7 +1241,13 @@ export class CanvasImageHandler {
 			const isTargetNode =
 				targetNodeEl &&
 				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
-			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
+			const isNodeInSelection = Boolean(
+				canvasObj.selection && canvasObj.selection.has(node)
+			);
+			const isExplicitlySelected = hasSelectionObject
+				? isNodeInSelection
+				: nodeEl.classList.contains('is-selected') ||
+					nodeEl.classList.contains('is-focused');
 
 			if (!(isExplicitlySelected || isTargetNode)) return;
 
@@ -2725,12 +2757,14 @@ export class CanvasImageHandler {
 		tags: string[],
 		forceReRender = false
 	): void {
-		// Synchronously hide any native img inside GIF nodes to prevent native playback flicker during badge updates
-		const targetImg = this.getNativeImageElement(nodeEl);
-		if (targetImg && targetImg.src) {
-			const srcLower = targetImg.src.toLowerCase();
-			if (srcLower.includes('.gif') || srcLower.startsWith('data:image/gif')) {
-				targetImg.setCssProps({ display: 'none' });
+		// Synchronously hide native img inside GIF nodes to prevent playback flicker ONLY if GIF tools are enabled
+		if (this.plugin?.settings?.enableGifTools !== false) {
+			const targetImg = this.getNativeImageElement(nodeEl);
+			if (targetImg && targetImg.src) {
+				const srcLower = targetImg.src.toLowerCase();
+				if (srcLower.includes('.gif') || srcLower.startsWith('data:image/gif')) {
+					targetImg.setCssProps({ display: 'none' });
+				}
 			}
 		}
 
