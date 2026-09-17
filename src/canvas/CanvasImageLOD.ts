@@ -425,7 +425,6 @@ export class ProxyCache {
 			})
 			.finally(() => {
 				this.inflight.delete(k);
-				RAW_BASE64_REGISTRY.delete(k);
 				this.stats.pending--;
 				this.plugin.updateStatus();
 				this.plugin.scheduleSyncAll();
@@ -518,9 +517,47 @@ export class ProxyCache {
 
 	private async _generate(src: string, k: string): Promise<void> {
 		const blob = await this._readBlob(src);
-		let bmp: ImageBitmap | null = null;
+		let bmp: ImageBitmap | HTMLCanvasElement | OffscreenCanvas | null = null;
+		const isGifBlob =
+			(blob.type && blob.type.includes('gif')) ||
+			src.startsWith('data:image/gif') ||
+			/\.gif($|\?)/i.test(src);
+
 		try {
-			bmp = await createImageBitmap(blob);
+			if (isGifBlob && typeof ImageDecoder !== 'undefined') {
+				let frame0VideoFrame: VideoFrame | null = null;
+				try {
+					const arrayBuf = await blob.arrayBuffer();
+					const dec = new ImageDecoder({ data: arrayBuf, type: 'image/gif' });
+					await dec.tracks.ready;
+					const frameRes = await dec.decode({ frameIndex: 0 });
+					frame0VideoFrame = frameRes.image;
+					const w = frame0VideoFrame.displayWidth || 300;
+					const h = frame0VideoFrame.displayHeight || 300;
+					const frameCanvas = this._makeCanvas(w, h);
+					const ctx = frameCanvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+					if (ctx) {
+						ctx.drawImage(frame0VideoFrame as unknown as CanvasImageSource, 0, 0);
+					}
+					bmp = frameCanvas;
+					dec.close();
+				} catch (e) {
+					if (getLodSettings(this.plugin).debug) console.warn('[canvas-image-lod] ImageDecoder fallback for GIF:', e);
+				} finally {
+					if (frame0VideoFrame) {
+						try {
+							frame0VideoFrame.close();
+						} catch (_) {
+							/* ignore */
+						}
+					}
+				}
+			}
+
+			if (!bmp) {
+				bmp = await createImageBitmap(blob);
+			}
+
 			const natW = bmp.width;
 			const natH = bmp.height;
 			const s = getLodSettings(this.plugin);
@@ -568,10 +605,15 @@ export class ProxyCache {
 			}
 		} finally {
 			if (bmp) {
-				try {
-					bmp.close();
-				} catch {
-					/* ignore */
+				if ('close' in bmp && typeof (bmp as ImageBitmap).close === 'function') {
+					try {
+						(bmp as ImageBitmap).close();
+					} catch {
+						/* ignore */
+					}
+				} else if ('width' in bmp) {
+					(bmp as any).width = 0;
+					(bmp as any).height = 0;
 				}
 			}
 		}

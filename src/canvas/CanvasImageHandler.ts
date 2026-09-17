@@ -53,7 +53,7 @@ import {
 } from '../utils/numberFormatters';
 
 import { CanvasGifHandler } from './CanvasGifHandler';
-import { EMBEDDED_BLOB_MAP, RAW_BASE64_REGISTRY, srcKey } from './CanvasImageLOD';
+import { EMBEDDED_BLOB_MAP, RAW_BASE64_REGISTRY, getOrigSrcFromImg, srcKey } from './CanvasImageLOD';
 
 export interface PendingImage {
 	filename: string;
@@ -795,11 +795,19 @@ export class CanvasImageHandler {
 						? rawFile.extension.toLowerCase()
 						: filePath.split('.').pop()?.toLowerCase() ?? '';
 
+				const origSrc = targetImg ? getOrigSrcFromImg(targetImg) : (rawUrl ?? '');
 				const imgSrc = targetImg?.src ?? rawUrl ?? '';
 				const isGif =
 					fileExt === 'gif' ||
+					origSrc.toLowerCase().includes('.gif') ||
+					origSrc.startsWith('data:image/gif') ||
 					imgSrc.toLowerCase().includes('.gif') ||
-					imgSrc.startsWith('data:image/gif');
+					imgSrc.startsWith('data:image/gif') ||
+					(targetImg && targetImg.dataset.kambasIsGif === 'true');
+
+				if (isGif && targetImg) {
+					targetImg.dataset.kambasIsGif = 'true';
+				}
 
 				const nodeId = (canvasNode as unknown as { id?: string }).id;
 				const canvasObj = canvas as unknown as { selection?: Set<unknown> };

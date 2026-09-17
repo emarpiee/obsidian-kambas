@@ -126,12 +126,13 @@ export class CanvasGifDecoder {
 
 		const clampedIndex = Math.max(0, Math.min(frameIndex, this.frameCount - 1));
 		let videoFrame: VideoFrame | null = null;
+		let offscreen: HTMLCanvasElement | null = null;
 
 		try {
 			const result = await this.decoder.decode({ frameIndex: clampedIndex });
 			videoFrame = result.image;
 
-			const offscreen = createEl('canvas');
+			offscreen = createEl('canvas');
 			offscreen.width = videoFrame.displayWidth || this.width;
 			offscreen.height = videoFrame.displayHeight || this.height;
 			const ctx = offscreen.getContext('2d');
@@ -143,12 +144,16 @@ export class CanvasGifDecoder {
 			ctx.drawImage(videoFrame, 0, 0);
 
 			return new Promise<Blob | null>((resolve) => {
-				offscreen.toBlob((blob) => resolve(blob), 'image/png');
+				offscreen!.toBlob((blob) => resolve(blob), 'image/png');
 			});
 		} catch (err) {
 			console.error(`Failed to extract GIF frame ${clampedIndex}:`, err);
 			return null;
 		} finally {
+			if (offscreen) {
+				offscreen.width = 0;
+				offscreen.height = 0;
+			}
 			if (videoFrame) {
 				try {
 					videoFrame.close();

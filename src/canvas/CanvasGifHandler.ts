@@ -4,6 +4,7 @@ import { CanvasGifToolbar } from '../views/CanvasGifToolbar';
 import { CanvasElement } from './CanvasTypes';
 import { arrayBufferToBase64DataUrl, saveFileToVault } from '../utils/imageUtils';
 import { getText } from '../i18n';
+import { getOrigSrcFromImg } from './CanvasImageLOD';
 
 export interface ActiveGifSession {
 	nodeId: string;
@@ -175,25 +176,44 @@ export class CanvasGifHandler {
 				}
 			}
 
-			if (!buffer && imgEl.src) {
-				try {
-					if (imgEl.src.startsWith('data:image/gif;base64,')) {
-						const base64Str = imgEl.src.split(',')[1];
-						const binaryStr = atob(base64Str);
-						const len = binaryStr.length;
-						const bytes = new Uint8Array(len);
-						for (let i = 0; i < len; i++) {
-							bytes[i] = binaryStr.charCodeAt(i);
+			if (!buffer) {
+				const origSrc =
+					getOrigSrcFromImg(imgEl) ||
+					(canvas?.nodes?.get(nodeId) as unknown as { url?: string; unknownData?: { url?: string } })?.url ||
+					(canvas?.nodes?.get(nodeId) as unknown as { url?: string; unknownData?: { url?: string } })?.unknownData?.url ||
+					imgEl.src;
+
+				if (origSrc) {
+					try {
+						if (origSrc.startsWith('data:image/')) {
+							const commaIdx = origSrc.indexOf(',');
+							if (commaIdx !== -1) {
+								const base64Str = origSrc.slice(commaIdx + 1);
+								const binaryStr = atob(base64Str);
+								const len = binaryStr.length;
+								const bytes = new Uint8Array(len);
+								for (let i = 0; i < len; i++) {
+									bytes[i] = binaryStr.charCodeAt(i);
+								}
+								buffer = bytes.buffer;
+							}
+						} else if (origSrc.startsWith('app://') || origSrc.startsWith('http://') || origSrc.startsWith('https://') || origSrc.startsWith('file://')) {
+							const res = await requestUrl({ url: origSrc });
+							buffer = res.arrayBuffer;
+						} else {
+							const abstractFile = this.app.vault.getAbstractFileByPath(origSrc);
+							if (abstractFile instanceof TFile) {
+								buffer = await this.app.vault.readBinary(abstractFile);
+							} else if (imgEl.src) {
+								const res = await requestUrl({ url: imgEl.src });
+								buffer = res.arrayBuffer;
+							}
 						}
-						buffer = bytes.buffer;
-					} else {
-						const res = await requestUrl({ url: imgEl.src });
-						buffer = res.arrayBuffer;
+					} catch (err) {
+						console.error('Failed to fetch GIF ArrayBuffer from origSrc:', err);
+						imgEl.setCssProps({ display: '' });
+						return;
 					}
-				} catch (err) {
-					console.error('Failed to fetch GIF ArrayBuffer from imgEl.src:', err);
-					imgEl.setCssProps({ display: '' });
-					return;
 				}
 			}
 
@@ -539,6 +559,8 @@ export class CanvasGifHandler {
 		}
 
 		// Full cleanup & disposal
+		session.canvasEl.width = 0;
+		session.canvasEl.height = 0;
 		session.canvasEl.remove();
 		session.imgEl.setCssProps({ display: '' });
 		session.decoder.destroy();
