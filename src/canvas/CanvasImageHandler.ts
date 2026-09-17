@@ -113,7 +113,7 @@ export class CanvasImageHandler {
 		if (!dataUrl) return '';
 		if (!dataUrl.startsWith('data:image/')) return dataUrl;
 		if (this.blobUrlMap.has(dataUrl)) {
-			return this.blobUrlMap.get(dataUrl)!;
+			return this.blobUrlMap.get(dataUrl);
 		}
 		try {
 			const parts = dataUrl.split(',');
@@ -167,12 +167,14 @@ export class CanvasImageHandler {
 
 	private rescanTimeoutId: number | null = null;
 
-	private scheduleRescan(activeView: CanvasItemView): void {
-		if (this.rescanTimeoutId !== null) return;
+	private scheduleRescan(activeView: CanvasItemView, delay = 150): void {
+		if (this.rescanTimeoutId !== null) {
+			window.clearTimeout(this.rescanTimeoutId);
+		}
 		this.rescanTimeoutId = window.setTimeout(() => {
 			this.rescanTimeoutId = null;
 			this.scanAndRestoreTransforms(activeView);
-		}, 60);
+		}, delay);
 	}
 
 	private startEditGuard(): void {
@@ -184,12 +186,15 @@ export class CanvasImageHandler {
 						: mutation.target.parentElement
 				) as HTMLElement | null;
 
+				if (!targetEl?.closest?.('.canvas-wrapper, .canvas')) continue;
+
 				if (
 					targetEl?.closest?.('.kambas-tag-panel') ||
 					targetEl?.closest?.('.kambas-gif-toolbar') ||
 					targetEl?.closest?.('.kambas-gif-canvas-overlay') ||
 					targetEl?.closest?.('.kambas-tag-bar') ||
-					targetEl?.closest?.('.kambas-palette-bar')
+					targetEl?.closest?.('.kambas-palette-bar') ||
+					targetEl?.classList?.contains('kambas-embedded-img')
 				) {
 					continue;
 				}
@@ -210,7 +215,8 @@ export class CanvasImageHandler {
 							el.classList?.contains('kambas-gif-toolbar') ||
 							el.closest?.('.kambas-gif-canvas-overlay') ||
 							el.closest?.('.kambas-tag-bar') ||
-							el.closest?.('.kambas-palette-bar')
+							el.closest?.('.kambas-palette-bar') ||
+							el.classList?.contains('kambas-embedded-img')
 						)
 							continue;
 						if (
@@ -231,7 +237,13 @@ export class CanvasImageHandler {
 					mutation.attributeName === 'class'
 				) {
 					const target = mutation.target as HTMLElement;
-					if (target?.classList?.contains('canvas-node')) {
+					if (
+						target?.classList?.contains('canvas-node') &&
+						!target.classList.contains('kambas-has-embedded-img') &&
+						!target.classList.contains('kambas-node-grayscale') &&
+						!target.classList.contains('kambas-img-flip-h') &&
+						!target.classList.contains('kambas-img-flip-v')
+					) {
 						const canvasView = this.getActiveCanvasView();
 						if (canvasView) {
 							this.scheduleRescan(canvasView);
@@ -364,15 +376,20 @@ export class CanvasImageHandler {
 		this.positionRafId = window.requestAnimationFrame(loop);
 	}
 
+	private scrollPanRafId: number | null = null;
 	private handleScrollOrPan = (evt: Event): void => {
 		const target = evt.target as HTMLElement | null;
 		if (target?.closest?.('.kambas-tag-panel')) return;
-		const activeView = this.getCanvasViewForEvent(evt);
-		if (activeView?.getViewType() === 'canvas') {
-			this.updateZoomScale(activeView);
-			this.triggerSmoothPositionUpdates(activeView);
-			this.scheduleRescan(activeView);
-		}
+		if (this.scrollPanRafId !== null) return;
+		this.scrollPanRafId = window.requestAnimationFrame(() => {
+			this.scrollPanRafId = null;
+			const activeView = this.getCanvasViewForEvent(evt);
+			if (activeView?.getViewType() === 'canvas') {
+				this.updateZoomScale(activeView);
+				this.triggerSmoothPositionUpdates(activeView);
+				this.scheduleRescan(activeView);
+			}
+		});
 	};
 
 	private handleKeyUpCheck = (evt: KeyboardEvent): void => {
@@ -589,6 +606,19 @@ export class CanvasImageHandler {
 					);
 				}
 			}
+
+			const container =
+				nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
+			const nodeContainer =
+				nodeEl.querySelector('.canvas-node-container') ?? nodeEl;
+			const hasEmbeddedImg = Boolean(
+				isLinkDataImg ||
+				container.querySelector('img.kambas-embedded-img') ||
+				nodeEl.querySelector('img.kambas-embedded-img')
+			);
+			nodeEl.classList.toggle('kambas-has-embedded-img', hasEmbeddedImg);
+			nodeContainer.classList.toggle('kambas-has-embedded-img', hasEmbeddedImg);
+			container.classList.toggle('kambas-has-embedded-img', hasEmbeddedImg);
 
 			// Apply stored transforms & opacity
 			if (unknownData) {
@@ -5613,7 +5643,7 @@ export class CanvasImageHandler {
 		const startX = centerPos.x - totalGridWidth / 2;
 		const startY = centerPos.y - totalGridHeight / 2;
 
-		const result: Array<{ x: number; y: number }> = new Array(count);
+		const result: Array<{ x: number; y: number }> = [];
 
 		let currentY = startY;
 		for (const row of rows) {

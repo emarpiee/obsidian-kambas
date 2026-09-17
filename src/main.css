@@ -1,11 +1,11 @@
 /* Kambas plugin styles */
 
 /* Ensure canvas node wrapper housing embedded images clips cleanly without scrollbar space & transparent background */
-.canvas .canvas-nodes .canvas-node:has(.kambas-embedded-img),
-.canvas .canvas-nodes .canvas-node:has(.kambas-embedded-img) .canvas-node-container,
-.canvas .canvas-nodes .canvas-node:has(.kambas-embedded-img) .canvas-node-content,
-.canvas-node-container:has(.kambas-embedded-img),
-.canvas-node-content:has(.kambas-embedded-img) {
+.canvas .canvas-nodes .canvas-node.kambas-has-embedded-img,
+.canvas .canvas-nodes .canvas-node.kambas-has-embedded-img .canvas-node-container,
+.canvas .canvas-nodes .canvas-node.kambas-has-embedded-img .canvas-node-content,
+.canvas-node-container.kambas-has-embedded-img,
+.canvas-node-content.kambas-has-embedded-img {
 	padding: 0;
 	margin: 0;
 	overflow: hidden;
@@ -16,7 +16,7 @@
 }
 
 /* Ensure node container allows click-through to parent canvas node selection */
-.canvas-node:has(.kambas-embedded-img) .canvas-node-content {
+.canvas-node.kambas-has-embedded-img .canvas-node-content {
 	pointer-events: none;
 }
 
@@ -24,40 +24,25 @@
 	transition: opacity 0.15s ease;
 }
 
-/* Smooth zoom transition for Space key & double-click viewport panning */
-.canvas-wrapper.kambas-smooth-zoom .canvas-content,
-.canvas-wrapper.kambas-smooth-zoom .canvas,
-.canvas.kambas-smooth-zoom .canvas-content {
-	transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
-}
+
 
 /* Remove scrollbar-gutter and scrollbar widths on all nested elements */
-.canvas-node:has(.kambas-embedded-img) *,
-.canvas-node-content:has(.kambas-embedded-img) * {
+.canvas-node.kambas-has-embedded-img *,
+.canvas-node-content.kambas-has-embedded-img * {
 	scrollbar-gutter: auto;
 	scrollbar-width: none;
 }
 
 /* Unconditionally hide raw base64 URL data label header above link image cards */
-.canvas-node:has(.kambas-embedded-img) .canvas-node-label,
-.canvas-node-label:has(+ .canvas-node-container .kambas-embedded-img),
-body.kambas-hide-labels .canvas-node:has(.kambas-embedded-img) .canvas-node-label,
-body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-embedded-img),
+.canvas-node.kambas-has-embedded-img .canvas-node-label,
+body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-label,
 .canvas-node.is-link[data-url^="data:image/"] .canvas-node-label,
 .canvas-node.is-link[data-url^="data:image/"] .canvas-node-title {
 	display: none !important;
 }
 
-/* Performance optimization for zooming/panning with 500+ images */
-.canvas-node:has(.kambas-embedded-img) {
-	content-visibility: auto;
-	contain-intrinsic-size: 400px 300px;
-	will-change: transform;
-}
-
-
-.canvas-node:has(.kambas-embedded-img) *::-webkit-scrollbar,
-.canvas-node-content:has(.kambas-embedded-img) *::-webkit-scrollbar {
+.canvas-node.kambas-has-embedded-img *::-webkit-scrollbar,
+.canvas-node-content.kambas-has-embedded-img *::-webkit-scrollbar {
 	display: none;
 	width: 0;
 	height: 0;
@@ -230,7 +215,7 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 
 
 /* Opacity slider modal */
-.modal:has(.kambas-opacity-buttons) .setting-item {
+.modal.kambas-opacity-modal .setting-item {
 	border-top: none;
 	padding: 12px 0 0 0;
 	flex-direction: column;
@@ -238,16 +223,16 @@ body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-
 	gap: 8px;
 }
 
-.modal:has(.kambas-opacity-buttons) .setting-item-info {
+.modal.kambas-opacity-modal .setting-item-info {
 	display: none;
 }
 
-.modal:has(.kambas-opacity-buttons) .setting-item-control {
+.modal.kambas-opacity-modal .setting-item-control {
 	width: 100%;
 	justify-content: stretch;
 }
 
-.modal:has(.kambas-opacity-buttons) .setting-item-control input[type="range"] {
+.modal.kambas-opacity-modal .setting-item-control input[type="range"] {
 	width: 100%;
 	box-sizing: border-box;
 }
@@ -1650,6 +1635,24 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 
 .kambas-gif-speed-select:hover {
 	color: var(--text-normal);
+}
+
+/* Image import progress modal */
+.kambas-import-progress-bar {
+	width: 100%;
+	margin: 12px 0;
+}
+
+.kambas-import-progress-status {
+	font-size: 0.9em;
+	opacity: 0.8;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.kambas-import-modal-buttons {
+	margin-top: 16px;
 }
 
 

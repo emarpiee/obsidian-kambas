@@ -27,21 +27,13 @@ export class ImageImportProgressModal extends Modal {
 		this.countEl = container.createDiv({ cls: 'kambas-import-progress-count' });
 		this.countEl.setText(`0 / ${this.total}`);
 
-		this.progressBarEl = container.createEl('progress');
+		this.progressBarEl = container.createEl('progress', { cls: 'kambas-import-progress-bar' });
 		this.progressBarEl.max = this.total;
 		this.progressBarEl.value = 0;
-		this.progressBarEl.style.width = '100%';
-		this.progressBarEl.style.margin = '12px 0';
 
 		this.statusEl = container.createDiv({ cls: 'kambas-import-progress-status' });
-		this.statusEl.style.fontSize = '0.9em';
-		this.statusEl.style.opacity = '0.8';
-		this.statusEl.style.overflow = 'hidden';
-		this.statusEl.style.textOverflow = 'ellipsis';
-		this.statusEl.style.whiteSpace = 'nowrap';
 
-		const btnContainer = contentEl.createDiv({ cls: 'modal-button-container' });
-		btnContainer.style.marginTop = '16px';
+		const btnContainer = contentEl.createDiv({ cls: 'modal-button-container kambas-import-modal-buttons' });
 
 		const cancelBtn = btnContainer.createEl('button', {
 			text: t.cancelBtn || 'Cancel',

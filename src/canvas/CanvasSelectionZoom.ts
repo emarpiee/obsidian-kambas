@@ -118,18 +118,7 @@ export class CanvasSelectionZoom {
 		evt.preventDefault();
 		evt.stopPropagation();
 
-		// Add smooth transition class briefly
-		const win = activeView.containerEl?.ownerDocument?.defaultView || window;
-		const wrapperEl =
-			(canvas as unknown as { wrapperEl?: HTMLElement }).wrapperEl ??
-			activeView.containerEl.querySelector('.canvas-wrapper');
-		if (wrapperEl) {
-			wrapperEl.classList.add('kambas-smooth-zoom');
-			win.setTimeout(
-				() => wrapperEl.classList.remove('kambas-smooth-zoom'),
-				350
-			);
-		}
+
 
 		// Determine if same selection as last zoom-in
 		const isSameSelection =

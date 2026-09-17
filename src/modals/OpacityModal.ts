@@ -22,6 +22,7 @@ export class OpacityModal extends Modal {
 		const t = getText();
 
 		titleEl.setText(t.opacityModalTitle);
+		this.modalEl.classList.add('kambas-opacity-modal');
 
 		let selectedOpacity = this.currentOpacity;
 
