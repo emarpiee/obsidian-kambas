@@ -22,6 +22,45 @@ export interface TranslationSchema {
 	zoomSpeedDesc: string;
 	duplicateKeyNotice: string;
 
+	// LOD Settings
+	lodHeading: string;
+	enableLodName: string;
+	enableLodDesc: string;
+	lodQualityHeading?: string;
+	lodQualityFactorName?: string;
+	lodQualityFactorDesc?: string;
+	lodTiersName?: string;
+	lodTiersDesc?: string;
+	lodMinSourceWidthName?: string;
+	lodMinSourceWidthDesc?: string;
+	lodQualityName?: string;
+	lodQualityDesc?: string;
+	lodPerfHeading?: string;
+	lodPrewarmName?: string;
+	lodPrewarmDesc?: string;
+	lodConcurrencyName?: string;
+	lodConcurrencyDesc?: string;
+	lodFastRasterName?: string;
+	lodFastRasterDesc?: string;
+	lodProxyGifsName?: string;
+	lodProxyGifsDesc?: string;
+	lodCacheHeading?: string;
+	lodCacheWhereDesc?: string;
+	lodMaxCacheMBName: string;
+	lodMaxCacheMBDesc: string;
+	lodMaxMemoryMBName: string;
+	lodMaxMemoryMBDesc: string;
+	lodCacheSizeLabel?: string;
+	clearLodCacheName: string;
+	clearLodCacheDesc: string;
+	clearLodCacheBtn: string;
+	lodCacheClearedNotice: string;
+	lodOtherHeading?: string;
+	lodShowStatusBarName?: string;
+	lodShowStatusBarNotice?: string;
+	debugName?: string;
+	debugDesc?: string;
+
 	// Ingestion & Progress Modal
 	modalTitle: string;
 	modalDescription: (filename: string) => string;
@@ -277,6 +316,44 @@ const en: TranslationSchema = {
 	duplicateKeyNotice:
 		'Duplicate key bindings are not allowed. Please choose unique keys for each action.',
 
+	lodHeading: 'Canvas Level of Detail (LOD)',
+	enableLodName: 'Enable proxy swapping',
+	enableLodDesc: 'Original files are never modified -- only what is drawn on screen is swapped.',
+	lodQualityHeading: 'Quality',
+	lodQualityFactorName: 'Quality headroom',
+	lodQualityFactorDesc: 'How much larger than strictly needed each proxy is. Lower is faster and softer, higher is sharper. 1.15 is usually indistinguishable from the original.',
+	lodTiersName: 'Detail levels',
+	lodTiersDesc: 'Proxy widths in pixels, comma separated, ascending.',
+	lodMinSourceWidthName: 'Minimum source width',
+	lodMinSourceWidthDesc: 'Images narrower than this are left alone; the swap would not pay off.',
+	lodQualityName: 'Proxy compression',
+	lodQualityDesc: '0.6 is noticeably lighter, 0.9 is near lossless.',
+	lodPerfHeading: 'Performance',
+	lodPrewarmName: 'Build proxies ahead of time',
+	lodPrewarmDesc: 'When a board opens, prepare every image in the background, including offscreen ones.',
+	lodConcurrencyName: 'Concurrent decodes',
+	lodConcurrencyDesc: 'Each one briefly costs the full size of the image. Higher is faster but heavier.',
+	lodFastRasterName: 'Cheap rasterization while moving',
+	lodFastRasterDesc: 'For 200 ms during a zoom, images are drawn the quick way. Helps on the heaviest boards, but movement looks blockier.',
+	lodProxyGifsName: 'Freeze GIFs when zoomed out',
+	lodProxyGifsDesc: 'Animated GIFs show their first frame while small. Animation returns up close.',
+	lodCacheHeading: 'Cache',
+	lodCacheWhereDesc: 'Proxies are stored in the browser database inside your Obsidian profile, not in your vault. They never sync and never count against Obsidian Sync storage.',
+	lodMaxCacheMBName: 'Cache budget (MB)',
+	lodMaxCacheMBDesc: 'Least recently used proxies are dropped once this is exceeded.',
+	lodMaxMemoryMBName: 'Memory budget (MB)',
+	lodMaxMemoryMBDesc: 'How much of the cache may be held in RAM at once. Anything dropped is reloaded from the database without re-decoding.',
+	lodCacheSizeLabel: 'Cache size',
+	clearLodCacheName: 'Clear proxy cache',
+	clearLodCacheDesc: 'Remove all generated image proxy tiers from IndexedDB persistent storage.',
+	clearLodCacheBtn: 'Clear',
+	lodCacheClearedNotice: 'Cache cleared',
+	lodOtherHeading: 'Other',
+	lodShowStatusBarName: 'Show in status bar',
+	lodShowStatusBarNotice: 'Reload the plugin to apply',
+	debugName: 'Debug logging',
+	debugDesc: 'Writes zoom level and swap counts to the developer console (Ctrl+Shift+I).',
+
 	modalTitle: 'Add media to canvas file',
 	modalDescription: (filename: string) =>
 		`How would you like to store "${filename}"?`,
@@ -527,6 +604,18 @@ const zh: TranslationSchema = {
 	zoomSpeedDesc: '每帧缩放变化率',
 	duplicateKeyNotice: '不允许重复绑定按键。请为每个操作选择唯一的按键。',
 
+	lodHeading: '画布多细节层次 (LOD) 图像优化',
+	enableLodName: '启用视口缩放感知图像 LOD',
+	enableLodDesc: '缩小画布时自动将图像替换为低分辨率代理，消除大型图片画布上的缩放卡顿。',
+	lodMaxCacheMBName: '最大磁盘缓存 (MB)',
+	lodMaxCacheMBDesc: 'IndexedDB 中缓存代理图像的最高存储容量上限。',
+	lodMaxMemoryMBName: '最大内存缓存 (MB)',
+	lodMaxMemoryMBDesc: '内存中保留活动对象 URL 的最高容量上限。',
+	clearLodCacheName: '清除 LOD 代理缓存',
+	clearLodCacheDesc: '从 IndexedDB 本地存储中删除所有已生成的代理图像。',
+	clearLodCacheBtn: '清除缓存',
+	lodCacheClearedNotice: 'LOD 代理缓存已成功清除。',
+
 	modalTitle: '添加媒体到画布文件',
 	modalDescription: (filename: string) => `您希望如何存储 "${filename}"？`,
 	applyRemaining: (count: number) => `将选择应用到剩余的 ${count} 个媒体`,
@@ -776,6 +865,18 @@ const zhTW: TranslationSchema = {
 	zoomSpeedDesc: '每幀縮放變化率',
 	duplicateKeyNotice: '不允許重複綁定按鍵。請為每個操作選擇唯一的按鍵。',
 
+	lodHeading: '畫布多細節層次 (LOD) 影像優化',
+	enableLodName: '啟用視口縮放感知影像 LOD',
+	enableLodDesc: '縮小畫布時自動將影像替換為低解析度代理，消除大型圖片畫布上的縮放卡頓。',
+	lodMaxCacheMBName: '最大磁碟快取 (MB)',
+	lodMaxCacheMBDesc: 'IndexedDB 中快取代理影像的最高儲存容量上限。',
+	lodMaxMemoryMBName: '最大記憶體快取 (MB)',
+	lodMaxMemoryMBDesc: '記憶體中保留活動物件 URL 的最高容量上限。',
+	clearLodCacheName: '清除 LOD 代理快取',
+	clearLodCacheDesc: '從 IndexedDB 本地儲存中刪除所有已產生的代理影像。',
+	clearLodCacheBtn: '清除快取',
+	lodCacheClearedNotice: 'LOD 代理快取已成功清除。',
+
 	modalTitle: '新增媒體至畫布檔案',
 	modalDescription: (filename: string) => `您希望如何儲存 "${filename}"？`,
 	applyRemaining: (count: number) => `將選擇套用至剩餘的 ${count} 個媒體`,
@@ -1005,6 +1106,18 @@ const es: TranslationSchema = {
 	zoomSpeedDesc: 'Tasa de cambio de zoom por fotograma',
 	duplicateKeyNotice:
 		'No se permiten asignaciones de teclas duplicadas. Por favor, elija teclas únicas para cada acción.',
+
+	lodHeading: 'Optimización de Nivel de Detalle (LOD) del Lienzo',
+	enableLodName: 'Habilitar proxy LOD',
+	enableLodDesc: 'Reduce las imágenes grandes del lienzo al alejar el zoom para evitar retrasos y picos de memoria. La resolución completa se restaura al acercar.',
+	lodMaxCacheMBName: 'Caché de disco máxima (MB)',
+	lodMaxCacheMBDesc: 'Límite máximo de almacenamiento asignado para proxys de imágenes LOD en IndexedDB.',
+	lodMaxMemoryMBName: 'Caché de RAM máxima (MB)',
+	lodMaxMemoryMBDesc: 'Límite máximo de memoria asignado para URL de objetos proxy en RAM.',
+	clearLodCacheName: 'Borrar caché de proxys LOD',
+	clearLodCacheDesc: 'Eliminar todos los proxys de imágenes LOD de la caché IndexedDB.',
+	clearLodCacheBtn: 'Borrar Caché',
+	lodCacheClearedNotice: 'Caché de proxys LOD borrada con éxito.',
 
 	modalTitle: 'Añadir medios al archivo de lienzo',
 	modalDescription: (filename: string) => `¿Cómo desea guardar "${filename}"?`,
@@ -1261,6 +1374,18 @@ const fr: TranslationSchema = {
 	zoomSpeedDesc: 'Taux de modification du zoom par image',
 	duplicateKeyNotice:
 		'Les raccourcis clavier en double ne sont pas autorisés. Veuillez choisir des touches uniques pour chaque action.',
+
+	lodHeading: 'Optimisation du Niveau de Détail (LOD) du Canvas',
+	enableLodName: 'Activer le proxy LOD',
+	enableLodDesc: 'Réduit la taille des grandes images lors du dézoom pour éviter les ralentissements et les pics de mémoire. La haute résolution est restaurée au zoom.',
+	lodMaxCacheMBName: 'Cache disque maximal (Mo)',
+	lodMaxCacheMBDesc: 'Stockage maximal alloué aux proxies d\'images LOD dans IndexedDB.',
+	lodMaxMemoryMBName: 'Cache RAM maximal (Mo)',
+	lodMaxMemoryMBDesc: 'Mémoire maximale allouée aux URL d\'objets proxies dans la RAM.',
+	clearLodCacheName: 'Vider le cache des proxies LOD',
+	clearLodCacheDesc: 'Supprimer tous les proxies d\'images LOD générés dans la base IndexedDB.',
+	clearLodCacheBtn: 'Vider le cache LOD',
+	lodCacheClearedNotice: 'Le cache des proxies LOD a été vidé avec succès.',
 
 	modalTitle: 'Ajouter un média au fichier de canevas',
 	modalDescription: (filename: string) =>
@@ -1519,6 +1644,18 @@ const de: TranslationSchema = {
 	duplicateKeyNotice:
 		'Doppelte Tastenbelegungen sind nicht erlaubt. Bitte wählen Sie eindeutige Tasten für jede Aktion.',
 
+	lodHeading: 'Canvas Level of Detail (LOD) Optimierung',
+	enableLodName: 'LOD-Proxying aktivieren',
+	enableLodDesc: 'Skaliert große Canvas-Bilder beim Herauszoomen herunter, um Ruckler und Speicherspitzen zu vermeiden. Vollauflösung wird beim Hineinzoomen wiederhergestellt.',
+	lodMaxCacheMBName: 'Max. Festplatten-Cache (MB)',
+	lodMaxCacheMBDesc: 'Maximaler Speicherplatz für generierte LOD-Bild-Proxys in IndexedDB.',
+	lodMaxMemoryMBName: 'Max. RAM-Cache (MB)',
+	lodMaxMemoryMBDesc: 'Maximaler Arbeitsspeicher für dekodierte Proxy-Objekt-URLs im RAM.',
+	clearLodCacheName: 'LOD-Proxy-Cache leeren',
+	clearLodCacheDesc: 'Löscht alle generierten LOD-Bild-Proxys aus dem IndexedDB-Speicher.',
+	clearLodCacheBtn: 'LOD-Cache leeren',
+	lodCacheClearedNotice: 'LOD-Proxy-Cache erfolgreich geleert.',
+
 	modalTitle: 'Medien zur Canvas-Datei hinzufügen',
 	modalDescription: (filename: string) =>
 		`Wie möchten Sie „${filename}“ speichern?`,
@@ -1776,6 +1913,18 @@ const ja: TranslationSchema = {
 	duplicateKeyNotice:
 		'重複したキー割り当ては許可されていません。各操作に一意のキーを選択してください。',
 
+	lodHeading: 'キャンバス詳細レベル (LOD) 画像最適化',
+	enableLodName: 'LODプロキシを有効化',
+	enableLodDesc: 'ズームアウト時に画像を縮小してラグやメモリ消費を防止します。ズームイン時に高解像度に戻ります。',
+	lodMaxCacheMBName: '最大ディスクキャッシュ (MB)',
+	lodMaxCacheMBDesc: 'IndexedDBに保存するLODプロキシ画像の最大ストレージ容量。',
+	lodMaxMemoryMBName: '最大RAMキャッシュ (MB)',
+	lodMaxMemoryMBDesc: 'RAM上に展開するプロキシObject URLの最大メモリ容量。',
+	clearLodCacheName: 'LODプロキシキャッシュを消去',
+	clearLodCacheDesc: 'IndexedDBキャッシュ内のすべてのLODプロキシ画像を削除します。',
+	clearLodCacheBtn: 'LODキャッシュを消去',
+	lodCacheClearedNotice: 'LODプロキシキャッシュを正常に消去しました。',
+
 	modalTitle: 'キャンバスファイルにメディアを追加',
 	modalDescription: (filename: string) =>
 		`「${filename}」をどのように保存しますか？`,
@@ -2032,6 +2181,18 @@ const ko: TranslationSchema = {
 	duplicateKeyNotice:
 		'중복된 키 바인딩은 허용되지 않습니다. 각 작업에 고유한 키를 선택하세요.',
 
+	lodHeading: '캔버스 세부 수준 (LOD) 이미지 최적화',
+	enableLodName: 'LOD 프록시 활성화',
+	enableLodDesc: '축소 시 대형 이미지를 축소하여 랙과 메모리 급증을 방지합니다. 확대 시 원본 해상도로 복원됩니다.',
+	lodMaxCacheMBName: '최대 디스크 캐시 (MB)',
+	lodMaxCacheMBDesc: 'IndexedDB에 저장되는 생성된 LOD 프록시 이미지의 최대 디스크 용량.',
+	lodMaxMemoryMBName: '최대 RAM 캐시 (MB)',
+	lodMaxMemoryMBDesc: 'RAM에 디코딩된 프록시 Object URL의 최대 메모리 용량.',
+	clearLodCacheName: 'LOD 프록시 캐시 지우기',
+	clearLodCacheDesc: 'IndexedDB 캐시의 모든 생성된 LOD 프록시 이미지를 삭제합니다.',
+	clearLodCacheBtn: 'LOD 캐시 지우기',
+	lodCacheClearedNotice: 'LOD 프록시 캐시가 성공적으로 지워졌습니다.',
+
 	modalTitle: '캔버스 파일에 미디어 추가',
 	modalDescription: (filename: string) =>
 		`"${filename}"을(를) 어떻게 저장하시겠습니까?`,
@@ -2278,6 +2439,18 @@ const ru: TranslationSchema = {
 	zoomSpeedDesc: 'Скорость изменения масштаба за кадр',
 	duplicateKeyNotice:
 		'Дублирование привязок клавиш не допускается. Пожалуйста, выберите уникальные клавиши для каждого действия.',
+
+	lodHeading: 'Оптимизация уровня детализации (LOD) холста',
+	enableLodName: 'Включить LOD-проксирование',
+	enableLodDesc: 'Уменьшает масштаб крупных изображений при отдалении для предотвращения задержек и скачков памяти. Полное разрешение восстанавливается при приближении.',
+	lodMaxCacheMBName: 'Лимит дискового кэша (МБ)',
+	lodMaxCacheMBDesc: 'Максимальный объем памяти, выделенный под LOD-прокси в IndexedDB.',
+	lodMaxMemoryMBName: 'Лимит RAM-кэша (МБ)',
+	lodMaxMemoryMBDesc: 'Максимальный объем оперативной памяти под Object URL прокси.',
+	clearLodCacheName: 'Очистить кэш LOD-прокси',
+	clearLodCacheDesc: 'Удалить все сгенерированные LOD-прокси из кэша IndexedDB.',
+	clearLodCacheBtn: 'Очистить кэш LOD',
+	lodCacheClearedNotice: 'Кэш LOD-прокси успешно очищен.',
 
 	modalTitle: 'Добавить медиа в файл холста',
 	modalDescription: (filename: string) =>
@@ -2532,6 +2705,18 @@ const pt: TranslationSchema = {
 	duplicateKeyNotice:
 		'Teclas duplicadas não são permitidas. Por favor, escolha teclas únicas para cada ação.',
 
+	lodHeading: 'Otimização de Nível de Detalhe (LOD) do Canvas',
+	enableLodName: 'Ativar proxy LOD',
+	enableLodDesc: 'Reduz o tamanho de imagens grandes ao afastar o zoom para evitar travamentos e picos de memória. A resolução total é restaurada ao aproximar.',
+	lodMaxCacheMBName: 'Limite do cache de disco (MB)',
+	lodMaxCacheMBDesc: 'Armazenamento máximo alocado para proxies de imagem LOD no IndexedDB.',
+	lodMaxMemoryMBName: 'Limite do cache de RAM (MB)',
+	lodMaxMemoryMBDesc: 'Memória máxima alocada para URLs de objetos proxy na RAM.',
+	clearLodCacheName: 'Limpar cache de proxies LOD',
+	clearLodCacheDesc: 'Excluir todos os proxies de imagem LOD gerados do cache IndexedDB.',
+	clearLodCacheBtn: 'Limpar Cache LOD',
+	lodCacheClearedNotice: 'Cache de proxies LOD limpo com sucesso.',
+
 	modalTitle: 'Adicionar mídia ao arquivo de tela',
 	modalDescription: (filename: string) =>
 		`Como você gostaria de armazenar "${filename}"?`,
@@ -2779,6 +2964,18 @@ const it: TranslationSchema = {
 	zoomSpeedDesc: 'Tasso di modifica dello zoom per fotogramma',
 	duplicateKeyNotice:
 		'I tasti duplicati non sono consentiti. Scegli tasti univoci per ciascuna azione.',
+
+	lodHeading: 'Ottimizzazione Livello di Dettaglio (LOD) della Tela',
+	enableLodName: 'Abilita proxy LOD',
+	enableLodDesc: 'Riduce la dimensione delle grandi immagini quando si riduce lo zoom per evitare ritardi e picchi di memoria. La risoluzione originale viene ripristinata aumentando lo zoom.',
+	lodMaxCacheMBName: 'Budget cache disco proxy (MB)',
+	lodMaxCacheMBDesc: 'Spazio massimo allocato per i proxy di immagini LOD in IndexedDB.',
+	lodMaxMemoryMBName: 'Budget cache RAM proxy (MB)',
+	lodMaxMemoryMBDesc: 'Memoria massima allocata per gli Object URL dei proxy in RAM.',
+	clearLodCacheName: 'Cancella cache proxy LOD',
+	clearLodCacheDesc: 'Elimina tutti i proxy di immagini LOD generati dalla cache IndexedDB.',
+	clearLodCacheBtn: 'Cancella Cache LOD',
+	lodCacheClearedNotice: 'Cache proxy LOD cancellata con successo.',
 
 	modalTitle: 'Aggiungi media al file della tela',
 	modalDescription: (filename: string) =>
@@ -3033,6 +3230,18 @@ const ar: TranslationSchema = {
 	duplicateKeyNotice:
 		'غير مسموح بتكرار تعيين المفاتيح. يرجى اختيار مفاتيح فريدة لكل إجراء.',
 
+	lodHeading: 'تحسين مستوى التفاصيل (LOD) للوحة',
+	enableLodName: 'تفعيل الوكيل LOD',
+	enableLodDesc: 'تقليل حجم الصور الكبيرة عند تصغير العرض لمنع البطء واستهلاك الذاكرة. يتم استعادة الدقة الكاملة عند التكبير.',
+	lodMaxCacheMBName: 'سعة التخزين المؤقت للقرص (ميغابايت)',
+	lodMaxCacheMBDesc: 'الحد الأقصى للمساحة المخصصة لصور LOD في IndexedDB.',
+	lodMaxMemoryMBName: 'سعة التخزين المؤقت للذاكرة (ميغابايت)',
+	lodMaxMemoryMBDesc: 'الحد الأقصى للذاكرة المخصصة لعناوين Object URL في الذاكرة العشوائية.',
+	clearLodCacheName: 'مسح التخزين المؤقت لـ LOD',
+	clearLodCacheDesc: 'حذف جميع صور LOD المنشأة من التخزين المؤقت في IndexedDB.',
+	clearLodCacheBtn: 'مسح التخزين المؤقت',
+	lodCacheClearedNotice: 'تم مسح التخزين المؤقت لـ LOD بنجاح.',
+
 	modalTitle: 'إضافة وسائط إلى ملف اللوحة',
 	modalDescription: (filename: string) => `كيف ترغب في تخزين "${filename}"؟`,
 	applyRemaining: (count: number) =>
@@ -3192,6 +3401,18 @@ const he: TranslationSchema = {
 	zoomSpeedName: 'מהירות תקריב',
 	zoomSpeedDesc: 'קצב שינוי התקריב לכל פריים',
 	duplicateKeyNotice: 'כפילות מקשים אינה מותרת. נא לבחור מקש ייחודי לכל פעולה.',
+
+	lodHeading: 'מיטוב רמת פירוט (LOD) של לוח הקנבס',
+	enableLodName: 'הפעל LOD תמונות מותאם לתקריב',
+	enableLodDesc: 'החלף תמונות בגרסאות מוקטנות בעת הקטנת תצוגה למניעת איטיות בלוחות גדולים.',
+	lodMaxCacheMBName: 'זיכרון מטמון דיסק מרבי (MB)',
+	lodMaxCacheMBDesc: 'מגבלת אחסון מרבית עבור תמונות מוקטנות ב-IndexedDB.',
+	lodMaxMemoryMBName: 'זיכרון מטמון RAM מרבי (MB)',
+	lodMaxMemoryMBDesc: 'מגבלת זיכרון מרבית עבור כתובות אובייקט פעילות ב-RAM.',
+	clearLodCacheName: 'ניקוי זיכרון מטמון LOD',
+	clearLodCacheDesc: 'מחק את כל התמונות המוקטנות שנוצרו מאחסון IndexedDB.',
+	clearLodCacheBtn: 'נקה מטמון',
+	lodCacheClearedNotice: 'מטמון פרוקסי LOD נוקה בהצלחה.',
 
 	modalTitle: 'הוספת מדיה לקובץ הקנבס',
 	modalDescription: (filename: string) => `כיצד ברצונך לאחסן את "${filename}"?`,

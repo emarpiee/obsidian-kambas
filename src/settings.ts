@@ -43,6 +43,20 @@ export interface KambasSettings {
 	selectionZoomToFitHotkey: string; // Hotkey to zoom to fit selected elements
 	keyboardPan: CanvasKeyboardPanSettings;
 	tagColors?: Record<string, { text?: string; bg?: string }>;
+	// LOD Settings
+	enableLod?: boolean;
+	lodTiers?: number[];
+	lodQualityFactor?: number;
+	lodMinSourceWidth?: number;
+	lodMaxCacheMB?: number;
+	lodMaxMemoryMB?: number;
+	lodPrewarm?: boolean;
+	lodConcurrency?: number;
+	lodFastRasterWhileMoving?: boolean;
+	lodProxyGifs?: boolean;
+	lodQuality?: number;
+	lodShowStatusBar?: boolean;
+	debug?: boolean;
 }
 
 export const DEFAULT_SETTINGS: KambasSettings = {
@@ -65,9 +79,22 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	loupeZoomLevel: 3.0,
 	loupeSize: 260,
 	loupeShape: 'circle',
-	loupeSmoothing: 0.5,
+	loupeSmoothing: 0.25,
 	selectionZoomToFitHotkey: 'Space',
-	keyboardPan: { ...DEFAULT_KEYBOARD_PAN_SETTINGS },
+	keyboardPan: DEFAULT_KEYBOARD_PAN_SETTINGS,
+	enableLod: true,
+	lodTiers: [128, 320, 768, 1600],
+	lodQualityFactor: 1.15,
+	lodMinSourceWidth: 900,
+	lodMaxCacheMB: 300,
+	lodMaxMemoryMB: 96,
+	lodPrewarm: true,
+	lodConcurrency: 2,
+	lodFastRasterWhileMoving: false,
+	lodProxyGifs: true,
+	lodQuality: 0.82,
+	lodShowStatusBar: true,
+	debug: false,
 	tagColors: {},
 };
 
@@ -275,6 +302,215 @@ export class KambasSettingTab extends PluginSettingTab {
 						this.plugin.settings.base64Quality = value;
 						await this.plugin.saveSettings();
 					})
+			);
+
+		// Canvas Image Level of Detail (LOD) Section Header
+		new Setting(containerEl).setName(t.lodHeading).setHeading();
+
+		new Setting(containerEl)
+			.setName(t.enableLodName)
+			.setDesc(t.enableLodDesc)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableLod ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.enableLod = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl).setName(t.lodQualityHeading || 'Quality').setHeading();
+
+		new Setting(containerEl)
+			.setName(t.lodQualityFactorName || 'Quality headroom')
+			.setDesc(
+				t.lodQualityFactorDesc ||
+					'How much larger than strictly needed each proxy is. Lower is faster and softer, higher is sharper. 1.15 is usually indistinguishable from the original.'
+			)
+			.addSlider((sl) =>
+				sl
+					.setLimits(0.75, 2, 0.05)
+					.setValue(this.plugin.settings.lodQualityFactor ?? 1.15)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodQualityFactor = v;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t.lodTiersName || 'Detail levels')
+			.setDesc(t.lodTiersDesc || 'Proxy widths in pixels, comma separated, ascending.')
+			.addText((tx) =>
+				tx.setValue((this.plugin.settings.lodTiers ?? [128, 320, 768, 1600]).join(', ')).onChange(async (v) => {
+					const tiers = v
+						.split(',')
+						.map((x) => parseInt(x.trim(), 10))
+						.filter((x) => Number.isFinite(x) && x > 16)
+						.sort((a, b) => a - b);
+					if (!tiers.length) return;
+					this.plugin.settings.lodTiers = tiers;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(t.lodMinSourceWidthName || 'Minimum source width')
+			.setDesc(t.lodMinSourceWidthDesc || 'Images narrower than this are left alone; the swap would not pay off.')
+			.addText((tx) =>
+				tx.setValue(String(this.plugin.settings.lodMinSourceWidth ?? 900)).onChange(async (v) => {
+					const n = parseInt(v, 10);
+					if (Number.isFinite(n) && n > 0) {
+						this.plugin.settings.lodMinSourceWidth = n;
+						await this.plugin.saveSettings();
+					}
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(t.lodQualityName || 'Proxy compression')
+			.setDesc(t.lodQualityDesc || '0.6 is noticeably lighter, 0.9 is near lossless.')
+			.addSlider((sl) =>
+				sl
+					.setLimits(0.5, 0.95, 0.01)
+					.setValue(this.plugin.settings.lodQuality ?? 0.82)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodQuality = v;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl).setName(t.lodPerfHeading || 'Performance').setHeading();
+
+		new Setting(containerEl)
+			.setName(t.lodPrewarmName || 'Build proxies ahead of time')
+			.setDesc(t.lodPrewarmDesc || 'When a board opens, prepare every image in the background, including offscreen ones.')
+			.addToggle((tgl) =>
+				tgl.setValue(this.plugin.settings.lodPrewarm ?? true).onChange(async (v) => {
+					this.plugin.settings.lodPrewarm = v;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(t.lodConcurrencyName || 'Concurrent decodes')
+			.setDesc(t.lodConcurrencyDesc || 'Each one briefly costs the full size of the image. Higher is faster but heavier.')
+			.addSlider((sl) =>
+				sl
+					.setLimits(1, 6, 1)
+					.setValue(this.plugin.settings.lodConcurrency ?? 2)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodConcurrency = v;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t.lodFastRasterName || 'Cheap rasterization while moving')
+			.setDesc(
+				t.lodFastRasterDesc ||
+					'For 200 ms during a zoom, images are drawn the quick way. Helps on the heaviest boards, but movement looks blockier.'
+			)
+			.addToggle((tgl) =>
+				tgl.setValue(this.plugin.settings.lodFastRasterWhileMoving ?? false).onChange(async (v) => {
+					this.plugin.settings.lodFastRasterWhileMoving = v;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(t.lodProxyGifsName || 'Freeze GIFs when zoomed out')
+			.setDesc(t.lodProxyGifsDesc || 'Animated GIFs show their first frame while small. Animation returns up close.')
+			.addToggle((tgl) =>
+				tgl.setValue(this.plugin.settings.lodProxyGifs ?? true).onChange(async (v) => {
+					this.plugin.settings.lodProxyGifs = v;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl).setName(t.lodCacheHeading || 'Cache').setHeading();
+
+		const where = containerEl.createEl('p', { cls: 'setting-item-description' });
+		where.setText(
+			t.lodCacheWhereDesc ||
+				'Proxies are stored in the browser database inside your Obsidian profile, not in your vault. They never sync and never count against Obsidian Sync storage.'
+		);
+
+		new Setting(containerEl)
+			.setName(t.lodMaxCacheMBName)
+			.setDesc(t.lodMaxCacheMBDesc)
+			.addText((tx) =>
+				tx.setValue(String(this.plugin.settings.lodMaxCacheMB ?? 300)).onChange(async (v) => {
+					const n = parseInt(v, 10);
+					if (Number.isFinite(n) && n > 0) {
+						this.plugin.settings.lodMaxCacheMB = n;
+						await this.plugin.saveSettings();
+					}
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(t.lodMaxMemoryMBName)
+			.setDesc(t.lodMaxMemoryMBDesc)
+			.addText((tx) =>
+				tx.setValue(String(this.plugin.settings.lodMaxMemoryMB ?? 96)).onChange(async (v) => {
+					const n = parseInt(v, 10);
+					if (Number.isFinite(n) && n > 0) {
+						this.plugin.settings.lodMaxMemoryMB = n;
+						await this.plugin.saveSettings();
+					}
+				})
+			);
+
+		const sizeSetting = new Setting(containerEl)
+			.setName(t.lodCacheSizeLabel || 'Cache size')
+			.setDesc('measuring...');
+
+		if (this.plugin.cache && this.plugin.cache.store) {
+			this.plugin.cache.store.sizeBytes().then((b) => {
+				const mem = this.plugin.cache.mem;
+				sizeSetting.setDesc(
+					`${(b / 1024 / 1024).toFixed(1)} MB stored, ` +
+						`${mem.entries.size} proxies in memory (${(mem.bytes / 1024 / 1024).toFixed(1)} MB)`
+				);
+			});
+		}
+
+		sizeSetting.addButton((btn) =>
+			btn
+				.setButtonText(t.clearLodCacheBtn || 'Clear')
+				.setWarning()
+				.onClick(async () => {
+					if (this.plugin.cache) {
+						await this.plugin.cache.clear();
+					}
+					new Notice(t.lodCacheClearedNotice || 'Cache cleared');
+					this.display();
+				})
+		);
+
+		new Setting(containerEl).setName(t.lodOtherHeading || 'Other').setHeading();
+
+		new Setting(containerEl)
+			.setName(t.lodShowStatusBarName || 'Show in status bar')
+			.addToggle((tgl) =>
+				tgl.setValue(this.plugin.settings.lodShowStatusBar ?? true).onChange(async (v) => {
+					this.plugin.settings.lodShowStatusBar = v;
+					await this.plugin.saveSettings();
+					new Notice(t.lodShowStatusBarNotice || 'Reload the plugin to apply');
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(t.debugName || 'Debug logging')
+			.setDesc(t.debugDesc || 'Writes zoom level and swap counts to the developer console (Ctrl+Shift+I).')
+			.addToggle((tgl) =>
+				tgl.setValue(this.plugin.settings.debug ?? false).onChange(async (v) => {
+					this.plugin.settings.debug = v;
+					await this.plugin.saveSettings();
+				})
 			);
 
 		// Visual Inspection Section

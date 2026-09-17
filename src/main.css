@@ -1,4 +1,16 @@
-/* Kambas plugin styles */
+/* Canvas Image LOD styles */
+.cil-fast {
+	image-rendering: optimizeSpeed;
+	image-rendering: -webkit-optimize-contrast;
+}
+
+.status-bar-item.cil-status-working {
+	color: var(--text-warning);
+}
+
+.status-bar-item.cil-status-off {
+	opacity: 0.5;
+}
 
 /* Ensure canvas node wrapper housing embedded images clips cleanly without scrollbar space & transparent background */
 .canvas .canvas-nodes .canvas-node.kambas-has-embedded-img,
