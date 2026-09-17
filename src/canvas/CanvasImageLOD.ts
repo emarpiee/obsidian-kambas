@@ -48,6 +48,7 @@ export function getLodSettings(plugin: KambasPlugin): LodSettings {
 }
 
 export const EMBEDDED_BLOB_MAP = new Map<string, string>();
+export const RAW_BASE64_REGISTRY = new Map<string, string>();
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -64,7 +65,7 @@ export function srcKey(src: string): string {
 	if (!src) return 'empty';
 	if (src.startsWith('data:image/')) {
 		const len = src.length;
-		if (len > 1024) {
+		if (len > 512) {
 			const sample = src.slice(0, 256) + '_' + len + '_' + src.slice(len - 256);
 			return 'b64_' + fnv1a(sample);
 		}
@@ -98,8 +99,13 @@ export function isProxyable(src: string, settings: LodSettings): boolean {
 }
 
 export function getOrigSrcFromImg(img: HTMLImageElement): string {
-	if (img.dataset.cilOrig) return img.dataset.cilOrig;
-	if (img.dataset.kambasOrigSrc) return img.dataset.kambasOrigSrc;
+	if (img.dataset.cilOrig && !img.dataset.cilOrig.startsWith('data:image/')) {
+		return img.dataset.cilOrig;
+	}
+	const key = img.dataset.cilKey;
+	if (key && RAW_BASE64_REGISTRY.has(key)) {
+		return RAW_BASE64_REGISTRY.get(key)!;
+	}
 	const src = img.getAttribute('src') || '';
 	if (src && EMBEDDED_BLOB_MAP.has(src)) {
 		return EMBEDDED_BLOB_MAP.get(src)!;
@@ -419,6 +425,7 @@ export class ProxyCache {
 			})
 			.finally(() => {
 				this.inflight.delete(k);
+				RAW_BASE64_REGISTRY.delete(k);
 				this.stats.pending--;
 				this.plugin.updateStatus();
 				this.plugin.scheduleSyncAll();
@@ -476,8 +483,8 @@ export class ProxyCache {
 	}
 
 	private async _readBlob(src: string): Promise<Blob> {
-		if (EMBEDDED_BLOB_MAP.has(src)) {
-			src = EMBEDDED_BLOB_MAP.get(src)!;
+		if (RAW_BASE64_REGISTRY.has(src)) {
+			src = RAW_BASE64_REGISTRY.get(src)!;
 		}
 
 		if (src.startsWith('data:image/')) {
@@ -511,12 +518,13 @@ export class ProxyCache {
 
 	private async _generate(src: string, k: string): Promise<void> {
 		const blob = await this._readBlob(src);
-		const bmp = await createImageBitmap(blob);
-		const natW = bmp.width;
-		const natH = bmp.height;
-		const s = getLodSettings(this.plugin);
-
+		let bmp: ImageBitmap | null = null;
 		try {
+			bmp = await createImageBitmap(blob);
+			const natW = bmp.width;
+			const natH = bmp.height;
+			const s = getLodSettings(this.plugin);
+
 			if (natW < s.minSourceWidth) {
 				this.noProxy.add(k);
 				return;
@@ -548,10 +556,24 @@ export class ProxyCache {
 				if (this.store.available) {
 					this.store.put(key, t, out).catch(() => {});
 				}
+				if (source !== bmp && 'width' in source) {
+					(source as any).width = 0;
+					(source as any).height = 0;
+				}
 				source = canvas;
 			}
+			if (source !== bmp && 'width' in source) {
+				(source as any).width = 0;
+				(source as any).height = 0;
+			}
 		} finally {
-			bmp.close();
+			if (bmp) {
+				try {
+					bmp.close();
+				} catch {
+					/* ignore */
+				}
+			}
 		}
 	}
 

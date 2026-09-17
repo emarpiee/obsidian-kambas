@@ -118,9 +118,10 @@ export default class KambasPlugin extends Plugin {
 				return;
 			}
 			const canvasView = activeView as unknown as CanvasItemView;
-			window.setTimeout(() => {
-				this.canvasImageHandler.scanAndRestoreTransforms(canvasView);
-			}, 10);
+			this.canvasImageHandler.scanAndRestoreTransforms(canvasView);
+			window.setTimeout(() => this.canvasImageHandler.scanAndRestoreTransforms(canvasView), 30);
+			window.setTimeout(() => this.canvasImageHandler.scanAndRestoreTransforms(canvasView), 100);
+			window.setTimeout(() => this.canvasImageHandler.scanAndRestoreTransforms(canvasView), 300);
 		};
 
 		this.registerEvent(

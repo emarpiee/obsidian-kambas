@@ -53,7 +53,7 @@ import {
 } from '../utils/numberFormatters';
 
 import { CanvasGifHandler } from './CanvasGifHandler';
-import { EMBEDDED_BLOB_MAP } from './CanvasImageLOD';
+import { EMBEDDED_BLOB_MAP, RAW_BASE64_REGISTRY, srcKey } from './CanvasImageLOD';
 
 export interface PendingImage {
 	filename: string;
@@ -167,10 +167,8 @@ export class CanvasImageHandler {
 
 	private rescanTimeoutId: number | null = null;
 
-	private scheduleRescan(activeView: CanvasItemView, delay = 150): void {
-		if (this.rescanTimeoutId !== null) {
-			window.clearTimeout(this.rescanTimeoutId);
-		}
+	private scheduleRescan(activeView: CanvasItemView, delay = 16): void {
+		if (this.rescanTimeoutId !== null) return;
 		this.rescanTimeoutId = window.setTimeout(() => {
 			this.rescanTimeoutId = null;
 			this.scanAndRestoreTransforms(activeView);
@@ -552,11 +550,16 @@ export class CanvasImageHandler {
 				unknownData.type = 'link';
 				unknownData.url = nodeUrl;
 
-				const container =
-					nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
+				const container = nodeEl.querySelector('.canvas-node-content');
+				if (!container) {
+					this.scheduleRescan(activeView, 16);
+					return;
+				}
 				let existingImg = container.querySelector<HTMLImageElement>(
 					'img.kambas-embedded-img'
 				);
+				const key = srcKey(nodeUrl);
+				RAW_BASE64_REGISTRY.set(key, nodeUrl);
 				const displayUrl = this.getOrCreateBlobUrl(nodeUrl);
 				if (!existingImg) {
 					const existingCanvas = container.querySelector<HTMLCanvasElement>(
@@ -569,17 +572,13 @@ export class CanvasImageHandler {
 						cls: 'kambas-embedded-img',
 						attr: {
 							src: displayUrl,
-							'data-kambas-orig-src': nodeUrl,
-							'data-cil-orig': nodeUrl,
+							'data-cil-key': key,
 							draggable: 'false',
 							style: `${existingCanvas ? 'display:none;' : ''}position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;`,
 						},
 					});
 				} else {
-					existingImg.dataset.kambasOrigSrc = nodeUrl;
-					if (!existingImg.dataset.cilOrig) {
-						existingImg.dataset.cilOrig = nodeUrl;
-					}
+					existingImg.dataset.cilKey = key;
 					if (!existingImg.dataset.cilTier && existingImg.src !== displayUrl) {
 						existingImg.src = displayUrl;
 					}
