@@ -26,6 +26,7 @@ import {
 	ImageIngestionModal,
 	StorageChoice,
 } from '../modals/ImageIngestionModal';
+import { ImageImportProgressModal } from '../modals/ImageImportProgressModal';
 import { ImageSwapModal } from '../modals/ImageSwapModal';
 import {
 	MediaFilenameModal,
@@ -105,12 +106,59 @@ export class CanvasImageHandler {
 		this.startEditGuard();
 	}
 
+	private blobUrlMap: Map<string, string> = new Map();
+	private createdBlobUrls: Set<string> = new Set();
+
+	public getOrCreateBlobUrl(dataUrl: string): string {
+		if (!dataUrl) return '';
+		if (!dataUrl.startsWith('data:image/')) return dataUrl;
+		if (this.blobUrlMap.has(dataUrl)) {
+			return this.blobUrlMap.get(dataUrl)!;
+		}
+		try {
+			const parts = dataUrl.split(',');
+			if (parts.length < 2) return dataUrl;
+			const mimeMatch = parts[0].match(/:(.*?);/);
+			const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+			const bstr = atob(parts[1]);
+			let n = bstr.length;
+			const u8arr = new Uint8Array(n);
+			while (n--) {
+				u8arr[n] = bstr.charCodeAt(n);
+			}
+			const blob = new Blob([u8arr], { type: mime });
+			const blobUrl = URL.createObjectURL(blob);
+			this.blobUrlMap.set(dataUrl, blobUrl);
+			this.createdBlobUrls.add(blobUrl);
+			return blobUrl;
+		} catch (err) {
+			console.error('Error creating Blob URL from Base64:', err);
+			return dataUrl;
+		}
+	}
+
+	public cleanupCanvasResources(): void {
+		for (const blobUrl of Array.from(this.createdBlobUrls)) {
+			try {
+				URL.revokeObjectURL(blobUrl);
+			} catch {
+				// ignore
+			}
+		}
+		this.blobUrlMap.clear();
+		this.createdBlobUrls.clear();
+		this.nodeColorCache.clear();
+		if (this.gifHandler) {
+			this.gifHandler.cleanupCanvasResources();
+		}
+	}
+
 	public unregisterEvents(): void {
 		if (this.editGuardObserver) {
 			this.editGuardObserver.disconnect();
 			this.editGuardObserver = null;
 		}
-		this.gifHandler.detachAll();
+		this.cleanupCanvasResources();
 	}
 
 	// ──────────────────────────────────────────────────────────────────────────
@@ -492,6 +540,7 @@ export class CanvasImageHandler {
 				let existingImg = container.querySelector<HTMLImageElement>(
 					'img.kambas-embedded-img'
 				);
+				const displayUrl = this.getOrCreateBlobUrl(nodeUrl);
 				if (!existingImg) {
 					const existingCanvas = container.querySelector<HTMLCanvasElement>(
 						'canvas.kambas-gif-canvas-overlay'
@@ -502,13 +551,13 @@ export class CanvasImageHandler {
 					existingImg = container.createEl('img', {
 						cls: 'kambas-embedded-img',
 						attr: {
-							src: nodeUrl,
+							src: displayUrl,
 							draggable: 'false',
 							style: `${existingCanvas ? 'display:none;' : ''}position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;`,
 						},
 					});
-				} else if (existingImg.src !== nodeUrl) {
-					existingImg.src = nodeUrl;
+				} else if (existingImg.src !== displayUrl) {
+					existingImg.src = displayUrl;
 				}
 
 				// Lock parent node aspect ratio to natural image dimensions
@@ -5112,12 +5161,13 @@ export class CanvasImageHandler {
 		images: PendingImage[],
 		evt: MouseEvent | ClipboardEvent | DragEvent
 	): Promise<void> {
-		// Capture exact position at the moment of paste/drop BEFORE opening modal or async loading
+		if (images.length === 0) return;
 		const initialMousePos = this.lastMousePos ? { ...this.lastMousePos } : null;
 
 		let currentChoice: StorageChoice | null = null;
 		let applyToAllRemaining = false;
 
+		// 1. Get ingestion choice modal
 		for (let i = 0; i < images.length; i++) {
 			const item = images[i];
 			const remainingCount = images.length - i;
@@ -5139,33 +5189,81 @@ export class CanvasImageHandler {
 				applyToAllRemaining = res.applyToAll;
 			}
 
-			if (currentChoice === 'cancel') {
-				break;
+			if (currentChoice === 'cancel') return;
+			if (applyToAllRemaining) break;
+		}
+
+		if (!currentChoice || currentChoice === 'cancel') return;
+
+		// 2. Open progress modal if batch import
+		let progressModal: ImageImportProgressModal | null = null;
+		if (images.length > 1) {
+			progressModal = new ImageImportProgressModal(this.app, images.length);
+			progressModal.open();
+		}
+
+		// Center drop position on canvas
+		const centerPos = this.getCanvasPosition(
+			canvasView,
+			evt,
+			0,
+			400,
+			300,
+			initialMousePos
+		);
+
+		// 3. Measure dimensions for all images asynchronously
+		const imageDimensions: Array<{ width: number; height: number }> = [];
+		const validImages: PendingImage[] = [];
+
+		for (let i = 0; i < images.length; i++) {
+			if (progressModal?.isCancelled) break;
+			const item = images[i];
+			if (progressModal) {
+				progressModal.updateProgress(i + 1, item.filename);
 			}
 
 			let dims = { width: 400, height: 300 };
-			if (item.file) {
-				dims = await getImageDimensions(item.file);
-			} else if (item.arrayBuffer) {
-				const tempUrl = arrayBufferToBase64DataUrl(
-					item.arrayBuffer,
-					item.mimeType
-				);
-				dims = await getImageDimensions(tempUrl);
+			try {
+				if (item.file) {
+					dims = await getImageDimensions(item.file);
+				} else if (item.arrayBuffer) {
+					const tempUrl = arrayBufferToBase64DataUrl(
+						item.arrayBuffer,
+						item.mimeType
+					);
+					dims = await getImageDimensions(tempUrl);
+				}
+			} catch {
+				dims = { width: 400, height: 300 };
 			}
 
-			const pos = this.getCanvasPosition(
-				canvasView,
-				evt,
-				i,
-				dims.width,
-				dims.height,
-				initialMousePos
-			);
+			imageDimensions.push(dims);
+			validImages.push(item);
+		}
+
+		if (validImages.length === 0) {
+			progressModal?.close();
+			return;
+		}
+
+		// 4. Calculate PureRef-style grid layout
+		const layoutPositions = this.calculatePureRefGridLayout(
+			imageDimensions,
+			centerPos
+		);
+
+		// 5. Construct batch nodes
+		const nodesToInsert: CanvasNodeData[] = [];
+
+		for (let i = 0; i < validImages.length; i++) {
+			if (progressModal?.isCancelled) break;
+			const item = validImages[i];
+			const pos = layoutPositions[i];
+			const dims = imageDimensions[i];
 
 			if (currentChoice === 'embed') {
 				let dataUrl = '';
-
 				if (item.file) {
 					dataUrl = await blobToBase64(item.file);
 				} else if (item.arrayBuffer) {
@@ -5173,19 +5271,19 @@ export class CanvasImageHandler {
 				}
 
 				if (dataUrl) {
-					await this.addEmbeddedImageToCanvas(
-						canvasView,
-						dataUrl,
-						item.filename,
-						pos.x,
-						pos.y,
-						dims.width,
-						dims.height
-					);
+					nodesToInsert.push({
+						type: 'link',
+						url: dataUrl,
+						x: pos.x,
+						y: pos.y,
+						width: dims.width,
+						height: dims.height,
+						originalWidth: dims.width,
+						originalHeight: dims.height,
+					});
 				}
 			} else {
 				let buffer: ArrayBuffer | null = null;
-
 				if (item.file) {
 					buffer = await item.file.arrayBuffer();
 				} else if (item.arrayBuffer) {
@@ -5204,16 +5302,40 @@ export class CanvasImageHandler {
 						item.filename,
 						buffer
 					);
-					await this.addVaultImageToCanvas(
-						canvasView,
-						vaultPath,
-						pos.x,
-						pos.y,
-						dims.width,
-						dims.height
-					);
+					nodesToInsert.push({
+						type: 'file',
+						file: vaultPath,
+						x: pos.x,
+						y: pos.y,
+						width: dims.width,
+						height: dims.height,
+						originalWidth: dims.width,
+						originalHeight: dims.height,
+					});
 				}
 			}
+		}
+
+		// 6. Write all nodes to `.canvas` file in 1 single atomic disk update
+		if (canvasView.file && nodesToInsert.length > 0) {
+			await this.appendBatchNodesToCanvasFile(
+				canvasView.file.path,
+				nodesToInsert
+			);
+			window.setTimeout(() => {
+				this.scanAndRestoreTransforms(canvasView);
+			}, 30);
+		}
+
+		if (progressModal) {
+			progressModal.close();
+		}
+
+		const t = getText();
+		if (nodesToInsert.length === images.length) {
+			new Notice(t.importCompleteNotice(nodesToInsert.length));
+		} else if (nodesToInsert.length > 0) {
+			new Notice(t.importCancelledNotice(nodesToInsert.length));
 		}
 	}
 
@@ -5417,10 +5539,101 @@ export class CanvasImageHandler {
 		}
 	}
 
-	private async appendNodeToCanvasFile(
+	private calculatePureRefGridLayout(
+		items: Array<{ width: number; height: number }>,
+		centerPos: { x: number; y: number }
+	): Array<{ x: number; y: number }> {
+		if (items.length === 0) return [];
+		if (items.length === 1) {
+			return [
+				{
+					x: Math.round(centerPos.x - items[0].width / 2),
+					y: Math.round(centerPos.y - items[0].height / 2),
+				},
+			];
+		}
+
+		const count = items.length;
+		const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
+		const gap = 30;
+
+		const rows: Array<{
+			items: Array<{ index: number; width: number; height: number; relX: number }>;
+			rowWidth: number;
+			rowHeight: number;
+		}> = [];
+
+		let currentRowItems: Array<{
+			index: number;
+			width: number;
+			height: number;
+			relX: number;
+		}> = [];
+		let currentRowWidth = 0;
+		let currentRowMaxHeight = 0;
+
+		for (let i = 0; i < count; i++) {
+			const item = items[i];
+			const w = item.width || 400;
+			const h = item.height || 300;
+
+			if (currentRowItems.length >= cols) {
+				rows.push({
+					items: currentRowItems,
+					rowWidth: currentRowWidth - gap,
+					rowHeight: currentRowMaxHeight,
+				});
+				currentRowItems = [];
+				currentRowWidth = 0;
+				currentRowMaxHeight = 0;
+			}
+
+			currentRowItems.push({
+				index: i,
+				width: w,
+				height: h,
+				relX: currentRowWidth,
+			});
+			currentRowWidth += w + gap;
+			if (h > currentRowMaxHeight) currentRowMaxHeight = h;
+		}
+
+		if (currentRowItems.length > 0) {
+			rows.push({
+				items: currentRowItems,
+				rowWidth: currentRowWidth - gap,
+				rowHeight: currentRowMaxHeight,
+			});
+		}
+
+		const totalGridWidth = Math.max(...rows.map((r) => r.rowWidth));
+		const totalGridHeight =
+			rows.reduce((acc, r) => acc + r.rowHeight, 0) + (rows.length - 1) * gap;
+
+		const startX = centerPos.x - totalGridWidth / 2;
+		const startY = centerPos.y - totalGridHeight / 2;
+
+		const result: Array<{ x: number; y: number }> = new Array(count);
+
+		let currentY = startY;
+		for (const row of rows) {
+			for (const item of row.items) {
+				result[item.index] = {
+					x: Math.round(startX + item.relX),
+					y: Math.round(currentY),
+				};
+			}
+			currentY += row.rowHeight + gap;
+		}
+
+		return result;
+	}
+
+	private async appendBatchNodesToCanvasFile(
 		canvasFilePath: string,
-		nodeData: CanvasNodeData
+		nodesData: CanvasNodeData[]
 	): Promise<void> {
+		if (nodesData.length === 0) return;
 		const file = this.app.vault.getAbstractFileByPath(canvasFilePath);
 		if (!file || !(file instanceof TFile) || file.extension !== 'canvas')
 			return;
@@ -5437,14 +5650,25 @@ export class CanvasImageHandler {
 		}
 
 		if (!data.nodes) data.nodes = [];
-		nodeData.id = Math.random().toString(36).substring(2, 16);
-		data.nodes.push(nodeData);
+		for (const node of nodesData) {
+			if (!node.id) {
+				node.id = Math.random().toString(36).substring(2, 16);
+			}
+			data.nodes.push(node);
+		}
 
 		try {
 			await this.app.vault.modify(file, JSON.stringify(data, null, 2));
 		} catch (err) {
-			console.error('Error saving updated node to canvas file:', err);
+			console.error('Error saving updated batch nodes to canvas file:', err);
 		}
+	}
+
+	private async appendNodeToCanvasFile(
+		canvasFilePath: string,
+		nodeData: CanvasNodeData
+	): Promise<void> {
+		await this.appendBatchNodesToCanvasFile(canvasFilePath, [nodeData]);
 	}
 
 	// ──────────────────────────────────────────────────────────────────────────

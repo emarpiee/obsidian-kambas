@@ -1,0 +1,76 @@
+import { App, Modal } from 'obsidian';
+import { getText } from '../i18n';
+
+export class ImageImportProgressModal extends Modal {
+	private total: number;
+	private current = 0;
+	private currentFilename = '';
+	private progressBarEl!: HTMLProgressElement;
+	private statusEl!: HTMLElement;
+	private countEl!: HTMLElement;
+	public isCancelled = false;
+
+	constructor(app: App, total: number) {
+		super(app);
+		this.total = total;
+	}
+
+	onOpen(): void {
+		const { contentEl, titleEl } = this;
+		contentEl.empty();
+		const t = getText();
+
+		titleEl.setText(t.importProgressTitle);
+
+		const container = contentEl.createDiv({ cls: 'kambas-import-progress-container' });
+
+		this.countEl = container.createDiv({ cls: 'kambas-import-progress-count' });
+		this.countEl.setText(`0 / ${this.total}`);
+
+		this.progressBarEl = container.createEl('progress');
+		this.progressBarEl.max = this.total;
+		this.progressBarEl.value = 0;
+		this.progressBarEl.style.width = '100%';
+		this.progressBarEl.style.margin = '12px 0';
+
+		this.statusEl = container.createDiv({ cls: 'kambas-import-progress-status' });
+		this.statusEl.style.fontSize = '0.9em';
+		this.statusEl.style.opacity = '0.8';
+		this.statusEl.style.overflow = 'hidden';
+		this.statusEl.style.textOverflow = 'ellipsis';
+		this.statusEl.style.whiteSpace = 'nowrap';
+
+		const btnContainer = contentEl.createDiv({ cls: 'modal-button-container' });
+		btnContainer.style.marginTop = '16px';
+
+		const cancelBtn = btnContainer.createEl('button', {
+			text: t.cancelBtn || 'Cancel',
+			cls: 'mod-cancel',
+		});
+		cancelBtn.addEventListener('click', () => {
+			this.isCancelled = true;
+			this.close();
+		});
+	}
+
+	public updateProgress(current: number, filename: string): void {
+		this.current = current;
+		this.currentFilename = filename;
+		const t = getText();
+
+		if (this.progressBarEl) {
+			this.progressBarEl.value = current;
+		}
+		if (this.countEl) {
+			this.countEl.setText(`${current} / ${this.total}`);
+		}
+		if (this.statusEl) {
+			this.statusEl.setText(t.importProgressStatus(current, this.total, filename));
+		}
+	}
+
+	onClose(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
+}

@@ -22,12 +22,16 @@ export interface TranslationSchema {
 	zoomSpeedDesc: string;
 	duplicateKeyNotice: string;
 
-	// Ingestion Modal
+	// Ingestion & Progress Modal
 	modalTitle: string;
 	modalDescription: (filename: string) => string;
 	applyRemaining: (count: number) => string;
 	saveToVault: string;
 	embedInCanvas: string;
+	importProgressTitle: string;
+	importProgressStatus: (current: number, total: number, filename: string) => string;
+	importCompleteNotice: (count: number) => string;
+	importCancelledNotice: (count: number) => string;
 
 	// Convert To Embed Modal
 	convertModalTitle: string;
@@ -279,6 +283,13 @@ const en: TranslationSchema = {
 	applyRemaining: (count: number) => `Apply choice to remaining ${count} media`,
 	saveToVault: 'Save to vault',
 	embedInCanvas: 'Embed in canvas file',
+	importProgressTitle: 'Importing Images',
+	importProgressStatus: (current, total, filename) =>
+		`Importing image ${current} of ${total}: ${filename}`,
+	importCompleteNotice: (count) =>
+		`Successfully imported ${count} image${count === 1 ? '' : 's'}`,
+	importCancelledNotice: (count) =>
+		`Import cancelled after ${count} image${count === 1 ? '' : 's'}`,
 
 	convertModalTitle: 'Embed media in canvas file',
 	convertModalDesc: (filename: string) =>
@@ -521,6 +532,11 @@ const zh: TranslationSchema = {
 	applyRemaining: (count: number) => `将选择应用到剩余的 ${count} 个媒体`,
 	saveToVault: '保存到宝库',
 	embedInCanvas: '嵌入到画布文件',
+	importProgressTitle: '正在导入图片',
+	importProgressStatus: (current, total, filename) =>
+		`正在导入第 ${current} / ${total} 张图片: ${filename}`,
+	importCompleteNotice: (count) => `成功导入 ${count} 张图片`,
+	importCancelledNotice: (count) => `已取消导入，共导入 ${count} 张图片`,
 
 	convertModalTitle: '在画布文件中嵌入媒体',
 	convertModalDesc: (filename: string) =>
@@ -765,6 +781,11 @@ const zhTW: TranslationSchema = {
 	applyRemaining: (count: number) => `將選擇套用至剩餘的 ${count} 個媒體`,
 	saveToVault: '儲存至寶庫',
 	embedInCanvas: '嵌入至畫布檔案',
+	importProgressTitle: '正在匯入圖片',
+	importProgressStatus: (current, total, filename) =>
+		`正在匯入第 ${current} / ${total} 張圖片: ${filename}`,
+	importCompleteNotice: (count) => `成功匯入 ${count} 張圖片`,
+	importCancelledNotice: (count) => `已取消匯入，共匯入 ${count} 張圖片`,
 
 	convertModalTitle: '在畫布檔案中嵌入媒體',
 	convertModalDesc: (filename: string) =>
@@ -991,6 +1012,11 @@ const es: TranslationSchema = {
 		`Aplicar opción a los ${count} medios restantes`,
 	saveToVault: 'Guardar en la bóveda',
 	embedInCanvas: 'Incrustar en el archivo de lienzo',
+	importProgressTitle: 'Importando imágenes',
+	importProgressStatus: (current, total, filename) =>
+		`Importando imagen ${current} de ${total}: ${filename}`,
+	importCompleteNotice: (count) => `${count} imagen(es) importada(s) con éxito`,
+	importCancelledNotice: (count) => `Importación cancelada tras ${count} imagen(es)`,
 
 	convertModalTitle: 'Incrustar medios en el archivo de lienzo',
 	convertModalDesc: (filename: string) =>
@@ -1243,6 +1269,11 @@ const fr: TranslationSchema = {
 		`Appliquer le choix aux ${count} médias restants`,
 	saveToVault: 'Enregistrer dans le coffre',
 	embedInCanvas: 'Intégrer dans le fichier de canevas',
+	importProgressTitle: 'Importation des images',
+	importProgressStatus: (current, total, filename) =>
+		`Importation de l'image ${current} sur ${total} : ${filename}`,
+	importCompleteNotice: (count) => `${count} image(s) importée(s) avec succès`,
+	importCancelledNotice: (count) => `Importation annulée après ${count} image(s)`,
 
 	convertModalTitle: 'Intégrer le média dans le fichier de canevas',
 	convertModalDesc: (filename: string) =>
@@ -1495,6 +1526,11 @@ const de: TranslationSchema = {
 		`Auswahl auf die verbleibenden ${count} Medien anwenden`,
 	saveToVault: 'Im Tresor speichern',
 	embedInCanvas: 'In Canvas-Datei einbetten',
+	importProgressTitle: 'Bilder werden importiert',
+	importProgressStatus: (current, total, filename) =>
+		`Bild ${current} von ${total} wird importiert: ${filename}`,
+	importCompleteNotice: (count) => `${count} Bild(er) erfolgreich importiert`,
+	importCancelledNotice: (count) => `Import nach ${count} Bild(ern) abgebrochen`,
 
 	convertModalTitle: 'Medien in Canvas-Datei einbetten',
 	convertModalDesc: (filename: string) =>
@@ -1747,6 +1783,11 @@ const ja: TranslationSchema = {
 		`残りの${count}件のメディアにこの選択を適用`,
 	saveToVault: '保管庫に保存',
 	embedInCanvas: 'キャンバスファイルに埋め込む',
+	importProgressTitle: '画像をインポート中',
+	importProgressStatus: (current, total, filename) =>
+		`画像 ${current} / ${total} をインポート中: ${filename}`,
+	importCompleteNotice: (count) => `${count} 枚の画像を正常にインポートしました`,
+	importCancelledNotice: (count) => `${count} 枚の画像処理後にインポートをキャンセルしました`,
 
 	convertModalTitle: 'キャンバスファイルにメディアを埋め込む',
 	convertModalDesc: (filename: string) =>
@@ -1997,6 +2038,11 @@ const ko: TranslationSchema = {
 	applyRemaining: (count: number) => `남은 미디어 ${count}개에 선택 적용`,
 	saveToVault: '보관함에 저장',
 	embedInCanvas: '캔버스 파일에 임베드',
+	importProgressTitle: '이미지 가져오는 중',
+	importProgressStatus: (current, total, filename) =>
+		`이미지 가져오는 중 (${current} / ${total}): ${filename}`,
+	importCompleteNotice: (count) => `${count}개 이미지를 성공적으로 가져왔습니다`,
+	importCancelledNotice: (count) => `${count}개 이미지 처리 후 가져오기가 취소되었습니다`,
 
 	convertModalTitle: '캔버스 파일에 미디어 임베드',
 	convertModalDesc: (filename: string) =>
@@ -2240,6 +2286,11 @@ const ru: TranslationSchema = {
 		`Применить выбор к оставшимся ${count} медиа`,
 	saveToVault: 'Сохранить в хранилище',
 	embedInCanvas: 'Встроить в файл холста',
+	importProgressTitle: 'Импорт изображений',
+	importProgressStatus: (current, total, filename) =>
+		`Импорт изображения ${current} из ${total}: ${filename}`,
+	importCompleteNotice: (count) => `Успешно импортировано изображений: ${count}`,
+	importCancelledNotice: (count) => `Импорт отменен после ${count} изобр.`,
 
 	convertModalTitle: 'Встроить медиа в файл холста',
 	convertModalDesc: (filename: string) =>
@@ -2488,6 +2539,11 @@ const pt: TranslationSchema = {
 		`Aplicar escolha às ${count} mídias restantes`,
 	saveToVault: 'Salvar no cofre',
 	embedInCanvas: 'Incorporar no arquivo de tela',
+	importProgressTitle: 'Importando imagens',
+	importProgressStatus: (current, total, filename) =>
+		`Importando imagem ${current} de ${total}: ${filename}`,
+	importCompleteNotice: (count) => `${count} imagem(ns) importada(s) com sucesso`,
+	importCancelledNotice: (count) => `Importação cancelada após ${count} imagem(ns)`,
 
 	convertModalTitle: 'Incorporar mídia no arquivo de tela',
 	convertModalDesc: (filename: string) =>
@@ -2731,6 +2787,11 @@ const it: TranslationSchema = {
 		`Applica scelta ai rimanenti ${count} elementi media`,
 	saveToVault: 'Salva nel vault',
 	embedInCanvas: 'Incorpora nel file della tela',
+	importProgressTitle: 'Importazione immagini',
+	importProgressStatus: (current, total, filename) =>
+		`Importazione immagine ${current} di ${total}: ${filename}`,
+	importCompleteNotice: (count) => `${count} immagine/i importata/e con successo`,
+	importCancelledNotice: (count) => `Importazione annullata dopo ${count} immagine/i`,
 
 	convertModalTitle: 'Incorpora media nel file della tela',
 	convertModalDesc: (filename: string) =>
@@ -2978,6 +3039,11 @@ const ar: TranslationSchema = {
 		`تطبيق الخيار على الوسائط المتبقية وعددها ${count}`,
 	saveToVault: 'حفظ في الخزنة',
 	embedInCanvas: 'تضمين في ملف اللوحة',
+	importProgressTitle: 'جاري استيراد الصور',
+	importProgressStatus: (current, total, filename) =>
+		`جاري استيراد الصورة ${current} من ${total}: ${filename}`,
+	importCompleteNotice: (count) => `تم استيراد ${count} صورة بنجاح`,
+	importCancelledNotice: (count) => `تم إلغاء الاستيراد بعد ${count} صورة`,
 
 	convertModalTitle: 'تضمين الوسائط في ملف اللوحة',
 	convertModalDesc: (filename: string) =>
@@ -3133,6 +3199,11 @@ const he: TranslationSchema = {
 		`החל בחירה על ${count} פריטי המדיה הנותרים`,
 	saveToVault: 'שמור בכספת',
 	embedInCanvas: 'הטמע בקובץ הקנבס',
+	importProgressTitle: 'ייבוא תמונות',
+	importProgressStatus: (current, total, filename) =>
+		`מייבא תמונה ${current} מתוך ${total}: ${filename}`,
+	importCompleteNotice: (count) => `${count} תמונות יובאו בהצלחה`,
+	importCancelledNotice: (count) => `הייבוא בוטל לאחר ${count} תמונות`,
 
 	convertModalTitle: 'הטמעת מדיה בקובץ הקנבס',
 	convertModalDesc: (filename: string) =>

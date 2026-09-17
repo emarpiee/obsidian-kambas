@@ -38,11 +38,23 @@
 	scrollbar-width: none;
 }
 
-/* Hide base64 URL data label header above link image cards when setting enabled */
+/* Unconditionally hide raw base64 URL data label header above link image cards */
+.canvas-node:has(.kambas-embedded-img) .canvas-node-label,
+.canvas-node-label:has(+ .canvas-node-container .kambas-embedded-img),
 body.kambas-hide-labels .canvas-node:has(.kambas-embedded-img) .canvas-node-label,
-body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-embedded-img) {
-	display: none;
+body.kambas-hide-labels .canvas-node-label:has(+ .canvas-node-container .kambas-embedded-img),
+.canvas-node.is-link[data-url^="data:image/"] .canvas-node-label,
+.canvas-node.is-link[data-url^="data:image/"] .canvas-node-title {
+	display: none !important;
 }
+
+/* Performance optimization for zooming/panning with 500+ images */
+.canvas-node:has(.kambas-embedded-img) {
+	content-visibility: auto;
+	contain-intrinsic-size: 400px 300px;
+	will-change: transform;
+}
+
 
 .canvas-node:has(.kambas-embedded-img) *::-webkit-scrollbar,
 .canvas-node-content:has(.kambas-embedded-img) *::-webkit-scrollbar {

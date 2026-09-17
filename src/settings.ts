@@ -138,19 +138,6 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName(t.hideImageLabelName)
-			.setDesc(t.hideImageLabelDesc)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.hideImageLabel)
-					.onChange(async (value) => {
-						this.plugin.settings.hideImageLabel = value;
-						await this.plugin.saveSettings();
-						this.plugin.applySettingsCss();
-					})
-			);
-
-		new Setting(containerEl)
 			.setName(t.tagBadgePositionName)
 			.setDesc(t.tagBadgePositionDesc)
 			.addDropdown((dropdown) =>

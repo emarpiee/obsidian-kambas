@@ -44,6 +44,7 @@ export default class KambasPlugin extends Plugin {
 		const updateActiveCanvas = (): void => {
 			const activeView = this.app.workspace.getActiveViewOfType(ItemView);
 			if (activeView?.getViewType() !== 'canvas') {
+				this.canvasImageHandler?.cleanupCanvasResources();
 				this.canvasImageHandler?.unregisterEvents();
 				return;
 			}
@@ -608,6 +609,7 @@ export default class KambasPlugin extends Plugin {
 			doc.body.classList.remove('kambas-tag-position-inside');
 		});
 		if (this.canvasImageHandler) {
+			this.canvasImageHandler.cleanupCanvasResources();
 			this.canvasImageHandler.unregisterEvents();
 		}
 		if (this.canvasKeyboardPan) {
@@ -642,11 +644,7 @@ export default class KambasPlugin extends Plugin {
 
 	applySettingsCss(): void {
 		const updateDoc = (doc: Document): void => {
-			if (this.settings.hideImageLabel) {
-				doc.body.classList.add('kambas-hide-labels');
-			} else {
-				doc.body.classList.remove('kambas-hide-labels');
-			}
+			doc.body.classList.add('kambas-hide-labels');
 
 			if (this.settings.tagBadgePosition === 'inside') {
 				doc.body.classList.add('kambas-tag-position-inside');

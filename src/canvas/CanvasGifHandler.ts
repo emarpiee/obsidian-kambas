@@ -556,6 +556,14 @@ export class CanvasGifHandler {
 		}
 	}
 
+	public cleanupCanvasResources(): void {
+		this.detachAll();
+		this.pendingSessions.clear();
+		this.canceledSessions.clear();
+		this.lastKnownState.clear();
+		this.activeSessions.clear();
+	}
+
 	private togglePlayMulti(nodeIds: string[], canvas?: CanvasElement): void {
 		const sessions = nodeIds
 			.map((id) => this.activeSessions.get(id))
