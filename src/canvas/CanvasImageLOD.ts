@@ -47,6 +47,8 @@ export function getLodSettings(plugin: KambasPlugin): LodSettings {
 	};
 }
 
+export const EMBEDDED_BLOB_MAP = new Map<string, string>();
+
 /* ---------------------------------------------------------------- helpers */
 
 export function fnv1a(str: string): string {
@@ -61,7 +63,12 @@ export function fnv1a(str: string): string {
 export function srcKey(src: string): string {
 	if (!src) return 'empty';
 	if (src.startsWith('data:image/')) {
-		return fnv1a(src);
+		const len = src.length;
+		if (len > 1024) {
+			const sample = src.slice(0, 256) + '_' + len + '_' + src.slice(len - 256);
+			return 'b64_' + fnv1a(sample);
+		}
+		return 'b64_' + fnv1a(src);
 	}
 	try {
 		const u = new URL(src);
@@ -72,12 +79,13 @@ export function srcKey(src: string): string {
 }
 
 export function isProxyable(src: string, settings: LodSettings): boolean {
-	if (!src || src.startsWith('blob:')) return false;
+	if (!src) return false;
 	if (src.startsWith('data:image/')) {
 		if (src.startsWith('data:image/svg+xml')) return false;
 		if (src.startsWith('data:image/gif')) return settings.proxyGifs;
 		return true;
 	}
+	if (src.startsWith('blob:')) return false;
 	let path = src;
 	try {
 		path = new URL(src).pathname;
@@ -87,6 +95,21 @@ export function isProxyable(src: string, settings: LodSettings): boolean {
 	if (RASTER_RE.test(path)) return true;
 	if (settings.proxyGifs && GIF_RE.test(path)) return true;
 	return false;
+}
+
+export function getOrigSrcFromImg(img: HTMLImageElement): string {
+	if (img.dataset.cilOrig) return img.dataset.cilOrig;
+	if (img.dataset.kambasOrigSrc) return img.dataset.kambasOrigSrc;
+	const src = img.getAttribute('src') || '';
+	if (src && EMBEDDED_BLOB_MAP.has(src)) {
+		return EMBEDDED_BLOB_MAP.get(src)!;
+	}
+	const nodeEl = img.closest('.canvas-node') as HTMLElement | null;
+	if (nodeEl) {
+		const nodeUrl = nodeEl.dataset.url || nodeEl.getAttribute('data-url');
+		if (nodeUrl && nodeUrl.startsWith('data:image/')) return nodeUrl;
+	}
+	return src;
 }
 
 export class Semaphore {
@@ -453,6 +476,10 @@ export class ProxyCache {
 	}
 
 	private async _readBlob(src: string): Promise<Blob> {
+		if (EMBEDDED_BLOB_MAP.has(src)) {
+			src = EMBEDDED_BLOB_MAP.get(src)!;
+		}
+
 		if (src.startsWith('data:image/')) {
 			const commaIdx = src.indexOf(',');
 			if (commaIdx !== -1) {
@@ -840,7 +867,7 @@ export class CanvasBinder {
 		}> = [];
 
 		for (const img of Array.from(imgs)) {
-			const orig = img.dataset.cilOrig || img.getAttribute('src');
+			const orig = getOrigSrcFromImg(img as HTMLImageElement);
 			if (!orig || !isProxyable(orig, s)) continue;
 
 			const nat = img.dataset.cilTier ? Number(img.dataset.cilNat || 0) : img.naturalWidth;
@@ -850,7 +877,7 @@ export class CanvasBinder {
 			}
 			if (nat < s.minSourceWidth) continue;
 
-			const layoutW = this.widthOf(img);
+			const layoutW = this.widthOf(img as HTMLImageElement);
 			if (!layoutW) {
 				this.dirty = true;
 				continue;
@@ -863,7 +890,7 @@ export class CanvasBinder {
 				tier = found === undefined ? null : found;
 			}
 
-			plan.push({ img, orig, nat, tier });
+			plan.push({ img: img as HTMLImageElement, orig, nat, tier });
 		}
 
 		let swapped = 0;
@@ -927,11 +954,16 @@ export class CanvasBinder {
 			const data = JSON.parse(await this.plugin.app.vault.cachedRead(file));
 			const s = getLodSettings(this.plugin);
 			for (const node of data.nodes || []) {
-				if (node.type !== 'file' || !node.file) continue;
-				if (!RASTER_RE.test(node.file) && !(s.proxyGifs && GIF_RE.test(node.file))) continue;
-				const tf = this.plugin.app.vault.getAbstractFileByPath(normalizePath(node.file));
-				if (!(tf instanceof TFile)) continue;
-				this.plugin.cache.request(this.plugin.app.vault.getResourcePath(tf));
+				if (node.type === 'file' && node.file) {
+					if (!RASTER_RE.test(node.file) && !(s.proxyGifs && GIF_RE.test(node.file))) continue;
+					const tf = this.plugin.app.vault.getAbstractFileByPath(normalizePath(node.file));
+					if (!(tf instanceof TFile)) continue;
+					this.plugin.cache.request(this.plugin.app.vault.getResourcePath(tf));
+				} else if (node.type === 'link' && node.url && node.url.startsWith('data:image/')) {
+					if (isProxyable(node.url, s)) {
+						this.plugin.cache.request(node.url);
+					}
+				}
 			}
 		} catch (e) {
 			if (getLodSettings(this.plugin).debug) console.error('[canvas-image-lod] prewarm', e);

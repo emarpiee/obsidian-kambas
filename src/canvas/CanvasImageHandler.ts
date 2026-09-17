@@ -52,9 +52,8 @@ import {
 	formatIncrementalNumber,
 } from '../utils/numberFormatters';
 
-// CanvasTagSync imports removed (unused after sync-to-vault feature removal)
-
 import { CanvasGifHandler } from './CanvasGifHandler';
+import { EMBEDDED_BLOB_MAP } from './CanvasImageLOD';
 
 export interface PendingImage {
 	filename: string;
@@ -130,6 +129,7 @@ export class CanvasImageHandler {
 			const blobUrl = URL.createObjectURL(blob);
 			this.blobUrlMap.set(dataUrl, blobUrl);
 			this.createdBlobUrls.add(blobUrl);
+			EMBEDDED_BLOB_MAP.set(blobUrl, dataUrl);
 			return blobUrl;
 		} catch (err) {
 			console.error('Error creating Blob URL from Base64:', err);
@@ -569,12 +569,20 @@ export class CanvasImageHandler {
 						cls: 'kambas-embedded-img',
 						attr: {
 							src: displayUrl,
+							'data-kambas-orig-src': nodeUrl,
+							'data-cil-orig': nodeUrl,
 							draggable: 'false',
 							style: `${existingCanvas ? 'display:none;' : ''}position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;margin:0;padding:0;border:none;pointer-events:none;user-select:none;-webkit-user-drag:none;`,
 						},
 					});
-				} else if (existingImg.src !== displayUrl) {
-					existingImg.src = displayUrl;
+				} else {
+					existingImg.dataset.kambasOrigSrc = nodeUrl;
+					if (!existingImg.dataset.cilOrig) {
+						existingImg.dataset.cilOrig = nodeUrl;
+					}
+					if (!existingImg.dataset.cilTier && existingImg.src !== displayUrl) {
+						existingImg.src = displayUrl;
+					}
 				}
 
 				// Lock parent node aspect ratio to natural image dimensions
