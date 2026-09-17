@@ -108,11 +108,12 @@ export class CanvasImageHandler {
 	private blobUrlMap: Map<string, string> = new Map();
 	private createdBlobUrls: Set<string> = new Set();
 
-	public getOrCreateBlobUrl(dataUrl: string): string {
+	public getOrCreateBlobUrl(dataUrl: string, key?: string): string {
 		if (!dataUrl) return '';
 		if (!dataUrl.startsWith('data:image/')) return dataUrl;
-		if (this.blobUrlMap.has(dataUrl)) {
-			return this.blobUrlMap.get(dataUrl);
+		const lookupKey = key || srcKey(dataUrl);
+		if (this.blobUrlMap.has(lookupKey)) {
+			return this.blobUrlMap.get(lookupKey)!;
 		}
 		try {
 			const parts = dataUrl.split(',');
@@ -127,9 +128,9 @@ export class CanvasImageHandler {
 			}
 			const blob = new Blob([u8arr], { type: mime });
 			const blobUrl = URL.createObjectURL(blob);
-			this.blobUrlMap.set(dataUrl, blobUrl);
+			this.blobUrlMap.set(lookupKey, blobUrl);
 			this.createdBlobUrls.add(blobUrl);
-			EMBEDDED_BLOB_MAP.set(blobUrl, dataUrl);
+			EMBEDDED_BLOB_MAP.set(blobUrl, lookupKey);
 			return blobUrl;
 		} catch (err) {
 			console.error('Error creating Blob URL from Base64:', err);
@@ -258,20 +259,6 @@ export class CanvasImageHandler {
 			attributeFilter: ['class'],
 		});
 
-		this.plugin.registerDomEvent(window, 'pointerdown', (evt) => {
-			const canvasView = this.getActiveCanvasView(evt);
-			if (canvasView) {
-				this.scheduleRescan(canvasView);
-			}
-		});
-
-		this.plugin.registerDomEvent(window, 'click', (evt) => {
-			const canvasView = this.getActiveCanvasView(evt);
-			if (canvasView) {
-				this.scheduleRescan(canvasView);
-			}
-		});
-
 		this.plugin.registerDomEvent(
 			window,
 			'scroll',
@@ -279,12 +266,6 @@ export class CanvasImageHandler {
 			true
 		);
 		this.plugin.registerDomEvent(window, 'wheel', this.handleScrollOrPan, true);
-		this.plugin.registerDomEvent(
-			window,
-			'pointerup',
-			this.handleScrollOrPan,
-			true
-		);
 
 		// Listen to keyup (Ctrl+V) and mouseup (Alt+Drag duplication) to refresh canvas link nodes
 		this.plugin.registerDomEvent(window, 'keyup', this.handleKeyUpCheck, true);
@@ -354,6 +335,7 @@ export class CanvasImageHandler {
 			'--kambas-zoom-scale',
 			counterScale
 		);
+		this.gifHandler.updateZoomScale(zoom);
 	}
 
 	private positionRafId: number | null = null;
@@ -560,7 +542,7 @@ export class CanvasImageHandler {
 				);
 				const key = srcKey(nodeUrl);
 				RAW_BASE64_REGISTRY.set(key, nodeUrl);
-				const displayUrl = this.getOrCreateBlobUrl(nodeUrl);
+				const displayUrl = this.getOrCreateBlobUrl(nodeUrl, key);
 				if (!existingImg) {
 					const existingCanvas = container.querySelector<HTMLCanvasElement>(
 						'canvas.kambas-gif-canvas-overlay'

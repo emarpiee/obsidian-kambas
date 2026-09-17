@@ -426,6 +426,7 @@ export class ProxyCache {
 			.finally(() => {
 				this.inflight.delete(k);
 				this.stats.pending--;
+				this.evictMemory();
 				this.plugin.updateStatus();
 				this.plugin.scheduleSyncAll();
 			});
@@ -555,7 +556,16 @@ export class ProxyCache {
 			}
 
 			if (!bmp) {
-				bmp = await createImageBitmap(blob);
+				const s = getLodSettings(this.plugin);
+				const maxTier = s.tiers.length ? Math.max(...s.tiers) : 1600;
+				try {
+					bmp = await createImageBitmap(blob, {
+						resizeWidth: maxTier,
+						resizeQuality: 'high',
+					});
+				} catch (_) {
+					bmp = await createImageBitmap(blob);
+				}
 			}
 
 			const natW = bmp.width;
@@ -923,6 +933,16 @@ export class CanvasBinder {
 		const dpr = window.devicePixelRatio || 1;
 		const imgs = this.canvasEl.querySelectorAll('img');
 
+		const containerRect = this.wrapperEl
+			? this.wrapperEl.getBoundingClientRect()
+			: this.canvasEl.getBoundingClientRect();
+		const marginW = containerRect.width || 1200;
+		const marginH = containerRect.height || 800;
+		const viewMinX = containerRect.left - marginW;
+		const viewMaxX = containerRect.right + marginW;
+		const viewMinY = containerRect.top - marginH;
+		const viewMaxY = containerRect.bottom + marginH;
+
 		const plan: Array<{
 			img: HTMLImageElement;
 			orig: string;
@@ -934,14 +954,40 @@ export class CanvasBinder {
 			const orig = getOrigSrcFromImg(img as HTMLImageElement);
 			if (!orig || !isProxyable(orig, s)) continue;
 
-			const nat = img.dataset.cilTier ? Number(img.dataset.cilNat || 0) : img.naturalWidth;
+			const htmlImg = img as HTMLImageElement;
+			const imgRect = htmlImg.getBoundingClientRect();
+			const isNearView =
+				imgRect.right >= viewMinX &&
+				imgRect.left <= viewMaxX &&
+				imgRect.bottom >= viewMinY &&
+				imgRect.top <= viewMaxY;
+
+			const nat = htmlImg.dataset.cilTier ? Number(htmlImg.dataset.cilNat || 0) : htmlImg.naturalWidth;
+
+			if (!isNearView) {
+				// Off-screen image: if un-proxied, assign lowest tier (128px) to conserve RAM
+				if (!htmlImg.dataset.cilTier) {
+					const lowestTier = s.tiers[0] || 128;
+					const best = this.plugin.cache.peekBest(orig, lowestTier);
+					if (best) {
+						if (!htmlImg.dataset.cilOrig) htmlImg.dataset.cilOrig = orig;
+						htmlImg.dataset.cilNat = String(nat || 1000);
+						htmlImg.dataset.cilTier = String(best.tier);
+						htmlImg.src = best.url;
+					} else {
+						this.plugin.cache.request(orig);
+					}
+				}
+				continue;
+			}
+
 			if (!nat) {
 				this.dirty = true;
 				continue;
 			}
 			if (nat < s.minSourceWidth) continue;
 
-			const layoutW = this.widthOf(img as HTMLImageElement);
+			const layoutW = this.widthOf(htmlImg);
 			if (!layoutW) {
 				this.dirty = true;
 				continue;
@@ -954,7 +1000,7 @@ export class CanvasBinder {
 				tier = found === undefined ? null : found;
 			}
 
-			plan.push({ img: img as HTMLImageElement, orig, nat, tier });
+			plan.push({ img: htmlImg, orig, nat, tier });
 		}
 
 		let swapped = 0;

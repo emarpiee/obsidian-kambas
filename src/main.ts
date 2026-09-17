@@ -113,15 +113,21 @@ export default class KambasPlugin extends Plugin {
 			this.refreshBinders();
 			const activeView = this.app.workspace.getActiveViewOfType(ItemView);
 			if (activeView?.getViewType() !== 'canvas') {
-				this.canvasImageHandler?.cleanupCanvasResources();
-				this.canvasImageHandler?.unregisterEvents();
+				for (const b of this.binders.values()) b.suspend();
+				this.canvasImageHandler?.gifHandler?.detachAll();
+				if (this.cache) this.cache.evictMemory();
 				return;
+			}
+			const activeLeaf = activeView.leaf;
+			for (const [leaf, b] of this.binders.entries()) {
+				if (leaf === activeLeaf) {
+					b.resume();
+				} else {
+					b.suspend();
+				}
 			}
 			const canvasView = activeView as unknown as CanvasItemView;
 			this.canvasImageHandler.scanAndRestoreTransforms(canvasView);
-			window.setTimeout(() => this.canvasImageHandler.scanAndRestoreTransforms(canvasView), 30);
-			window.setTimeout(() => this.canvasImageHandler.scanAndRestoreTransforms(canvasView), 100);
-			window.setTimeout(() => this.canvasImageHandler.scanAndRestoreTransforms(canvasView), 300);
 		};
 
 		this.registerEvent(
@@ -134,14 +140,19 @@ export default class KambasPlugin extends Plugin {
 		this.registerInterval(
 			window.setInterval(() => {
 				try {
+					const activeView = this.app.workspace.getActiveViewOfType(ItemView);
+					if (activeView?.getViewType() !== 'canvas') return;
+
 					if (this.binders.size !== this.app.workspace.getLeavesOfType('canvas').length) {
 						this.refreshBinders();
 					}
 					this._tick = (this._tick || 0) + 1;
 					const reconcile = this._tick % 5 === 0;
-					for (const b of this.binders.values()) {
-						if (reconcile) b.reconcile();
-						else b.schedule();
+					const activeLeaf = activeView.leaf;
+					const activeBinder = this.binders.get(activeLeaf);
+					if (activeBinder && !activeBinder.suspended) {
+						if (reconcile) activeBinder.reconcile();
+						else activeBinder.schedule();
 					}
 					if (this._tick % 12 === 0) this.patchExportCommands();
 				} catch (e) {

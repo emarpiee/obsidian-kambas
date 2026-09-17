@@ -22,6 +22,8 @@ export interface FilterPreset {
 export interface KambasSettings {
 	hideImageLabel: boolean;
 	enableGifTools?: boolean; // Enable GIF playback and extraction tool
+	freezeGifOnZoomOut?: boolean; // Pause GIF playback when canvas is zoomed out
+	gifZoomThreshold?: number; // Zoom scale threshold to pause GIF playback (0.1 - 1.0)
 	tagBadgePosition: 'outside' | 'inside';
 	tagZoomOnSelect: boolean;
 	tagPanelAutoClose: boolean; // Auto-close filter panel when canvas/panel loses focus
@@ -62,6 +64,8 @@ export interface KambasSettings {
 export const DEFAULT_SETTINGS: KambasSettings = {
 	hideImageLabel: true,
 	enableGifTools: true,
+	freezeGifOnZoomOut: true,
+	gifZoomThreshold: 0.4,
 	tagBadgePosition: 'outside',
 	tagZoomOnSelect: true,
 	tagPanelAutoClose: true,

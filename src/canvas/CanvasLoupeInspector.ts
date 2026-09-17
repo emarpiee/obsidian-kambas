@@ -230,9 +230,52 @@ export class CanvasLoupeInspector {
 				const win = targetDoc.defaultView || window;
 				innerWrapper = win.createDiv({ cls: 'kambas-loupe-inner' });
 				this.loupeEl.appendChild(innerWrapper);
-				const clone = innerContent.cloneNode(true) as HTMLElement;
-				innerWrapper.appendChild(clone);
+
+				// Fast selective cloning: clone node container shallowly and copy ONLY nodes under cursor
+				const cloneContainer = innerContent.cloneNode(false) as HTMLElement;
+				innerWrapper.appendChild(cloneContainer);
+
+				const margin = loupeSize * 1.5;
+				const minX = clientX - margin;
+				const maxX = clientX + margin;
+				const minY = clientY - margin;
+				const maxY = clientY + margin;
+
+				const children = Array.from(innerContent.children);
+				for (const child of children) {
+					if (child instanceof HTMLElement) {
+						const rect = child.getBoundingClientRect();
+						const isIntersecting =
+							rect.right >= minX &&
+							rect.left <= maxX &&
+							rect.bottom >= minY &&
+							rect.top <= maxY;
+
+						if (isIntersecting) {
+							cloneContainer.appendChild(child.cloneNode(true));
+						}
+					}
+				}
 			}
+
+			// Sync active GIF canvas overlay bitmaps to cloned loupe canvases on every frame
+			const origCanvases = innerContent.querySelectorAll<HTMLCanvasElement>('canvas.kambas-gif-canvas-overlay');
+			const clonedCanvases = innerWrapper.querySelectorAll<HTMLCanvasElement>('canvas.kambas-gif-canvas-overlay');
+
+			origCanvases.forEach((origCanvas, index) => {
+				const clonedCanvas = clonedCanvases[index];
+				if (clonedCanvas && origCanvas.width > 0 && origCanvas.height > 0) {
+					if (clonedCanvas.width !== origCanvas.width || clonedCanvas.height !== origCanvas.height) {
+						clonedCanvas.width = origCanvas.width;
+						clonedCanvas.height = origCanvas.height;
+					}
+					const ctx = clonedCanvas.getContext('2d');
+					if (ctx) {
+						ctx.clearRect(0, 0, clonedCanvas.width, clonedCanvas.height);
+						ctx.drawImage(origCanvas, 0, 0);
+					}
+				}
+			});
 
 			const canvasRect = innerContent.getBoundingClientRect();
 			const offsetX = clientX - canvasRect.left;

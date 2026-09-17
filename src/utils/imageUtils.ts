@@ -70,20 +70,37 @@ export function getImageDimensions(
 ): Promise<{ width: number; height: number }> {
 	return new Promise((resolve) => {
 		const img = new Image();
+		let objectUrlToRevoke: string | null = null;
+
+		const cleanup = (): void => {
+			if (objectUrlToRevoke) {
+				try {
+					URL.revokeObjectURL(objectUrlToRevoke);
+				} catch (_) {
+					// ignore
+				}
+				objectUrlToRevoke = null;
+			}
+		};
+
 		img.onload = (): void => {
-			resolve({
+			const dims = {
 				width: img.naturalWidth || 400,
 				height: img.naturalHeight || 300,
-			});
+			};
+			cleanup();
+			resolve(dims);
 		};
 		img.onerror = (): void => {
+			cleanup();
 			resolve({ width: 400, height: 300 });
 		};
 
 		if (typeof src === 'string') {
 			img.src = src;
 		} else {
-			img.src = URL.createObjectURL(src);
+			objectUrlToRevoke = URL.createObjectURL(src);
+			img.src = objectUrlToRevoke;
 		}
 	});
 }
@@ -157,11 +174,25 @@ export function extractImagePalette(
 	return new Promise((resolve) => {
 		const img = new Image();
 		img.crossOrigin = 'Anonymous';
+		let objectUrlToRevoke: string | null = null;
+
+		const cleanup = (): void => {
+			if (objectUrlToRevoke) {
+				try {
+					URL.revokeObjectURL(objectUrlToRevoke);
+				} catch (_) {
+					// ignore
+				}
+				objectUrlToRevoke = null;
+			}
+		};
+
 		img.onload = (): void => {
 			try {
 				const canvas = createEl('canvas');
 				const ctx = canvas.getContext('2d');
 				if (!ctx) {
+					cleanup();
 					resolve([]);
 					return;
 				}
@@ -344,26 +375,14 @@ export function extractImagePalette(
 					return rgbDist;
 				};
 
-				const selected: {
-					r: number;
-					g: number;
-					b: number;
-					h: number;
-					s: number;
-				}[] = [];
-				const minDistance = 35; // Distinctness threshold
-
+				const selected: Array<{ r: number; g: number; b: number; h: number; s: number }> = [];
 				for (const cand of candidateClusters) {
-					const isDistinct = selected.every(
-						(s) => colorDistance(s, cand) >= minDistance
-					);
-					if (isDistinct) {
+					if (selected.every((s) => colorDistance(s, cand) >= 35)) {
 						selected.push(cand);
 					}
 					if (selected.length >= maxColorCount) break;
 				}
 
-				// Fill up swatches if distinctness filter was slightly too strict
 				if (selected.length < maxColorCount) {
 					for (const cand of candidateClusters) {
 						if (!selected.includes(cand)) {
@@ -377,17 +396,23 @@ export function extractImagePalette(
 					({ r, g, b }) =>
 						`#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
 				);
+				cleanup();
 				resolve(hexColors);
 			} catch {
+				cleanup();
 				resolve([]);
 			}
 		};
-		img.onerror = (): void => resolve([]);
+		img.onerror = (): void => {
+			cleanup();
+			resolve([]);
+		};
 
 		if (typeof src === 'string') {
 			img.src = src;
 		} else {
-			img.src = URL.createObjectURL(src);
+			objectUrlToRevoke = URL.createObjectURL(src);
+			img.src = objectUrlToRevoke;
 		}
 	});
 }
@@ -509,17 +534,31 @@ export function canvasNodePresetColorToName(colorStr: string): string | null {
  * If includeAccents is true: also includes minor vivid accent colors (>= 0.5% coverage for vivid pixels, e.g. stems/icons).
  */
 export async function getNodeDominantColorName(
-	src: string,
+	src: string | Blob,
 	includeAccents = false
 ): Promise<string[] | null> {
 	return new Promise((resolve) => {
 		const img = new Image();
 		img.crossOrigin = 'Anonymous';
+		let objectUrlToRevoke: string | null = null;
+
+		const cleanup = (): void => {
+			if (objectUrlToRevoke) {
+				try {
+					URL.revokeObjectURL(objectUrlToRevoke);
+				} catch (_) {
+					// ignore
+				}
+				objectUrlToRevoke = null;
+			}
+		};
+
 		img.onload = (): void => {
 			try {
 				const canvas = createEl('canvas');
 				const ctx = canvas.getContext('2d');
 				if (!ctx) {
+					cleanup();
 					resolve(null);
 					return;
 				}
@@ -603,21 +642,26 @@ export async function getNodeDominantColorName(
 					if (count >= dominantThreshold) {
 						detectedColors.add(colorName);
 					} else if (includeAccents && vividCount >= vividThreshold) {
-						// Only include minor accent colors when accent mode toggle is ON
 						detectedColors.add(colorName);
 					}
 				}
+				cleanup();
 				resolve(detectedColors.size > 0 ? Array.from(detectedColors) : null);
 			} catch {
+				cleanup();
 				resolve(null);
 			}
 		};
-		img.onerror = (): void => resolve(null);
+		img.onerror = (): void => {
+			cleanup();
+			resolve(null);
+		};
 
 		if (typeof src === 'string') {
 			img.src = src;
 		} else {
-			img.src = URL.createObjectURL(src);
+			objectUrlToRevoke = URL.createObjectURL(src);
+			img.src = objectUrlToRevoke;
 		}
 	});
 }
@@ -690,6 +734,19 @@ export async function compressAndOptimizeBase64(
 	return new Promise((resolve, reject) => {
 		const img = new Image();
 		img.crossOrigin = 'Anonymous';
+		let objectUrlToRevoke: string | null = null;
+
+		const cleanup = (): void => {
+			if (objectUrlToRevoke) {
+				try {
+					URL.revokeObjectURL(objectUrlToRevoke);
+				} catch (_) {
+					// ignore
+				}
+				objectUrlToRevoke = null;
+			}
+		};
+
 		img.onload = (): void => {
 			try {
 				let width = img.naturalWidth || 400;
@@ -717,6 +774,7 @@ export async function compressAndOptimizeBase64(
 				canvas.height = height;
 				const ctx = canvas.getContext('2d');
 				if (!ctx) {
+					cleanup();
 					reject(new Error('Failed to get 2D canvas context'));
 					return;
 				}
@@ -733,6 +791,10 @@ export async function compressAndOptimizeBase64(
 				const newSize = Math.round((optimizedDataUrl.length * 3) / 4);
 				const bytesSaved = Math.max(0, origSize - newSize);
 
+				canvas.width = 0;
+				canvas.height = 0;
+				cleanup();
+
 				resolve({
 					dataUrl: optimizedDataUrl,
 					width,
@@ -740,6 +802,7 @@ export async function compressAndOptimizeBase64(
 					bytesSaved,
 				});
 			} catch (err) {
+				cleanup();
 				reject(
 					err instanceof Error
 						? err
@@ -749,17 +812,20 @@ export async function compressAndOptimizeBase64(
 				);
 			}
 		};
-		img.onerror = (err): void =>
+		img.onerror = (err): void => {
+			cleanup();
 			reject(
 				err instanceof Error
 					? err
 					: new Error('Failed to load image for optimization')
 			);
+		};
 
 		if (typeof src === 'string') {
 			img.src = src;
 		} else {
-			img.src = URL.createObjectURL(src);
+			objectUrlToRevoke = URL.createObjectURL(src);
+			img.src = objectUrlToRevoke;
 		}
 	});
 }

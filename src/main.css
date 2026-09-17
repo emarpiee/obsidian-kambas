@@ -126,6 +126,10 @@ body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-label,
 	pointer-events: none !important;
 }
 
+.kambas-loupe-inner img {
+	display: block !important;
+}
+
 
 /* Image Transformation utility classes */
 .canvas-node.kambas-img-flip-h img,

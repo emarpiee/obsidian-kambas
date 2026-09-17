@@ -129,8 +129,6 @@ export class CanvasGifHandler {
 		unknownData?: { kambasGifPaused?: boolean; kambasGifFrame?: number; kambasGifSpeed?: number },
 		containerEl?: HTMLElement
 	): Promise<void> {
-		this.garbageCollectStaleSessions(canvas);
-
 		const existingSession = this.activeSessions.get(nodeId);
 
 		if (existingSession && !existingSession.isDisposed) {
@@ -721,6 +719,34 @@ export class CanvasGifHandler {
 			primary.decoder.getFrameCount(),
 			primary.speed
 		);
+	}
+
+	public updateZoomScale(scale: number, selectedNodeIds: string[] = []): void {
+		const freezeOnZoom = this.plugin?.settings?.freezeGifOnZoomOut ?? true;
+		const threshold = this.plugin?.settings?.gifZoomThreshold ?? 0.4;
+		const isZoomedOut = freezeOnZoom && scale < threshold;
+
+		for (const [nodeId, session] of this.activeSessions.entries()) {
+			if (session.isDisposed) continue;
+			const isSelected = selectedNodeIds.includes(nodeId);
+
+			if (isZoomedOut && !isSelected) {
+				if (session.isPlaying) {
+					session.isPlaying = false;
+					if (session.animFrameId !== null) {
+						cancelAnimationFrame(session.animFrameId);
+						session.animFrameId = null;
+					}
+				}
+			} else {
+				const isUserPaused = this.lastKnownState.get(nodeId)?.isPaused ?? false;
+				if (!isUserPaused && !session.isPlaying) {
+					session.isPlaying = true;
+					session.lastFrameTime = performance.now();
+					this.startAnimationLoop(session);
+				}
+			}
+		}
 	}
 
 	private startAnimationLoop(session: ActiveGifSession): void {
