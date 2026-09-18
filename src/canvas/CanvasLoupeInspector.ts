@@ -27,32 +27,41 @@ export class CanvasLoupeInspector {
 		window.removeEventListener('keydown', this.keydownHandler, true);
 		window.removeEventListener('keyup', this.keyupHandler, true);
 		window.removeEventListener('mousemove', this.mousemoveHandler, true);
-		if (this.rafId !== null) {
-			window.cancelAnimationFrame(this.rafId);
-			this.rafId = null;
-		}
+		this.stopLoop();
 		this.removeLoupe();
 	}
 
 	private onKeyDown(evt: KeyboardEvent): void {
 		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
-		if (evt.key.toLowerCase() === configuredKey && !evt.repeat) {
+		const pressedKey = (evt.key || '').toLowerCase();
+		const pressedCode = (evt.code || '').toLowerCase();
+
+		if ((pressedKey === configuredKey || pressedCode === `key${configuredKey}`) && !evt.repeat) {
 			const activeTag = (document.activeElement?.tagName || '').toLowerCase();
 			const isEditable = (document.activeElement as HTMLElement | null)?.isContentEditable;
 			if (activeTag === 'input' || activeTag === 'textarea' || isEditable) {
 				return;
 			}
 			this.isKeyDown = true;
-			if (this.lastMousePos) {
-				this.updateLoupeAtPosition(this.lastMousePos.x, this.lastMousePos.y);
+			if (!this.lastMousePos) {
+				this.lastMousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 			}
+			// Re-clone on keydown to capture fresh DOM snapshot
+			if (this.loupeEl) {
+				this.removeLoupe();
+			}
+			this.updateLoupeAtPosition(this.lastMousePos.x, this.lastMousePos.y);
 		}
 	}
 
 	private onKeyUp(evt: KeyboardEvent): void {
 		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
-		if (evt.key.toLowerCase() === configuredKey) {
+		const pressedKey = (evt.key || '').toLowerCase();
+		const pressedCode = (evt.code || '').toLowerCase();
+
+		if (pressedKey === configuredKey || pressedCode === `key${configuredKey}`) {
 			this.isKeyDown = false;
+			this.stopLoop();
 			this.removeLoupe();
 		}
 	}
@@ -71,10 +80,21 @@ export class CanvasLoupeInspector {
 		}
 	}
 
+	private stopLoop(): void {
+		if (this.rafId !== null) {
+			window.cancelAnimationFrame(this.rafId);
+			this.rafId = null;
+		}
+	}
+
 	private updateLoupeAtPosition(clientX: number, clientY: number): void {
-		// Verify mouse cursor is within active canvas container
 		const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
-		const canvasEl = activeLeaf?.querySelector('.canvas-wrapper') || activeLeaf?.querySelector('.canvas');
+		const canvasEl =
+			activeLeaf?.querySelector<HTMLElement>('.canvas-wrapper') ||
+			activeLeaf?.querySelector<HTMLElement>('.canvas') ||
+			document.querySelector<HTMLElement>('.canvas-wrapper') ||
+			document.querySelector<HTMLElement>('.canvas');
+
 		if (!canvasEl) {
 			this.removeLoupe();
 			return;
@@ -109,7 +129,8 @@ export class CanvasLoupeInspector {
 				'--kambas-loupe-top': `${clientY - halfSize}px`,
 			});
 
-			const innerContent = (canvasEl.querySelector('.canvas-content') || canvasEl.querySelector('.canvas-nodes') || canvasEl);
+			// Target .canvas-content which holds Obsidian's transformed canvas surface
+			const innerContent = (canvasEl.querySelector('.canvas-content') || canvasEl.querySelector('.canvas-nodes') || canvasEl) as HTMLElement;
 
 			let innerWrapper = this.loupeEl.querySelector<HTMLElement>('.kambas-loupe-inner');
 			if (!innerWrapper) {
@@ -118,6 +139,9 @@ export class CanvasLoupeInspector {
 				const clone = innerContent.cloneNode(true) as HTMLElement;
 				innerWrapper.appendChild(clone);
 			}
+
+			// Copy pixel context buffer from original HTML <canvas> elements (GIF overlays) to cloned elements
+			this.syncClonedCanvases(innerContent, innerWrapper);
 
 			const canvasRect = innerContent.getBoundingClientRect();
 			const offsetX = clientX - canvasRect.left;
@@ -129,8 +153,27 @@ export class CanvasLoupeInspector {
 			innerWrapper.setCssProps({
 				'--kambas-loupe-width': `${canvasRect.width}px`,
 				'--kambas-loupe-height': `${canvasRect.height}px`,
-				'--kambas-loupe-transform': `translate3d(${translateX}px, ${translateY}px, 0) scale(${zoomLevel})`,
+				'--kambas-loupe-transform': `translate3d(${translateX.toFixed(2)}px, ${translateY.toFixed(2)}px, 0) scale(${zoomLevel})`,
 			});
+		}
+	}
+
+	private syncClonedCanvases(sourceEl: HTMLElement, targetEl: HTMLElement): void {
+		const origCanvases = sourceEl.querySelectorAll<HTMLCanvasElement>('canvas');
+		const clonedCanvases = targetEl.querySelectorAll<HTMLCanvasElement>('canvas');
+		for (let i = 0; i < origCanvases.length; i++) {
+			const orig = origCanvases[i];
+			const cloned = clonedCanvases[i];
+			if (orig && cloned && orig.width > 0 && orig.height > 0) {
+				if (cloned.width !== orig.width || cloned.height !== orig.height) {
+					cloned.width = orig.width;
+					cloned.height = orig.height;
+				}
+				const ctx = cloned.getContext('2d');
+				if (ctx) {
+					ctx.drawImage(orig, 0, 0);
+				}
+			}
 		}
 	}
 
@@ -145,9 +188,6 @@ export class CanvasLoupeInspector {
 			this.loupeEl.remove();
 			this.loupeEl = null;
 		}
-		if (this.rafId !== null) {
-			window.cancelAnimationFrame(this.rafId);
-			this.rafId = null;
-		}
+		this.stopLoop();
 	}
 }
