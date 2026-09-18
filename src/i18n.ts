@@ -21,6 +21,8 @@ export interface TranslationSchema {
 	zoomSpeedName: string;
 	zoomSpeedDesc: string;
 	duplicateKeyNotice: string;
+	changeHotkeyButton?: string;
+	pressAnyKeyPrompt?: string;
 
 	// LOD Settings
 	performanceHeading?: string;
@@ -330,6 +332,8 @@ const en: TranslationSchema = {
 	zoomSpeedDesc: 'Rate of zoom change per frame',
 	duplicateKeyNotice:
 		'Duplicate key bindings are not allowed. Please choose unique keys for each action.',
+	changeHotkeyButton: 'Change hotkey',
+	pressAnyKeyPrompt: 'Press key...',
 
 	performanceHeading: 'Canvas Performance & Optimization',
 	lodHeading: 'Canvas Level of Detail (LOD)',
@@ -640,6 +644,8 @@ const zh: TranslationSchema = {
 	zoomSpeedName: '缩放速度',
 	zoomSpeedDesc: '每帧缩放变化率',
 	duplicateKeyNotice: '不允许重复绑定按键。请为每个操作选择唯一的按键。',
+	changeHotkeyButton: '更改热键',
+	pressAnyKeyPrompt: '请按键...',
 
 	performanceHeading: '画布性能与图像优化',
 	lodHeading: '画布多细节层次 (LOD) 图像优化',
@@ -920,6 +926,8 @@ const zhTW: TranslationSchema = {
 	zoomSpeedName: '縮放速度',
 	zoomSpeedDesc: '每幀縮放變化率',
 	duplicateKeyNotice: '不允許重複綁定按鍵。請為每個操作選擇唯一的按鍵。',
+	changeHotkeyButton: '變更熱鍵',
+	pressAnyKeyPrompt: '請按鍵...',
 
 	performanceHeading: '畫布效能與影像優化',
 	lodHeading: '畫布多細節層次 (LOD) 影像優化',
@@ -1197,6 +1205,8 @@ const es: TranslationSchema = {
 	zoomSpeedDesc: 'Tasa de cambio de zoom por fotograma',
 	duplicateKeyNotice:
 		'No se permiten asignaciones de teclas duplicadas. Por favor, elija teclas únicas para cada acción.',
+	changeHotkeyButton: 'Cambiar atajo',
+	pressAnyKeyPrompt: 'Presione una tecla...',
 
 	performanceHeading: 'Rendimiento del lienzo y optimización de imágenes',
 	lodHeading: 'Optimización de Nivel de Detalle (LOD) del Lienzo',
@@ -1505,6 +1515,8 @@ const fr: TranslationSchema = {
 	zoomSpeedDesc: 'Taux de modification du zoom par image',
 	duplicateKeyNotice:
 		'Les raccourcis clavier en double ne sont pas autorisés. Veuillez choisir des touches uniques pour chaque action.',
+	changeHotkeyButton: 'Changer le raccourci',
+	pressAnyKeyPrompt: 'Appuyez sur une touche...',
 
 	performanceHeading: 'Performance du canvas et optimisation des images',
 	lodHeading: 'Optimisation du Niveau de Détail (LOD) du Canvas',
@@ -1813,6 +1825,8 @@ const de: TranslationSchema = {
 	zoomSpeedDesc: 'Rate der Zoomänderung pro Frame',
 	duplicateKeyNotice:
 		'Doppelte Tastenbelegungen sind nicht erlaubt. Bitte wählen Sie eindeutige Tasten für jede Aktion.',
+	changeHotkeyButton: 'Hot-Key ändern',
+	pressAnyKeyPrompt: 'Taste drücken...',
 
 	performanceHeading: 'Canvas-Leistung & Bildoptimierung',
 	lodHeading: 'Canvas Level of Detail (LOD) Optimierung',
@@ -2121,6 +2135,8 @@ const ja: TranslationSchema = {
 	zoomSpeedDesc: 'フレームあたりのズーム変化率',
 	duplicateKeyNotice:
 		'重複したキー割り当ては許可されていません。各操作に一意のキーを選択してください。',
+	changeHotkeyButton: 'ホットキーを変更',
+	pressAnyKeyPrompt: 'キーを押してください...',
 
 	performanceHeading: 'キャンバスのパフォーマンスと画像最適化',
 	lodHeading: 'キャンバス詳細レベル (LOD) 画像最適化',
@@ -2427,6 +2443,8 @@ const ko: TranslationSchema = {
 	zoomSpeedDesc: '프레임당 확대/축소 변화율',
 	duplicateKeyNotice:
 		'중복된 키 바인딩은 허용되지 않습니다. 각 작업에 고유한 키를 선택하세요.',
+	changeHotkeyButton: '단축키 변경',
+	pressAnyKeyPrompt: '키를 누르세요...',
 
 	performanceHeading: '캔버스 성능 및 이미지 최적화',
 	lodHeading: '캔버스 세부 수준 (LOD) 이미지 최적화',
@@ -3026,6 +3044,8 @@ const pt: TranslationSchema = {
 	zoomSpeedDesc: 'Taxa de alteração do zoom por quadro',
 	duplicateKeyNotice:
 		'Teclas duplicadas não são permitidas. Por favor, escolha teclas únicas para cada ação.',
+	changeHotkeyButton: 'Alterar atalho',
+	pressAnyKeyPrompt: 'Pressione uma tecla...',
 
 	performanceHeading: 'Desempenho do canvas e otimização de imagens',
 	lodHeading: 'Otimização de Nível de Detalhe (LOD) do Canvas',
@@ -3327,6 +3347,8 @@ const it: TranslationSchema = {
 	zoomSpeedDesc: 'Tasso di modifica dello zoom per fotogramma',
 	duplicateKeyNotice:
 		'I tasti duplicati non sono consentiti. Scegli tasti univoci per ciascuna azione.',
+	changeHotkeyButton: 'Cambia scorciatoia',
+	pressAnyKeyPrompt: 'Premi un tasto...',
 
 	performanceHeading: 'Prestazioni della tela e ottimizzazione delle immagini',
 	lodHeading: 'Ottimizzazione Livello di Dettaglio (LOD) della Tela',
@@ -3632,6 +3654,8 @@ const ar: TranslationSchema = {
 	zoomSpeedDesc: 'معدل تغيير التكبير/التصغير لكل إطار',
 	duplicateKeyNotice:
 		'غير مسموح بتكرار تعيين المفاتيح. يرجى اختيار مفاتيح فريدة لكل إجراء.',
+	changeHotkeyButton: 'تغيير مفتاح الاختصار',
+	pressAnyKeyPrompt: 'اضغط على أي مفتاح...',
 
 	performanceHeading: 'أداء اللوحة وتحسين الصور',
 	lodHeading: 'تحسين مستوى التفاصيل (LOD) للوحة',
@@ -3837,6 +3861,8 @@ const he: TranslationSchema = {
 	zoomSpeedName: 'מהירות תקריב',
 	zoomSpeedDesc: 'קצב שינוי התקריב לכל פריים',
 	duplicateKeyNotice: 'כפילות מקשים אינה מותרת. נא לבחור מקש ייחודי לכל פעולה.',
+	changeHotkeyButton: 'שנה מקש קיצור',
+	pressAnyKeyPrompt: 'לחץ על מקש...',
 
 	performanceHeading: 'ביצועי הקנבס ומיטוב תמונות',
 	lodHeading: 'מיטוב רמת פירוט (LOD) של לוח הקנבס',

@@ -159,10 +159,22 @@ const KeyLabelOverrides: Record<string, string> = {
 	ArrowRight: 'Right',
 };
 
+export function formatKeyLabel(key: string): string {
+	if (!key) return '?';
+	if (key === ' ' || key.toLowerCase() === 'space') return 'Space';
+	if (KeyLabelOverrides[key]) return KeyLabelOverrides[key];
+	if (key.length === 1) return key.toUpperCase();
+	return key;
+}
+
 export class KambasSettingTab extends PluginSettingTab {
 	private plugin: KambasPlugin;
 	private keySettingsListener: ((evt: KeyboardEvent) => void) | null = null;
 	private activeDirection: Direction | null = null;
+	private activeSingleKeyTarget:
+		| 'loupeHotkey'
+		| 'selectionZoomToFitHotkey'
+		| null = null;
 	private keys: Partial<CanvasKeyboardPanSettings['keys']> = {};
 
 	constructor(app: App, plugin: KambasPlugin) {
@@ -181,6 +193,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			this.keySettingsListener = null;
 		}
 		this.activeDirection = null;
+		this.activeSingleKeyTarget = null;
 	}
 
 	display(): void {
@@ -361,19 +374,14 @@ export class KambasSettingTab extends PluginSettingTab {
 		// ==========================================
 		new Setting(containerEl).setName(t.loupeHeading).setHeading();
 
-		new Setting(containerEl)
-			.setName(t.loupeHotkeyName)
-			.setDesc(t.loupeHotkeyDesc)
-			.addText((text) =>
-				text
-					.setPlaceholder('q')
-					.setValue(this.plugin.settings.loupeHotkey ?? 'q')
-					.onChange(async (value) => {
-						this.plugin.settings.loupeHotkey =
-							value.trim().toLowerCase() || 'q';
-						await this.plugin.saveSettings();
-					})
-			);
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.loupeHotkeyName,
+			t.loupeHotkeyDesc,
+			this.plugin.settings.loupeHotkey ?? 'q',
+			'q',
+			'loupeHotkey'
+		);
 
 		new Setting(containerEl)
 			.setName(t.loupeZoomLevelName)
@@ -435,19 +443,14 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
-			.setName(t.selectionZoomHotkeyName)
-			.setDesc(t.selectionZoomHotkeyDesc)
-			.addText((text) =>
-				text
-					.setPlaceholder('Space')
-					.setValue(this.plugin.settings.selectionZoomToFitHotkey ?? 'Space')
-					.onChange(async (value) => {
-						this.plugin.settings.selectionZoomToFitHotkey =
-							value.trim() || 'Space';
-						await this.plugin.saveSettings();
-					})
-			);
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.selectionZoomHotkeyName,
+			t.selectionZoomHotkeyDesc,
+			this.plugin.settings.selectionZoomToFitHotkey ?? 'Space',
+			'Space',
+			'selectionZoomToFitHotkey'
+		);
 
 		// ==========================================
 		// SECTION 3: ⌨️ Keyboard Navigation Controls
@@ -1006,6 +1009,54 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 	}
 
+	private getAllConfiguredHotkeys(): Record<string, string> {
+		return {
+			panNorth: this.plugin.settings.keyboardPan.keys[Direction.North],
+			panWest: this.plugin.settings.keyboardPan.keys[Direction.West],
+			panSouth: this.plugin.settings.keyboardPan.keys[Direction.South],
+			panEast: this.plugin.settings.keyboardPan.keys[Direction.East],
+			zoomIn: this.plugin.settings.keyboardPan.keys[Direction.ZoomIn],
+			zoomOut: this.plugin.settings.keyboardPan.keys[Direction.ZoomOut],
+			loupeHotkey: this.plugin.settings.loupeHotkey ?? 'q',
+			selectionZoomToFitHotkey:
+				this.plugin.settings.selectionZoomToFitHotkey ?? 'Space',
+		};
+	}
+
+	private hasDuplicateHotkeys(hotkeysMap: Record<string, string>): boolean {
+		const normalizedKeys = Object.values(hotkeysMap).map((k) =>
+			(k === ' ' ? 'space' : k).toLowerCase()
+		);
+		return new Set(normalizedKeys).size < normalizedKeys.length;
+	}
+
+	private async saveSingleHotkey(
+		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey',
+		newKey: string
+	): Promise<void> {
+		const formattedKey = newKey === ' ' ? 'Space' : newKey;
+		const currentHotkeys = this.getAllConfiguredHotkeys();
+		currentHotkeys[targetKey] = formattedKey;
+
+		if (this.hasDuplicateHotkeys(currentHotkeys)) {
+			const t = getText();
+			new Notice(t.duplicateKeyNotice);
+			this.cleanupKeyListener();
+			this.display();
+			return;
+		}
+
+		if (targetKey === 'loupeHotkey') {
+			this.plugin.settings.loupeHotkey = formattedKey;
+		} else {
+			this.plugin.settings.selectionZoomToFitHotkey = formattedKey;
+		}
+
+		await this.plugin.saveSettings();
+		this.cleanupKeyListener();
+		this.display();
+	}
+
 	public async saveKeys(
 		keys: Partial<CanvasKeyboardPanSettings['keys']>
 	): Promise<void> {
@@ -1020,10 +1071,17 @@ export class KambasSettingTab extends PluginSettingTab {
 			return;
 		}
 
-		// Check for duplicate key assignments across pan and zoom controls
-		const assignedValues = Object.values(keys);
-		const uniqueValues = new Set(assignedValues);
-		if (uniqueValues.size < assignedValues.length) {
+		const currentHotkeys = {
+			...this.getAllConfiguredHotkeys(),
+			panNorth: keys[Direction.North],
+			panWest: keys[Direction.West],
+			panSouth: keys[Direction.South],
+			panEast: keys[Direction.East],
+			zoomIn: keys[Direction.ZoomIn],
+			zoomOut: keys[Direction.ZoomOut],
+		};
+
+		if (this.hasDuplicateHotkeys(currentHotkeys)) {
 			const t = getText();
 			new Notice(t.duplicateKeyNotice);
 			this.cleanupKeyListener();
@@ -1038,6 +1096,84 @@ export class KambasSettingTab extends PluginSettingTab {
 		await this.plugin.saveSettings();
 		this.cleanupKeyListener();
 		this.display();
+	}
+
+	private renderSingleKeyRecorderSetting(
+		containerEl: HTMLElement,
+		name: string,
+		desc: string,
+		currentKey: string,
+		defaultKey: string,
+		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey'
+	): void {
+		const t = getText();
+
+		const badgeContainer = containerEl.createDiv({ cls: 'pan-kb-container' });
+		const row = badgeContainer.createDiv({ cls: 'pan-kb-zoom-row' });
+		const labelEl = row.createDiv({
+			cls: ['pan-kb-label', 'pan-kb-zoom-label'],
+			text: formatKeyLabel(currentKey),
+		});
+		const keyEl = row.createDiv({ cls: ['pan-kb', 'pan-kb-zoom-icon'] });
+		setIcon(keyEl, targetKey === 'loupeHotkey' ? 'search' : 'maximize-2');
+
+		const isRecordingThis = this.activeSingleKeyTarget === targetKey;
+		if (isRecordingThis) {
+			keyEl.classList.add('active');
+			labelEl.classList.add('active');
+		}
+
+		const setting = new Setting(containerEl).setName(name).setDesc(desc);
+
+		setting
+			.addExtraButton((button) => {
+				button.setIcon('rotate-ccw');
+				button.setTooltip(t.restoreDefaultTooltip);
+				button.onClick(async () => {
+					this.cleanupKeyListener();
+					await this.saveSingleHotkey(targetKey, defaultKey);
+				});
+			})
+			.addButton((button) => {
+				button.setButtonText(
+					isRecordingThis
+						? t.pressAnyKeyPrompt || 'Press key...'
+						: t.changeHotkeyButton || 'Change hotkey'
+				);
+				button.onClick(() => {
+					if (this.activeSingleKeyTarget === targetKey) {
+						this.cleanupKeyListener();
+						this.display();
+						return;
+					}
+
+					this.cleanupKeyListener();
+					this.activeSingleKeyTarget = targetKey;
+					this.display();
+
+					const listener = (evt: KeyboardEvent): void => {
+						if (
+							evt.repeat ||
+							['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(evt.key)
+						) {
+							return;
+						}
+
+						evt.preventDefault();
+						evt.stopPropagation();
+
+						let key = evt.key;
+						if (key === ' ') {
+							key = 'Space';
+						}
+
+						void this.saveSingleHotkey(targetKey, key);
+					};
+
+					this.keySettingsListener = listener;
+					window.addEventListener('keydown', listener, true);
+				});
+			});
 	}
 
 	public renderPanView(
@@ -1128,6 +1264,6 @@ export class KambasSettingTab extends PluginSettingTab {
 		direction: Direction
 	): string {
 		const key = keys[direction] ?? '?';
-		return KeyLabelOverrides[key] ?? key;
+		return formatKeyLabel(key);
 	}
 }

@@ -31,17 +31,24 @@ export class CanvasLoupeInspector {
 		this.removeLoupe();
 	}
 
-	private onKeyDown(evt: KeyboardEvent): void {
+	private isLoupeKeyMatch(evt: KeyboardEvent): boolean {
 		const configuredKey = (
 			this.plugin.settings.loupeHotkey || 'q'
 		).toLowerCase();
+		if (configuredKey === 'space' || configuredKey === ' ') {
+			return evt.key === ' ' || evt.code === 'Space';
+		}
 		const pressedKey = (evt.key || '').toLowerCase();
 		const pressedCode = (evt.code || '').toLowerCase();
+		return (
+			pressedKey === configuredKey ||
+			pressedCode === `key${configuredKey}` ||
+			evt.key === this.plugin.settings.loupeHotkey
+		);
+	}
 
-		if (
-			(pressedKey === configuredKey || pressedCode === `key${configuredKey}`) &&
-			!evt.repeat
-		) {
+	private onKeyDown(evt: KeyboardEvent): void {
+		if (this.isLoupeKeyMatch(evt) && !evt.repeat) {
 			const activeTag = (document.activeElement?.tagName || '').toLowerCase();
 			const isEditable = (document.activeElement as HTMLElement | null)
 				?.isContentEditable;
@@ -64,13 +71,7 @@ export class CanvasLoupeInspector {
 	}
 
 	private onKeyUp(evt: KeyboardEvent): void {
-		const configuredKey = (
-			this.plugin.settings.loupeHotkey || 'q'
-		).toLowerCase();
-		const pressedKey = (evt.key || '').toLowerCase();
-		const pressedCode = (evt.code || '').toLowerCase();
-
-		if (pressedKey === configuredKey || pressedCode === `key${configuredKey}`) {
+		if (this.isLoupeKeyMatch(evt)) {
 			this.isKeyDown = false;
 			this.stopLoop();
 			this.removeLoupe();
