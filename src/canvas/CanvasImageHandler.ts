@@ -5257,12 +5257,13 @@ export class CanvasImageHandler {
 		const imageDimensions: Array<{ width: number; height: number }> = [];
 		const validImages: PendingImage[] = [];
 
+		if (progressModal) {
+			progressModal.updateProgress(0, images[0]?.filename || '', 'Analyzing image dimensions...');
+		}
+
 		for (let i = 0; i < images.length; i++) {
 			if (progressModal?.isCancelled) break;
 			const item = images[i];
-			if (progressModal) {
-				progressModal.updateProgress(i + 1, item.filename);
-			}
 
 			let dims = { width: 400, height: 300 };
 			try {
@@ -5294,7 +5295,7 @@ export class CanvasImageHandler {
 			centerPos
 		);
 
-		// 5. Construct batch nodes
+		// 5. Construct batch nodes (Heavy processing & WebP optimization step)
 		const nodesToInsert: CanvasNodeData[] = [];
 
 		for (let i = 0; i < validImages.length; i++) {
@@ -5302,6 +5303,10 @@ export class CanvasImageHandler {
 			const item = validImages[i];
 			const pos = layoutPositions[i];
 			const dims = imageDimensions[i];
+
+			if (progressModal) {
+				progressModal.updateProgress(i + 1, item.filename);
+			}
 
 			if (currentChoice === 'embed') {
 				let dataUrl = '';

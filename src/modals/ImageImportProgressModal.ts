@@ -45,7 +45,7 @@ export class ImageImportProgressModal extends Modal {
 		});
 	}
 
-	public updateProgress(current: number, filename: string): void {
+	public updateProgress(current: number, filename: string, statusMessage?: string): void {
 		this.current = current;
 		this.currentFilename = filename;
 		const t = getText();
@@ -57,7 +57,9 @@ export class ImageImportProgressModal extends Modal {
 			this.countEl.setText(`${current} / ${this.total}`);
 		}
 		if (this.statusEl) {
-			this.statusEl.setText(t.importProgressStatus(current, this.total, filename));
+			this.statusEl.setText(
+				statusMessage || (filename ? t.importProgressStatus(current, this.total, filename) : '')
+			);
 		}
 	}
 

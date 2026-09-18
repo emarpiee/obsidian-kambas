@@ -1235,4 +1235,201 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	accent-color: var(--interactive-accent);
 }
 
+/* Image import progress modal */
+.kambas-import-progress-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	box-sizing: border-box;
+	margin: 8px 0;
+}
+
+.kambas-import-progress-count {
+	font-weight: var(--font-semibold, 600);
+	font-size: var(--font-ui-medium, 14px);
+	color: var(--text-normal);
+	margin-bottom: 6px;
+}
+
+.kambas-import-progress-bar {
+	display: block;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box;
+	height: 10px;
+	margin: 8px 0 12px 0;
+	border-radius: var(--radius-s, 6px);
+	overflow: hidden;
+	appearance: none;
+	-webkit-appearance: none;
+	background-color: var(--background-modifier-border);
+	border: none;
+}
+
+.kambas-import-progress-bar::-webkit-progress-bar {
+	background-color: var(--background-modifier-border);
+	border-radius: var(--radius-s, 6px);
+}
+
+.kambas-import-progress-bar::-webkit-progress-value {
+	background-color: var(--interactive-accent);
+	border-radius: var(--radius-s, 6px);
+	transition: width 0.15s ease;
+}
+
+.kambas-import-progress-bar::-moz-progress-bar {
+	background-color: var(--interactive-accent);
+	border-radius: var(--radius-s, 6px);
+}
+
+.kambas-import-progress-status {
+	font-size: var(--font-ui-small, 13px);
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	width: 100%;
+}
+
+.kambas-import-modal-buttons {
+	margin-top: 16px;
+	display: flex;
+	justify-content: flex-end;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Kambas — GIF Player Controls & Overlay
+   ═══════════════════════════════════════════════════════════════ */
+
+.kambas-gif-canvas-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	pointer-events: none;
+	z-index: 2;
+}
+
+.kambas-gif-toolbar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 8px);
+	box-shadow: var(--shadow-l, 0 4px 16px rgba(0, 0, 0, 0.2));
+	z-index: 1000;
+	pointer-events: auto;
+	user-select: none;
+	will-change: transform;
+}
+
+.kambas-gif-toolbar-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 4px 6px;
+	border-radius: var(--radius-s, 4px);
+	color: var(--text-muted);
+	cursor: pointer;
+	background: transparent;
+	border: 1px solid transparent;
+	transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.kambas-gif-toolbar-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.kambas-gif-toolbar-btn svg.svg-icon {
+	width: 16px;
+	height: 16px;
+}
+
+.kambas-gif-play-btn {
+	color: var(--interactive-accent);
+}
+
+.kambas-gif-extract-btn {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 4px 8px;
+	font-weight: 500;
+}
+
+.kambas-gif-extract-btn:hover {
+	background: var(--interactive-accent-hover, var(--interactive-accent));
+	color: var(--text-on-accent);
+}
+
+.kambas-gif-btn-text {
+	font-size: 11px;
+	font-weight: 500;
+}
+
+.kambas-gif-scrubber {
+	appearance: none;
+	-webkit-appearance: none;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+	outline: none;
+	cursor: pointer;
+	width: 100px;
+	transition: background 0.15s ease;
+}
+
+.kambas-gif-scrubber::-webkit-slider-thumb {
+	appearance: none;
+	-webkit-appearance: none;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	cursor: pointer;
+	transition: transform 0.12s ease;
+}
+
+.kambas-gif-scrubber::-webkit-slider-thumb:hover {
+	transform: scale(1.2);
+}
+
+.kambas-gif-scrubber::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	border: none;
+	cursor: pointer;
+}
+
+.kambas-gif-frame-counter {
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--text-muted);
+	min-width: 48px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.kambas-gif-speed-select {
+	font-size: 11px;
+	padding: 2px 4px;
+	border-radius: var(--radius-s, 4px);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+	outline: none;
+}
+
+
 
