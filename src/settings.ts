@@ -311,295 +311,6 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// ==========================================
-		// SECTION 2: ⚡ Canvas Performance & Optimization
-		// ==========================================
-		new Setting(containerEl)
-			.setName(t.performanceHeading || 'Canvas Performance & Optimization')
-			.setHeading();
-
-		new Setting(containerEl)
-			.setName(t.enableLodName)
-			.setDesc(t.enableLodDesc)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.enableLod ?? true)
-					.onChange(async (value) => {
-						this.plugin.settings.enableLod = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		const advancedContainer = containerEl.createDiv({
-			cls: 'kambas-advanced-lod-container',
-		});
-
-		let dropdownComponent: any = null;
-		new Setting(containerEl)
-			.setName(t.lodPresetName || 'Performance Profile')
-			.setDesc(
-				t.lodPresetDesc ||
-					'Choose a preset that matches your computer speed and canvas size.'
-			)
-			.addDropdown((dropdown) => {
-				dropdownComponent = dropdown;
-				dropdown
-					.addOption(
-						'performance',
-						t.lodPresetPerformance || '🚀 Performance (Fastest)'
-					)
-					.addOption(
-						'balanced',
-						t.lodPresetBalanced || '⚡ Balanced (Recommended)'
-					)
-					.addOption('high', t.lodPresetHigh || '🎨 High Quality')
-					.addOption('custom', t.lodPresetCustom || '⚙️ Custom (Advanced)')
-					.setValue(this.plugin.settings.lodPreset ?? 'balanced')
-					.onChange(async (v: string) => {
-						const value = v as 'performance' | 'balanced' | 'high' | 'custom';
-						this.plugin.settings.lodPreset = value;
-						if (value !== 'custom' && LOD_PRESETS[value]) {
-							const p = LOD_PRESETS[value];
-							this.plugin.settings.lodQualityFactor = p.qualityFactor;
-							this.plugin.settings.lodTiers = [...p.tiers];
-							this.plugin.settings.lodMinSourceWidth = p.minSourceWidth;
-							this.plugin.settings.lodQuality = p.quality;
-							this.plugin.settings.lodConcurrency = p.concurrency;
-							this.plugin.settings.lodFastRasterWhileMoving =
-								p.fastRasterWhileMoving;
-							this.plugin.settings.lodPrewarm = p.prewarm;
-
-							qualityFactorSlider?.setValue(p.qualityFactor);
-							tiersText?.setValue(p.tiers.join(', '));
-							minWidthText?.setValue(String(p.minSourceWidth));
-							qualitySlider?.setValue(p.quality);
-							prewarmToggle?.setValue(p.prewarm);
-							concurrencySlider?.setValue(p.concurrency);
-							fastRasterToggle?.setValue(p.fastRasterWhileMoving);
-
-							advancedContainer.style.display = 'none';
-						} else {
-							advancedContainer.style.display = 'block';
-						}
-						await this.plugin.saveSettings();
-					});
-			});
-
-		const where = containerEl.createEl('p', {
-			cls: 'setting-item-description',
-		});
-		where.setText(
-			t.lodCacheWhereDesc ||
-				'Image proxies are cached locally in your Obsidian application database (IndexedDB). They are isolated to this device and will not count against Obsidian Sync limits.'
-		);
-
-		new Setting(containerEl)
-			.setName(t.lodMaxCacheMBName || 'Maximum Cache Storage (MB)')
-			.setDesc(
-				t.lodMaxCacheMBDesc ||
-					'Maximum disk space used to save small image copies on your device.'
-			)
-			.addText((tx) =>
-				tx
-					.setValue(String(this.plugin.settings.lodMaxCacheMB ?? 300))
-					.onChange(async (v) => {
-						const n = parseInt(v, 10);
-						if (Number.isFinite(n) && n > 0) {
-							this.plugin.settings.lodMaxCacheMB = n;
-							await this.plugin.saveSettings();
-						}
-					})
-			);
-
-		const sizeSetting = new Setting(containerEl)
-			.setName(t.lodCacheSizeLabel || 'Cache size')
-			.setDesc('measuring...');
-
-		const updateCacheSizeLabel = async () => {
-			if (this.plugin.cache && this.plugin.cache.store) {
-				const b = await this.plugin.cache.store.sizeBytes();
-				const mem = this.plugin.cache.mem;
-				sizeSetting.setDesc(
-					`${(b / 1024 / 1024).toFixed(1)} MB stored, ` +
-						`${mem.entries.size} proxies in memory (${(mem.bytes / 1024 / 1024).toFixed(1)} MB)`
-				);
-			}
-		};
-		void updateCacheSizeLabel();
-
-		sizeSetting.addButton((btn) =>
-			btn
-				.setButtonText(t.clearLodCacheBtn || 'Clear')
-				.setWarning()
-				.onClick(async () => {
-					if (this.plugin.cache) {
-						await this.plugin.cache.clear();
-					}
-					new Notice(t.lodCacheClearedNotice || 'Cache cleared');
-					await updateCacheSizeLabel();
-				})
-		);
-
-		advancedContainer.style.display =
-			this.plugin.settings.lodPreset === 'custom' ? 'block' : 'none';
-
-		new Setting(advancedContainer)
-			.setName(t.lodAdvancedHeading || 'Advanced Level of Detail Settings')
-			.setDesc(
-				t.lodAdvancedDesc ||
-					'Fine-tune image sharpness, resolution tiers, thread limits, and preloading behaviors.'
-			)
-			.setHeading();
-
-		const markCustom = async () => {
-			if (this.plugin.settings.lodPreset !== 'custom') {
-				this.plugin.settings.lodPreset = 'custom';
-				if (dropdownComponent) {
-					dropdownComponent.setValue('custom');
-				}
-				advancedContainer.style.display = 'block';
-				await this.plugin.saveSettings();
-			}
-		};
-
-		let qualityFactorSlider: any = null;
-		new Setting(advancedContainer)
-			.setName(t.lodQualityFactorName || 'Image Sharpness')
-			.setDesc(
-				t.lodQualityFactorDesc ||
-					'Higher values make images sharper when zooming in. Lower values save computer memory.'
-			)
-			.addSlider((sl) => {
-				qualityFactorSlider = sl;
-				sl.setLimits(0.75, 2, 0.05)
-					.setValue(this.plugin.settings.lodQualityFactor ?? 1.15)
-					.setDynamicTooltip()
-					.onChange(async (v) => {
-						this.plugin.settings.lodQualityFactor = v;
-						await markCustom();
-						await this.plugin.saveSettings();
-					});
-			});
-
-		let tiersText: any = null;
-		new Setting(advancedContainer)
-			.setName(t.lodTiersName || 'Image Size Tiers (px)')
-			.setDesc(
-				t.lodTiersDesc ||
-					'Step sizes in pixels for creating smaller image copies. Separate numbers with commas (e.g. 128, 320, 768, 1600).'
-			)
-			.addText((tx) => {
-				tiersText = tx;
-				tx.setValue(
-					(this.plugin.settings.lodTiers ?? [128, 320, 768, 1600]).join(', ')
-				).onChange(async (v) => {
-					const tiers = v
-						.split(',')
-						.map((x) => parseInt(x.trim(), 10))
-						.filter((x) => Number.isFinite(x) && x > 16)
-						.sort((a, b) => a - b);
-					if (!tiers.length) return;
-					this.plugin.settings.lodTiers = tiers;
-					await markCustom();
-					await this.plugin.saveSettings();
-				});
-			});
-
-		let minWidthText: any = null;
-		new Setting(advancedContainer)
-			.setName(t.lodMinSourceWidthName || 'Smallest Image to Optimize (px)')
-			.setDesc(
-				t.lodMinSourceWidthDesc ||
-					'Images smaller than this width will not be changed because they already load quickly.'
-			)
-			.addText((tx) => {
-				minWidthText = tx;
-				tx.setValue(
-					String(this.plugin.settings.lodMinSourceWidth ?? 900)
-				).onChange(async (v) => {
-					const n = parseInt(v, 10);
-					if (Number.isFinite(n) && n > 0) {
-						this.plugin.settings.lodMinSourceWidth = n;
-						await markCustom();
-						await this.plugin.saveSettings();
-					}
-				});
-			});
-
-		let qualitySlider: any = null;
-		new Setting(advancedContainer)
-			.setName(t.lodQualityName || 'Image Quality & Storage Size')
-			.setDesc(
-				t.lodQualityDesc ||
-					'Higher values make images clearer. Lower values save disk space.'
-			)
-			.addSlider((sl) => {
-				qualitySlider = sl;
-				sl.setLimits(0.5, 0.95, 0.01)
-					.setValue(this.plugin.settings.lodQuality ?? 0.82)
-					.setDynamicTooltip()
-					.onChange(async (v) => {
-						this.plugin.settings.lodQuality = v;
-						await markCustom();
-						await this.plugin.saveSettings();
-					});
-			});
-
-		let prewarmToggle: any = null;
-		new Setting(advancedContainer)
-			.setName(t.lodPrewarmName || 'Preload Hidden Images')
-			.setDesc(
-				t.lodPrewarmDesc ||
-					'Prepare images outside your screen view as soon as you open a canvas.'
-			)
-			.addToggle((tgl) => {
-				prewarmToggle = tgl;
-				tgl
-					.setValue(this.plugin.settings.lodPrewarm ?? true)
-					.onChange(async (v) => {
-						this.plugin.settings.lodPrewarm = v;
-						await markCustom();
-						await this.plugin.saveSettings();
-					});
-			});
-
-		let concurrencySlider: any = null;
-		new Setting(advancedContainer)
-			.setName(t.lodConcurrencyName || 'Simultaneous Image Loading')
-			.setDesc(
-				t.lodConcurrencyDesc ||
-					'How many images to process at the same time. Higher values load boards faster on strong computers.'
-			)
-			.addSlider((sl) => {
-				concurrencySlider = sl;
-				sl.setLimits(1, 6, 1)
-					.setValue(this.plugin.settings.lodConcurrency ?? 2)
-					.setDynamicTooltip()
-					.onChange(async (v) => {
-						this.plugin.settings.lodConcurrency = v;
-						await markCustom();
-						await this.plugin.saveSettings();
-					});
-			});
-
-		let fastRasterToggle: any = null;
-		new Setting(advancedContainer)
-			.setName(t.lodFastRasterName || 'Fast Pan & Zooming')
-			.setDesc(
-				t.lodFastRasterDesc ||
-					'Temporarily lowers image quality while panning or zooming so screen movement stays smooth.'
-			)
-			.addToggle((tgl) => {
-				fastRasterToggle = tgl;
-				tgl
-					.setValue(this.plugin.settings.lodFastRasterWhileMoving ?? false)
-					.onChange(async (v) => {
-						this.plugin.settings.lodFastRasterWhileMoving = v;
-						await markCustom();
-						await this.plugin.saveSettings();
-					});
-			});
-
 		new Setting(containerEl)
 			.setName(t.autoOptimizeBase64Name)
 			.setDesc(t.autoOptimizeBase64Desc)
@@ -646,7 +357,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		// ==========================================
-		// SECTION 3: 🔍 Inspection & Visual Tools
+		// SECTION 2: 🔍 Inspection & Visual Tools
 		// ==========================================
 		new Setting(containerEl).setName(t.loupeHeading).setHeading();
 
@@ -738,7 +449,9 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Canvas Keyboard Pan Controls Section
+		// ==========================================
+		// SECTION 3: ⌨️ Keyboard Navigation Controls
+		// ==========================================
 		new Setting(containerEl).setName(t.keyboardPanHeading).setHeading();
 
 		const keyboardPanViewContainer = containerEl.createDiv();
@@ -960,8 +673,305 @@ export class KambasSettingTab extends PluginSettingTab {
 			});
 
 		// ==========================================
-		// SECTION 5: 🛠️ Diagnostics & Status Bar
+		// SECTION 4: ⚡ Canvas Performance & Optimization (LOD)
 		// ==========================================
+		new Setting(containerEl)
+			.setName(t.performanceHeading || 'Canvas Performance & Optimization')
+			.setHeading();
+
+		new Setting(containerEl)
+			.setName(t.enableLodName)
+			.setDesc(t.enableLodDesc)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableLod ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.enableLod = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		let isApplyingPreset = false;
+		let dropdownComponent: any = null;
+		let qualityFactorSlider: any = null;
+		let tiersText: any = null;
+		let minWidthText: any = null;
+		let qualitySlider: any = null;
+		let prewarmToggle: any = null;
+		let concurrencySlider: any = null;
+		let fastRasterToggle: any = null;
+
+		let advancedContainer: HTMLElement | null = null;
+
+		new Setting(containerEl)
+			.setName(t.lodPresetName || 'Performance Profile')
+			.setDesc(
+				t.lodPresetDesc ||
+					'Choose a preset that matches your computer speed and canvas size.'
+			)
+			.addDropdown((dropdown) => {
+				dropdownComponent = dropdown;
+				dropdown
+					.addOption(
+						'performance',
+						t.lodPresetPerformance || 'Performance (Fastest)'
+					)
+					.addOption(
+						'balanced',
+						t.lodPresetBalanced || 'Balanced (Recommended)'
+					)
+					.addOption('high', t.lodPresetHigh || 'High Quality')
+					.addOption('custom', t.lodPresetCustom || 'Custom (Advanced)')
+					.setValue(this.plugin.settings.lodPreset ?? 'balanced')
+					.onChange(async (v: string) => {
+						const value = v as 'performance' | 'balanced' | 'high' | 'custom';
+						this.plugin.settings.lodPreset = value;
+						if (value !== 'custom' && LOD_PRESETS[value]) {
+							const p = LOD_PRESETS[value];
+							this.plugin.settings.lodQualityFactor = p.qualityFactor;
+							this.plugin.settings.lodTiers = [...p.tiers];
+							this.plugin.settings.lodMinSourceWidth = p.minSourceWidth;
+							this.plugin.settings.lodQuality = p.quality;
+							this.plugin.settings.lodConcurrency = p.concurrency;
+							this.plugin.settings.lodFastRasterWhileMoving =
+								p.fastRasterWhileMoving;
+							this.plugin.settings.lodPrewarm = p.prewarm;
+
+							isApplyingPreset = true;
+							try {
+								qualityFactorSlider?.setValue(p.qualityFactor);
+								tiersText?.setValue(p.tiers.join(', '));
+								minWidthText?.setValue(String(p.minSourceWidth));
+								qualitySlider?.setValue(p.quality);
+								prewarmToggle?.setValue(p.prewarm);
+								concurrencySlider?.setValue(p.concurrency);
+								fastRasterToggle?.setValue(p.fastRasterWhileMoving);
+							} finally {
+								isApplyingPreset = false;
+							}
+
+							if (advancedContainer) advancedContainer.style.display = 'none';
+						} else {
+							if (advancedContainer) advancedContainer.style.display = 'block';
+						}
+						await this.plugin.saveSettings();
+					});
+			});
+
+		advancedContainer = containerEl.createDiv({
+			cls: 'kambas-advanced-lod-container',
+		});
+
+		const where = containerEl.createEl('p', {
+			cls: 'setting-item-description',
+		});
+		where.setText(
+			t.lodCacheWhereDesc ||
+				'Image proxies are cached locally in your Obsidian application database (IndexedDB). They are isolated to this device and will not count against Obsidian Sync limits.'
+		);
+
+		new Setting(containerEl)
+			.setName(t.lodMaxCacheMBName || 'Maximum Cache Storage (MB)')
+			.setDesc(
+				t.lodMaxCacheMBDesc ||
+					'Maximum disk space used to save small image copies on your device.'
+			)
+			.addText((tx) =>
+				tx
+					.setValue(String(this.plugin.settings.lodMaxCacheMB ?? 300))
+					.onChange(async (v) => {
+						const n = parseInt(v, 10);
+						if (Number.isFinite(n) && n > 0) {
+							this.plugin.settings.lodMaxCacheMB = n;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		const sizeSetting = new Setting(containerEl)
+			.setName(t.lodCacheSizeLabel || 'Cache size')
+			.setDesc('measuring...');
+
+		const updateCacheSizeLabel = async () => {
+			if (this.plugin.cache && this.plugin.cache.store) {
+				const b = await this.plugin.cache.store.sizeBytes();
+				const mem = this.plugin.cache.mem;
+				sizeSetting.setDesc(
+					`${(b / 1024 / 1024).toFixed(1)} MB stored, ` +
+						`${mem.entries.size} proxies in memory (${(mem.bytes / 1024 / 1024).toFixed(1)} MB)`
+				);
+			}
+		};
+		void updateCacheSizeLabel();
+
+		sizeSetting.addButton((btn) =>
+			btn
+				.setButtonText(t.clearLodCacheBtn || 'Clear')
+				.setWarning()
+				.onClick(async () => {
+					if (this.plugin.cache) {
+						await this.plugin.cache.clear();
+					}
+					new Notice(t.lodCacheClearedNotice || 'Cache cleared');
+					await updateCacheSizeLabel();
+				})
+		);
+
+		advancedContainer.style.display =
+			this.plugin.settings.lodPreset === 'custom' ? 'block' : 'none';
+
+		new Setting(advancedContainer)
+			.setName(t.lodAdvancedHeading || 'Advanced Level of Detail Settings')
+			.setDesc(
+				t.lodAdvancedDesc ||
+					'Fine-tune image sharpness, resolution tiers, thread limits, and preloading behaviors.'
+			)
+			.setHeading();
+
+		const markCustom = async () => {
+			if (isApplyingPreset) return;
+			if (this.plugin.settings.lodPreset !== 'custom') {
+				this.plugin.settings.lodPreset = 'custom';
+				if (dropdownComponent) {
+					dropdownComponent.setValue('custom');
+				}
+				advancedContainer.style.display = 'block';
+				await this.plugin.saveSettings();
+			}
+		};
+
+		new Setting(advancedContainer)
+			.setName(t.lodQualityFactorName || 'Image Sharpness')
+			.setDesc(
+				t.lodQualityFactorDesc ||
+					'Higher values make images sharper when zooming in. Lower values save computer memory.'
+			)
+			.addSlider((sl) => {
+				qualityFactorSlider = sl;
+				sl.setLimits(0.75, 2, 0.05)
+					.setValue(this.plugin.settings.lodQualityFactor ?? 1.15)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodQualityFactor = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(advancedContainer)
+			.setName(t.lodTiersName || 'Image Size Tiers (px)')
+			.setDesc(
+				t.lodTiersDesc ||
+					'Step sizes in pixels for creating smaller image copies. Separate numbers with commas (e.g. 128, 320, 768, 1600).'
+			)
+			.addText((tx) => {
+				tiersText = tx;
+				tx.setValue(
+					(this.plugin.settings.lodTiers ?? [128, 320, 768, 1600]).join(', ')
+				).onChange(async (v) => {
+					const tiers = v
+						.split(',')
+						.map((x) => parseInt(x.trim(), 10))
+						.filter((x) => Number.isFinite(x) && x > 16)
+						.sort((a, b) => a - b);
+					if (!tiers.length) return;
+					this.plugin.settings.lodTiers = tiers;
+					await markCustom();
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(advancedContainer)
+			.setName(t.lodMinSourceWidthName || 'Smallest Image to Optimize (px)')
+			.setDesc(
+				t.lodMinSourceWidthDesc ||
+					'Images smaller than this width will not be changed because they already load quickly.'
+			)
+			.addText((tx) => {
+				minWidthText = tx;
+				tx.setValue(
+					String(this.plugin.settings.lodMinSourceWidth ?? 900)
+				).onChange(async (v) => {
+					const n = parseInt(v, 10);
+					if (Number.isFinite(n) && n > 0) {
+						this.plugin.settings.lodMinSourceWidth = n;
+						await markCustom();
+						await this.plugin.saveSettings();
+					}
+				});
+			});
+
+		new Setting(advancedContainer)
+			.setName(t.lodQualityName || 'Image Quality & Storage Size')
+			.setDesc(
+				t.lodQualityDesc ||
+					'Higher values make images clearer. Lower values save disk space.'
+			)
+			.addSlider((sl) => {
+				qualitySlider = sl;
+				sl.setLimits(0.5, 0.95, 0.01)
+					.setValue(this.plugin.settings.lodQuality ?? 0.82)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodQuality = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(advancedContainer)
+			.setName(t.lodPrewarmName || 'Preload Hidden Images')
+			.setDesc(
+				t.lodPrewarmDesc ||
+					'Prepare images outside your screen view as soon as you open a canvas.'
+			)
+			.addToggle((tgl) => {
+				prewarmToggle = tgl;
+				tgl
+					.setValue(this.plugin.settings.lodPrewarm ?? true)
+					.onChange(async (v) => {
+						this.plugin.settings.lodPrewarm = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(advancedContainer)
+			.setName(t.lodConcurrencyName || 'Simultaneous Image Loading')
+			.setDesc(
+				t.lodConcurrencyDesc ||
+					'How many images to process at the same time. Higher values load boards faster on strong computers.'
+			)
+			.addSlider((sl) => {
+				concurrencySlider = sl;
+				sl.setLimits(1, 6, 1)
+					.setValue(this.plugin.settings.lodConcurrency ?? 2)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodConcurrency = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(advancedContainer)
+			.setName(t.lodFastRasterName || 'Fast Pan & Zooming')
+			.setDesc(
+				t.lodFastRasterDesc ||
+					'Temporarily lowers image quality while panning or zooming so screen movement stays smooth.'
+			)
+			.addToggle((tgl) => {
+				fastRasterToggle = tgl;
+				tgl
+					.setValue(this.plugin.settings.lodFastRasterWhileMoving ?? false)
+					.onChange(async (v) => {
+						this.plugin.settings.lodFastRasterWhileMoving = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		// Status Bar & Diagnostics Sub-heading in Performance section
 		new Setting(containerEl)
 			.setName(t.lodOtherHeading || 'Status Bar & Diagnostics')
 			.setHeading();

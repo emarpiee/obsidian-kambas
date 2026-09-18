@@ -117,6 +117,7 @@ export default class KambasPlugin extends Plugin {
 				for (const b of this.binders.values()) b.suspend();
 				this.canvasImageHandler?.gifHandler?.detachAll();
 				if (this.cache) this.cache.evictMemory();
+				this.updateStatus();
 				return;
 			}
 			const activeLeaf = activeView.leaf;
@@ -129,6 +130,7 @@ export default class KambasPlugin extends Plugin {
 			}
 			const canvasView = activeView as unknown as CanvasItemView;
 			this.canvasImageHandler.scanAndRestoreTransforms(canvasView);
+			this.updateStatus();
 		};
 
 		this.registerEvent(
@@ -870,6 +872,18 @@ export default class KambasPlugin extends Plugin {
 
 	updateStatus(): void {
 		if (!this.statusEl) return;
+
+		const activeView = this.app.workspace.getActiveViewOfType(ItemView);
+		const hasActiveCanvas = activeView?.getViewType() === 'canvas';
+
+		if (!hasActiveCanvas) {
+			this.statusEl.hide();
+			this._statusSig = '';
+			return;
+		}
+
+		this.statusEl.show();
+
 		const s = getLodSettings(this);
 		const st = this.cache.stats;
 		const sig = `${s.enabled}|${st.pending}|${this.cache.mem.entries.size}|${st.failed}`;
