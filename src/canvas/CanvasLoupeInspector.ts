@@ -1,17 +1,11 @@
-import { ItemView } from 'obsidian';
-
 import type KambasPlugin from '../main';
-import { CanvasItemView } from './CanvasTypes';
 
 export class CanvasLoupeInspector {
 	private plugin: KambasPlugin;
 	private loupeEl: HTMLElement | null = null;
-	private activeDoc: Document | null = null;
 	private isKeyDown = false;
 	private rafId: number | null = null;
 	private lastMousePos: { x: number; y: number } | null = null;
-	private currentPos: { x: number; y: number } | null = null;
-	private activeView: CanvasItemView | null = null;
 
 	private keydownHandler: (evt: KeyboardEvent) => void;
 	private keyupHandler: (evt: KeyboardEvent) => void;
@@ -24,163 +18,63 @@ export class CanvasLoupeInspector {
 		this.keyupHandler = this.onKeyUp.bind(this);
 		this.mousemoveHandler = this.onMouseMove.bind(this);
 
-		this.plugin.registerDomEvent(window, 'keydown', this.keydownHandler, true);
-		this.plugin.registerDomEvent(window, 'keyup', this.keyupHandler, true);
-		this.plugin.registerDomEvent(
-			window,
-			'mousemove',
-			this.mousemoveHandler,
-			true
-		);
+		window.addEventListener('keydown', this.keydownHandler, true);
+		window.addEventListener('keyup', this.keyupHandler, true);
+		window.addEventListener('mousemove', this.mousemoveHandler, true);
 	}
 
 	public destroy(): void {
-		this.stopLoop();
+		window.removeEventListener('keydown', this.keydownHandler, true);
+		window.removeEventListener('keyup', this.keyupHandler, true);
+		window.removeEventListener('mousemove', this.mousemoveHandler, true);
+		if (this.rafId !== null) {
+			window.cancelAnimationFrame(this.rafId);
+			this.rafId = null;
+		}
 		this.removeLoupe();
 	}
 
-	private getCanvasViewForEvent(evt: Event): CanvasItemView | null {
-		const target = evt.target as HTMLElement | null;
-		const doc = target?.ownerDocument ?? document;
-		const activeLeaf = this.plugin.app.workspace.getActiveViewOfType(ItemView);
-		if (
-			activeLeaf &&
-			activeLeaf.getViewType() === 'canvas' &&
-			activeLeaf.containerEl.ownerDocument === doc
-		) {
-			return activeLeaf;
-		}
-		let foundView: CanvasItemView | null = null;
-		this.plugin.app.workspace.iterateAllLeaves((leaf) => {
-			if (foundView) return;
-			if (
-				leaf.view?.getViewType() === 'canvas' &&
-				leaf.view.containerEl.ownerDocument === doc
-			) {
-				foundView = leaf.view;
-			}
-		});
-		return (
-			foundView ??
-			(activeLeaf?.getViewType() === 'canvas'
-				? (activeLeaf)
-				: null)
-		);
-	}
-
 	private onKeyDown(evt: KeyboardEvent): void {
-		const configuredKey = (
-			this.plugin.settings.loupeHotkey || 'q'
-		).toLowerCase();
+		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
 		if (evt.key.toLowerCase() === configuredKey && !evt.repeat) {
-			const targetView = this.getCanvasViewForEvent(evt);
-			if (!targetView || targetView.getViewType() !== 'canvas') return;
-
-			const ownerDoc =
-				(evt.target as HTMLElement)?.ownerDocument ??
-				targetView.containerEl.ownerDocument ??
-				document;
-			const activeTag = (ownerDoc.activeElement?.tagName || '').toLowerCase();
-			const isEditable = (ownerDoc.activeElement as HTMLElement | null)
-				?.isContentEditable;
+			const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+			const isEditable = (document.activeElement as HTMLElement | null)?.isContentEditable;
 			if (activeTag === 'input' || activeTag === 'textarea' || isEditable) {
 				return;
 			}
-
-			this.activeView = targetView;
-			this.activeDoc = ownerDoc;
 			this.isKeyDown = true;
 			if (this.lastMousePos) {
-				this.currentPos = { ...this.lastMousePos };
+				this.updateLoupeAtPosition(this.lastMousePos.x, this.lastMousePos.y);
 			}
-			this.startLoop();
 		}
 	}
 
 	private onKeyUp(evt: KeyboardEvent): void {
-		const configuredKey = (
-			this.plugin.settings.loupeHotkey || 'q'
-		).toLowerCase();
+		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
 		if (evt.key.toLowerCase() === configuredKey) {
 			this.isKeyDown = false;
-			this.stopLoop();
 			this.removeLoupe();
 		}
 	}
 
 	private onMouseMove(evt: MouseEvent): void {
 		this.lastMousePos = { x: evt.clientX, y: evt.clientY };
-		const targetView = this.getCanvasViewForEvent(evt);
-		if (targetView) {
-			this.activeView = targetView;
-			this.activeDoc =
-				(evt.target as HTMLElement)?.ownerDocument ??
-				targetView.containerEl.ownerDocument ??
-				document;
-		}
 		if (!this.isKeyDown) return;
-		if (!this.currentPos) {
-			this.currentPos = { x: evt.clientX, y: evt.clientY };
-		}
-		this.startLoop();
-	}
 
-	private startLoop(): void {
-		if (this.rafId !== null) return;
-		const win = this.activeDoc?.defaultView || window;
-		const loop = (): void => {
-			if (!this.isKeyDown || !this.lastMousePos) {
-				this.stopLoop();
-				return;
-			}
-
-			if (!this.currentPos) {
-				this.currentPos = { ...this.lastMousePos };
-			} else {
-				// Lerp interpolation for smooth dampening & lower panning sensitivity
-				const smoothing = this.plugin.settings.loupeSmoothing ?? 0.15;
-				const dx = this.lastMousePos.x - this.currentPos.x;
-				const dy = this.lastMousePos.y - this.currentPos.y;
-
-				if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
-					this.currentPos.x += dx * smoothing;
-					this.currentPos.y += dy * smoothing;
-				} else {
-					this.currentPos.x = this.lastMousePos.x;
-					this.currentPos.y = this.lastMousePos.y;
+		if (this.rafId === null) {
+			this.rafId = window.requestAnimationFrame(() => {
+				this.rafId = null;
+				if (this.lastMousePos && this.isKeyDown) {
+					this.updateLoupeAtPosition(this.lastMousePos.x, this.lastMousePos.y);
 				}
-			}
-
-			this.updateLoupeAtPosition(this.currentPos.x, this.currentPos.y);
-			this.rafId = win.requestAnimationFrame(loop);
-		};
-		this.rafId = win.requestAnimationFrame(loop);
-	}
-
-	private stopLoop(): void {
-		if (this.rafId !== null) {
-			const win = this.activeDoc?.defaultView || window;
-			win.cancelAnimationFrame(this.rafId);
-			this.rafId = null;
+			});
 		}
 	}
 
 	private updateLoupeAtPosition(clientX: number, clientY: number): void {
 		// Verify mouse cursor is within active canvas container
-		const activeView =
-			this.activeView ??
-			(this.plugin.app.workspace.getActiveViewOfType(
-				ItemView
-			));
-
-		if (!activeView || activeView.getViewType() !== 'canvas') {
-			this.removeLoupe();
-			return;
-		}
-
-		const canvasEl =
-			activeView.containerEl.querySelector('.canvas-wrapper') ||
-			activeView.containerEl.querySelector('.canvas');
+		const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
+		const canvasEl = activeLeaf?.querySelector('.canvas-wrapper') || activeLeaf?.querySelector('.canvas');
 		if (!canvasEl) {
 			this.removeLoupe();
 			return;
@@ -202,11 +96,8 @@ export class CanvasLoupeInspector {
 		const zoomLevel = this.plugin.settings.loupeZoomLevel || 3.0;
 		const shape = this.plugin.settings.loupeShape || 'circle';
 
-		const targetDoc = activeView.containerEl.ownerDocument;
-
-		if (!this.loupeEl || this.loupeEl.ownerDocument !== targetDoc) {
-			this.removeLoupe();
-			this.createLoupe(targetDoc);
+		if (!this.loupeEl) {
+			this.createLoupe();
 		}
 
 		if (this.loupeEl) {
@@ -218,64 +109,15 @@ export class CanvasLoupeInspector {
 				'--kambas-loupe-top': `${clientY - halfSize}px`,
 			});
 
-			const innerContent =
-				canvasEl.querySelector('.canvas-content') ||
-				canvasEl.querySelector('.canvas-nodes') ||
-				canvasEl;
+			const innerContent = (canvasEl.querySelector('.canvas-content') || canvasEl.querySelector('.canvas-nodes') || canvasEl);
 
-			let innerWrapper = this.loupeEl.querySelector<HTMLElement>(
-				'.kambas-loupe-inner'
-			);
+			let innerWrapper = this.loupeEl.querySelector<HTMLElement>('.kambas-loupe-inner');
 			if (!innerWrapper) {
-				const win = targetDoc.defaultView || window;
-				innerWrapper = win.createDiv({ cls: 'kambas-loupe-inner' });
+				innerWrapper = createDiv({ cls: 'kambas-loupe-inner' });
 				this.loupeEl.appendChild(innerWrapper);
-
-				// Fast selective cloning: clone node container shallowly and copy ONLY nodes under cursor
-				const cloneContainer = innerContent.cloneNode(false) as HTMLElement;
-				innerWrapper.appendChild(cloneContainer);
-
-				const margin = loupeSize * 1.5;
-				const minX = clientX - margin;
-				const maxX = clientX + margin;
-				const minY = clientY - margin;
-				const maxY = clientY + margin;
-
-				const children = Array.from(innerContent.children);
-				for (const child of children) {
-					if (child instanceof HTMLElement) {
-						const rect = child.getBoundingClientRect();
-						const isIntersecting =
-							rect.right >= minX &&
-							rect.left <= maxX &&
-							rect.bottom >= minY &&
-							rect.top <= maxY;
-
-						if (isIntersecting) {
-							cloneContainer.appendChild(child.cloneNode(true));
-						}
-					}
-				}
+				const clone = innerContent.cloneNode(true) as HTMLElement;
+				innerWrapper.appendChild(clone);
 			}
-
-			// Sync active GIF canvas overlay bitmaps to cloned loupe canvases on every frame
-			const origCanvases = innerContent.querySelectorAll<HTMLCanvasElement>('canvas.kambas-gif-canvas-overlay');
-			const clonedCanvases = innerWrapper.querySelectorAll<HTMLCanvasElement>('canvas.kambas-gif-canvas-overlay');
-
-			origCanvases.forEach((origCanvas, index) => {
-				const clonedCanvas = clonedCanvases[index];
-				if (clonedCanvas && origCanvas.width > 0 && origCanvas.height > 0) {
-					if (clonedCanvas.width !== origCanvas.width || clonedCanvas.height !== origCanvas.height) {
-						clonedCanvas.width = origCanvas.width;
-						clonedCanvas.height = origCanvas.height;
-					}
-					const ctx = clonedCanvas.getContext('2d');
-					if (ctx) {
-						ctx.clearRect(0, 0, clonedCanvas.width, clonedCanvas.height);
-						ctx.drawImage(origCanvas, 0, 0);
-					}
-				}
-			});
 
 			const canvasRect = innerContent.getBoundingClientRect();
 			const offsetX = clientX - canvasRect.left;
@@ -292,11 +134,10 @@ export class CanvasLoupeInspector {
 		}
 	}
 
-	private createLoupe(targetDoc: Document): void {
+	private createLoupe(): void {
 		if (this.loupeEl) return;
-		const win = targetDoc.defaultView || window;
-		this.loupeEl = win.createDiv({ cls: 'kambas-loupe-inspector' });
-		targetDoc.body.appendChild(this.loupeEl);
+		this.loupeEl = createDiv({ cls: 'kambas-loupe-inspector' });
+		document.body.appendChild(this.loupeEl);
 	}
 
 	private removeLoupe(): void {
@@ -304,7 +145,9 @@ export class CanvasLoupeInspector {
 			this.loupeEl.remove();
 			this.loupeEl = null;
 		}
-		this.currentPos = null;
-		this.stopLoop();
+		if (this.rafId !== null) {
+			window.cancelAnimationFrame(this.rafId);
+			this.rafId = null;
+		}
 	}
 }

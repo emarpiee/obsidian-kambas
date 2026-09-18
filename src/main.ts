@@ -841,6 +841,7 @@ export default class KambasPlugin extends Plugin {
 	scheduleSyncAll(): void {
 		for (const b of this.binders.values()) {
 			b.dirty = true;
+			b.lastScale = -1;
 			b.schedule();
 		}
 	}

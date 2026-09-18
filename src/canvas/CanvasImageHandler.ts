@@ -2597,8 +2597,22 @@ export class CanvasImageHandler {
 
 			// Read vault image file and encode to base64 data URL
 			const arrayBuffer = await this.app.vault.readBinary(tfile);
-			const mimeType = `image/${tfile.extension.toLowerCase() === 'jpg' ? 'jpeg' : tfile.extension.toLowerCase()}`;
-			const dataUrl = arrayBufferToBase64DataUrl(arrayBuffer, mimeType);
+			const ext = tfile.extension.toLowerCase();
+			const mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+			let dataUrl = arrayBufferToBase64DataUrl(arrayBuffer, mimeType);
+
+			if (this.plugin.settings.autoOptimizeBase64OnIngest && ext !== 'gif' && ext !== 'svg') {
+				try {
+					const res = await compressAndOptimizeBase64(dataUrl, {
+						maxDimension: this.plugin.settings.base64MaxDimension || 2048,
+						quality: this.plugin.settings.base64Quality || 0.82,
+						mimeType: 'image/webp',
+					});
+					if (res.dataUrl) dataUrl = res.dataUrl;
+				} catch (err) {
+					console.warn('Base64 optimization failed during vault convert:', err);
+				}
+			}
 
 			// 1. Preserve position, size, transform & tag data
 			const pos = {
@@ -5297,6 +5311,28 @@ export class CanvasImageHandler {
 					dataUrl = arrayBufferToBase64DataUrl(item.arrayBuffer, item.mimeType);
 				}
 
+				if (this.plugin.settings.autoOptimizeBase64OnIngest && dataUrl) {
+					const ext = item.filename?.split('.').pop()?.toLowerCase() || '';
+					const mime = item.mimeType?.toLowerCase() || '';
+					if (
+						ext !== 'gif' &&
+						ext !== 'svg' &&
+						mime !== 'image/gif' &&
+						mime !== 'image/svg+xml'
+					) {
+						try {
+							const res = await compressAndOptimizeBase64(dataUrl, {
+								maxDimension: this.plugin.settings.base64MaxDimension || 2048,
+								quality: this.plugin.settings.base64Quality || 0.82,
+								mimeType: 'image/webp',
+							});
+							if (res.dataUrl) dataUrl = res.dataUrl;
+						} catch (err) {
+							console.warn('Base64 optimization failed during image ingest:', err);
+						}
+					}
+				}
+
 				if (dataUrl) {
 					nodesToInsert.push({
 						type: 'link',
@@ -5762,7 +5798,30 @@ export class CanvasImageHandler {
 				const mimeType =
 					result.file.type ||
 					`image/${result.file.name.split('.').pop()?.toLowerCase() || 'png'}`;
-				const dataUrl = arrayBufferToBase64DataUrl(buffer, mimeType);
+				let dataUrl = arrayBufferToBase64DataUrl(buffer, mimeType);
+
+				if (this.plugin.settings.autoOptimizeBase64OnIngest && dataUrl) {
+					const ext = result.file.name.split('.').pop()?.toLowerCase() || '';
+					const mime = mimeType.toLowerCase();
+					if (
+						ext !== 'gif' &&
+						ext !== 'svg' &&
+						mime !== 'image/gif' &&
+						mime !== 'image/svg+xml'
+					) {
+						try {
+							const res = await compressAndOptimizeBase64(dataUrl, {
+								maxDimension: this.plugin.settings.base64MaxDimension || 2048,
+								quality: this.plugin.settings.base64Quality || 0.82,
+								mimeType: 'image/webp',
+							});
+							if (res.dataUrl) dataUrl = res.dataUrl;
+						} catch (err) {
+							console.warn('Base64 optimization failed during image replace:', err);
+						}
+					}
+				}
+
 				newFileOrUrl = { type: 'link', url: dataUrl };
 			} else {
 				const vaultWithConfig = this.app.vault as unknown as {

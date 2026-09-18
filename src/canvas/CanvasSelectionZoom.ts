@@ -221,6 +221,7 @@ export class CanvasSelectionZoom {
 
 			try {
 				canvas.zoomToBbox({ minX, minY, maxX, maxY });
+				this.triggerLODSync();
 				return;
 			} catch {
 				/* fall through */
@@ -231,6 +232,7 @@ export class CanvasSelectionZoom {
 		if (typeof canvas.zoomToSelection === 'function') {
 			try {
 				canvas.zoomToSelection();
+				this.triggerLODSync();
 				return;
 			} catch {
 				/* fall through */
@@ -238,6 +240,14 @@ export class CanvasSelectionZoom {
 		}
 		if (typeof canvas.zoomToFit === 'function') {
 			canvas.zoomToFit();
+			this.triggerLODSync();
 		}
+	}
+
+	private triggerLODSync(): void {
+		this.plugin.scheduleSyncAll();
+		window.setTimeout(() => {
+			this.plugin.scheduleSyncAll();
+		}, 150);
 	}
 }
