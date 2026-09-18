@@ -1,6 +1,7 @@
 import { ItemView } from 'obsidian';
 
 import type KambasPlugin from '../main';
+import { matchHotkeyEvent } from '../utils/hotkeyUtils';
 import { CanvasElement, CanvasItemView } from './CanvasTypes';
 
 /** Extended canvas type exposing internal selection set. */
@@ -87,13 +88,7 @@ export class CanvasSelectionZoom {
 
 		const configuredKey =
 			this.plugin.settings.selectionZoomToFitHotkey || 'Space';
-		const isSpace = configuredKey.toLowerCase() === 'space';
-		const matched = isSpace
-			? evt.key === ' ' || evt.code === 'Space'
-			: evt.key === configuredKey ||
-				evt.key.toLowerCase() === configuredKey.toLowerCase();
-
-		if (!matched) return;
+		if (!matchHotkeyEvent(evt, configuredKey)) return;
 
 		// Get selected nodes from canvas.selection (internal Set) — works for single AND multi select.
 		// Fallback: DOM query for is-selected (used when rubber-band selecting).

@@ -1,4 +1,5 @@
 import type KambasPlugin from '../main';
+import { matchHotkeyEvent } from '../utils/hotkeyUtils';
 
 export class CanvasLoupeInspector {
 	private plugin: KambasPlugin;
@@ -32,19 +33,8 @@ export class CanvasLoupeInspector {
 	}
 
 	private isLoupeKeyMatch(evt: KeyboardEvent): boolean {
-		const configuredKey = (
-			this.plugin.settings.loupeHotkey || 'q'
-		).toLowerCase();
-		if (configuredKey === 'space' || configuredKey === ' ') {
-			return evt.key === ' ' || evt.code === 'Space';
-		}
-		const pressedKey = (evt.key || '').toLowerCase();
-		const pressedCode = (evt.code || '').toLowerCase();
-		return (
-			pressedKey === configuredKey ||
-			pressedCode === `key${configuredKey}` ||
-			evt.key === this.plugin.settings.loupeHotkey
-		);
+		const configuredKey = this.plugin.settings.loupeHotkey || 'q';
+		return matchHotkeyEvent(evt, configuredKey);
 	}
 
 	private onKeyDown(evt: KeyboardEvent): void {

@@ -16,6 +16,7 @@ import {
 	Direction,
 } from './canvas/CanvasKeyboardPan';
 import { CanvasItemView } from './canvas/CanvasTypes';
+import { formatKeyLabel, formatRecordedHotkey } from './utils/hotkeyUtils';
 
 export interface FilterPreset {
 	id: string;
@@ -152,20 +153,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	tagColors: {},
 };
 
-const KeyLabelOverrides: Record<string, string> = {
-	ArrowUp: 'Up',
-	ArrowLeft: 'Left',
-	ArrowDown: 'Down',
-	ArrowRight: 'Right',
-};
 
-export function formatKeyLabel(key: string): string {
-	if (!key) return '?';
-	if (key === ' ' || key.toLowerCase() === 'space') return 'Space';
-	if (KeyLabelOverrides[key]) return KeyLabelOverrides[key];
-	if (key.length === 1) return key.toUpperCase();
-	return key;
-}
 
 export class KambasSettingTab extends PluginSettingTab {
 	private plugin: KambasPlugin;
@@ -1033,7 +1021,7 @@ export class KambasSettingTab extends PluginSettingTab {
 	private async saveSingleHotkey(
 		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey',
 		newKey: string
-	): Promise<void> {
+	): Promise<boolean> {
 		const formattedKey = newKey === ' ' ? 'Space' : newKey;
 		const currentHotkeys = this.getAllConfiguredHotkeys();
 		currentHotkeys[targetKey] = formattedKey;
@@ -1042,8 +1030,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			const t = getText();
 			new Notice(t.duplicateKeyNotice);
 			this.cleanupKeyListener();
-			this.display();
-			return;
+			return false;
 		}
 
 		if (targetKey === 'loupeHotkey') {
@@ -1054,7 +1041,7 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		await this.plugin.saveSettings();
 		this.cleanupKeyListener();
-		this.display();
+		return true;
 	}
 
 	public async saveKeys(
@@ -1098,6 +1085,14 @@ export class KambasSettingTab extends PluginSettingTab {
 		this.display();
 	}
 
+	private getHotkeySetting(
+		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey'
+	): string {
+		return targetKey === 'loupeHotkey'
+			? this.plugin.settings.loupeHotkey ?? 'q'
+			: this.plugin.settings.selectionZoomToFitHotkey ?? 'Space';
+	}
+
 	private renderSingleKeyRecorderSetting(
 		containerEl: HTMLElement,
 		name: string,
@@ -1106,74 +1101,120 @@ export class KambasSettingTab extends PluginSettingTab {
 		defaultKey: string,
 		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey'
 	): void {
-		const t = getText();
+		const wrapper = containerEl.createDiv();
 
-		const badgeContainer = containerEl.createDiv({ cls: 'pan-kb-container' });
-		const row = badgeContainer.createDiv({ cls: 'pan-kb-zoom-row' });
-		const labelEl = row.createDiv({
-			cls: ['pan-kb-label', 'pan-kb-zoom-label'],
-			text: formatKeyLabel(currentKey),
-		});
-		const keyEl = row.createDiv({ cls: ['pan-kb', 'pan-kb-zoom-icon'] });
-		setIcon(keyEl, targetKey === 'loupeHotkey' ? 'search' : 'maximize-2');
+		const render = (isRecording: boolean, activeKeyVal: string) => {
+			wrapper.empty();
+			const t = getText();
 
-		const isRecordingThis = this.activeSingleKeyTarget === targetKey;
-		if (isRecordingThis) {
-			keyEl.classList.add('active');
-			labelEl.classList.add('active');
-		}
+			const badgeContainer = wrapper.createDiv({ cls: 'pan-kb-container' });
+			const row = badgeContainer.createDiv({ cls: 'pan-kb-zoom-row' });
+			const labelEl = row.createDiv({
+				cls: ['pan-kb-label', 'pan-kb-zoom-label'],
+				text: formatKeyLabel(activeKeyVal),
+			});
+			const keyEl = row.createDiv({ cls: ['pan-kb', 'pan-kb-zoom-icon'] });
+			setIcon(keyEl, targetKey === 'loupeHotkey' ? 'search' : 'maximize-2');
 
-		const setting = new Setting(containerEl).setName(name).setDesc(desc);
+			if (isRecording) {
+				keyEl.classList.add('active');
+				labelEl.classList.add('active');
+			}
 
-		setting
-			.addExtraButton((button) => {
-				button.setIcon('rotate-ccw');
-				button.setTooltip(t.restoreDefaultTooltip);
-				button.onClick(async () => {
-					this.cleanupKeyListener();
-					await this.saveSingleHotkey(targetKey, defaultKey);
-				});
-			})
-			.addButton((button) => {
-				button.setButtonText(
-					isRecordingThis
-						? t.pressAnyKeyPrompt || 'Press key...'
-						: t.changeHotkeyButton || 'Change hotkey'
-				);
-				button.onClick(() => {
-					if (this.activeSingleKeyTarget === targetKey) {
+			const setting = new Setting(wrapper).setName(name).setDesc(desc);
+
+			setting
+				.addExtraButton((button) => {
+					button.setIcon('rotate-ccw');
+					button.setTooltip(t.restoreDefaultTooltip);
+					button.onClick(async () => {
 						this.cleanupKeyListener();
-						this.display();
-						return;
-					}
-
-					this.cleanupKeyListener();
-					this.activeSingleKeyTarget = targetKey;
-					this.display();
-
-					const listener = (evt: KeyboardEvent): void => {
-						if (
-							evt.repeat ||
-							['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(evt.key)
-						) {
+						await this.saveSingleHotkey(targetKey, defaultKey);
+						render(false, defaultKey);
+					});
+				})
+				.addButton((button) => {
+					button.setButtonText(
+						isRecording
+							? t.pressAnyKeyPrompt || 'Press key...'
+							: t.changeHotkeyButton || 'Change hotkey'
+					);
+					button.onClick(() => {
+						if (this.activeSingleKeyTarget === targetKey) {
+							this.cleanupKeyListener();
+							render(false, activeKeyVal);
 							return;
 						}
 
-						evt.preventDefault();
-						evt.stopPropagation();
+						this.cleanupKeyListener();
+						this.activeSingleKeyTarget = targetKey;
+						render(true, activeKeyVal);
 
-						let key = evt.key;
-						if (key === ' ') {
-							key = 'Space';
-						}
+						let recordedCombo = '';
+						let isModifierOnly = false;
 
-						void this.saveSingleHotkey(targetKey, key);
-					};
+						const keydownListener = (evt: KeyboardEvent): void => {
+							if (evt.repeat || evt.key === 'CapsLock') return;
 
-					this.keySettingsListener = listener;
-					window.addEventListener('keydown', listener, true);
+							evt.preventDefault();
+							evt.stopPropagation();
+
+							const isModifier = ['Shift', 'Control', 'Alt', 'Meta'].includes(
+								evt.key
+							);
+							const combo = formatRecordedHotkey(evt);
+
+							if (isModifier) {
+								isModifierOnly = true;
+								recordedCombo = combo;
+								render(true, combo);
+							} else {
+								cleanup();
+								void this.saveSingleHotkey(targetKey, combo).then(
+									(success) => {
+										render(
+											false,
+											success ? combo : this.getHotkeySetting(targetKey)
+										);
+									}
+								);
+							}
+						};
+
+						const keyupListener = (evt: KeyboardEvent): void => {
+							const isModifier = ['Shift', 'Control', 'Alt', 'Meta'].includes(
+								evt.key
+							);
+							if (isModifier && isModifierOnly && recordedCombo) {
+								cleanup();
+								void this.saveSingleHotkey(targetKey, recordedCombo).then(
+									(success) => {
+										render(
+											false,
+											success ? recordedCombo : this.getHotkeySetting(targetKey)
+										);
+									}
+								);
+							}
+						};
+
+						const cleanup = () => {
+							window.removeEventListener('keydown', keydownListener, true);
+							window.removeEventListener('keyup', keyupListener, true);
+							if (this.keySettingsListener === keydownListener) {
+								this.keySettingsListener = null;
+							}
+							this.activeSingleKeyTarget = null;
+						};
+
+						this.keySettingsListener = keydownListener;
+						window.addEventListener('keydown', keydownListener, true);
+						window.addEventListener('keyup', keyupListener, true);
+					});
 				});
-			});
+		};
+
+		render(false, currentKey);
 	}
 
 	public renderPanView(
