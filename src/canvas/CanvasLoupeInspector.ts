@@ -32,19 +32,28 @@ export class CanvasLoupeInspector {
 	}
 
 	private onKeyDown(evt: KeyboardEvent): void {
-		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
+		const configuredKey = (
+			this.plugin.settings.loupeHotkey || 'q'
+		).toLowerCase();
 		const pressedKey = (evt.key || '').toLowerCase();
 		const pressedCode = (evt.code || '').toLowerCase();
 
-		if ((pressedKey === configuredKey || pressedCode === `key${configuredKey}`) && !evt.repeat) {
+		if (
+			(pressedKey === configuredKey || pressedCode === `key${configuredKey}`) &&
+			!evt.repeat
+		) {
 			const activeTag = (document.activeElement?.tagName || '').toLowerCase();
-			const isEditable = (document.activeElement as HTMLElement | null)?.isContentEditable;
+			const isEditable = (document.activeElement as HTMLElement | null)
+				?.isContentEditable;
 			if (activeTag === 'input' || activeTag === 'textarea' || isEditable) {
 				return;
 			}
 			this.isKeyDown = true;
 			if (!this.lastMousePos) {
-				this.lastMousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+				this.lastMousePos = {
+					x: window.innerWidth / 2,
+					y: window.innerHeight / 2,
+				};
 			}
 			// Re-clone on keydown to capture fresh DOM snapshot
 			if (this.loupeEl) {
@@ -55,7 +64,9 @@ export class CanvasLoupeInspector {
 	}
 
 	private onKeyUp(evt: KeyboardEvent): void {
-		const configuredKey = (this.plugin.settings.loupeHotkey || 'q').toLowerCase();
+		const configuredKey = (
+			this.plugin.settings.loupeHotkey || 'q'
+		).toLowerCase();
 		const pressedKey = (evt.key || '').toLowerCase();
 		const pressedCode = (evt.code || '').toLowerCase();
 
@@ -130,9 +141,13 @@ export class CanvasLoupeInspector {
 			});
 
 			// Target .canvas-content which holds Obsidian's transformed canvas surface
-			const innerContent = (canvasEl.querySelector('.canvas-content') || canvasEl.querySelector('.canvas-nodes') || canvasEl) as HTMLElement;
+			const innerContent = (canvasEl.querySelector('.canvas-content') ||
+				canvasEl.querySelector('.canvas-nodes') ||
+				canvasEl);
 
-			let innerWrapper = this.loupeEl.querySelector<HTMLElement>('.kambas-loupe-inner');
+			let innerWrapper = this.loupeEl.querySelector<HTMLElement>(
+				'.kambas-loupe-inner'
+			);
 			if (!innerWrapper) {
 				innerWrapper = createDiv({ cls: 'kambas-loupe-inner' });
 				this.loupeEl.appendChild(innerWrapper);
@@ -141,7 +156,7 @@ export class CanvasLoupeInspector {
 			}
 
 			// Copy pixel context buffer from original HTML <canvas> elements (GIF overlays) to cloned elements
-			this.syncClonedCanvases(innerContent, innerWrapper);
+			this.syncClonedCanvases(innerContent as HTMLElement, innerWrapper);
 
 			const canvasRect = innerContent.getBoundingClientRect();
 			const offsetX = clientX - canvasRect.left;
@@ -158,9 +173,13 @@ export class CanvasLoupeInspector {
 		}
 	}
 
-	private syncClonedCanvases(sourceEl: HTMLElement, targetEl: HTMLElement): void {
+	private syncClonedCanvases(
+		sourceEl: HTMLElement,
+		targetEl: HTMLElement
+	): void {
 		const origCanvases = sourceEl.querySelectorAll<HTMLCanvasElement>('canvas');
-		const clonedCanvases = targetEl.querySelectorAll<HTMLCanvasElement>('canvas');
+		const clonedCanvases =
+			targetEl.querySelectorAll<HTMLCanvasElement>('canvas');
 		for (let i = 0; i < origCanvases.length; i++) {
 			const orig = origCanvases[i];
 			const cloned = clonedCanvases[i];

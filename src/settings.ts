@@ -1,14 +1,21 @@
-import { App, ItemView, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
+import {
+	App,
+	ItemView,
+	Notice,
+	PluginSettingTab,
+	Setting,
+	setIcon,
+} from 'obsidian';
 
 import { getText } from './i18n';
 import type KambasPlugin from './main';
-import { CanvasItemView } from './canvas/CanvasTypes';
 
 import {
 	CanvasKeyboardPanSettings,
 	DEFAULT_KEYBOARD_PAN_SETTINGS,
 	Direction,
 } from './canvas/CanvasKeyboardPan';
+import { CanvasItemView } from './canvas/CanvasTypes';
 
 export interface FilterPreset {
 	id: string;
@@ -18,6 +25,49 @@ export interface FilterPreset {
 	includeColors: string[];
 	excludeColors: string[];
 }
+
+export interface LodPresetValues {
+	qualityFactor: number;
+	tiers: number[];
+	minSourceWidth: number;
+	quality: number;
+	concurrency: number;
+	fastRasterWhileMoving: boolean;
+	prewarm: boolean;
+}
+
+export const LOD_PRESETS: Record<
+	'performance' | 'balanced' | 'high',
+	LodPresetValues
+> = {
+	performance: {
+		qualityFactor: 1.0,
+		tiers: [128, 256, 512, 1024],
+		minSourceWidth: 600,
+		quality: 0.7,
+		concurrency: 2,
+		fastRasterWhileMoving: true,
+		prewarm: false,
+	},
+	balanced: {
+		qualityFactor: 1.15,
+		tiers: [128, 320, 768, 1600],
+		minSourceWidth: 900,
+		quality: 0.82,
+		concurrency: 3,
+		fastRasterWhileMoving: false,
+		prewarm: true,
+	},
+	high: {
+		qualityFactor: 1.35,
+		tiers: [256, 512, 1024, 2048],
+		minSourceWidth: 1200,
+		quality: 0.9,
+		concurrency: 4,
+		fastRasterWhileMoving: false,
+		prewarm: true,
+	},
+};
 
 export interface KambasSettings {
 	hideImageLabel: boolean;
@@ -47,6 +97,7 @@ export interface KambasSettings {
 	tagColors?: Record<string, { text?: string; bg?: string }>;
 	// LOD Settings
 	enableLod?: boolean;
+	lodPreset?: 'performance' | 'balanced' | 'high' | 'custom';
 	lodTiers?: number[];
 	lodQualityFactor?: number;
 	lodMinSourceWidth?: number;
@@ -55,7 +106,6 @@ export interface KambasSettings {
 	lodPrewarm?: boolean;
 	lodConcurrency?: number;
 	lodFastRasterWhileMoving?: boolean;
-	lodProxyGifs?: boolean;
 	lodQuality?: number;
 	lodShowStatusBar?: boolean;
 	debug?: boolean;
@@ -87,15 +137,15 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	selectionZoomToFitHotkey: 'Space',
 	keyboardPan: DEFAULT_KEYBOARD_PAN_SETTINGS,
 	enableLod: true,
+	lodPreset: 'balanced',
 	lodTiers: [128, 320, 768, 1600],
 	lodQualityFactor: 1.15,
 	lodMinSourceWidth: 900,
 	lodMaxCacheMB: 300,
 	lodMaxMemoryMB: 96,
 	lodPrewarm: true,
-	lodConcurrency: 2,
+	lodConcurrency: 3,
 	lodFastRasterWhileMoving: false,
-	lodProxyGifs: true,
 	lodQuality: 0.82,
 	lodShowStatusBar: true,
 	debug: false,
@@ -140,7 +190,9 @@ export class KambasSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		const t = getText();
 
-		// Display & Canvas Section Header
+		// ==========================================
+		// SECTION 1: 🎨 Display & Tags
+		// ==========================================
 		new Setting(containerEl).setName(t.settingsHeading).setHeading();
 
 		new Setting(containerEl)
@@ -160,7 +212,9 @@ export class KambasSettingTab extends PluginSettingTab {
 								ItemView
 							) as unknown as CanvasItemView | null;
 							if (activeView && activeView.getViewType() === 'canvas') {
-								this.plugin.canvasImageHandler.scanAndRestoreTransforms(activeView);
+								this.plugin.canvasImageHandler.scanAndRestoreTransforms(
+									activeView
+								);
 							}
 						} else {
 							this.plugin.canvasImageHandler.gifHandler.detachAll();
@@ -239,9 +293,6 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Color Filter Section
-		new Setting(containerEl).setName(t.colorFilterPanel).setHeading();
-
 		new Setting(containerEl)
 			.setName(t.colorExtractModeName)
 			.setDesc(t.colorExtractModeDesc)
@@ -260,8 +311,294 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Performance & Base64 Optimization Section
-		new Setting(containerEl).setName(t.base64Heading).setHeading();
+		// ==========================================
+		// SECTION 2: ⚡ Canvas Performance & Optimization
+		// ==========================================
+		new Setting(containerEl)
+			.setName(t.performanceHeading || 'Canvas Performance & Optimization')
+			.setHeading();
+
+		new Setting(containerEl)
+			.setName(t.enableLodName)
+			.setDesc(t.enableLodDesc)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableLod ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.enableLod = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		const advancedContainer = containerEl.createDiv({
+			cls: 'kambas-advanced-lod-container',
+		});
+
+		let dropdownComponent: any = null;
+		new Setting(containerEl)
+			.setName(t.lodPresetName || 'Performance Profile')
+			.setDesc(
+				t.lodPresetDesc ||
+					'Choose a preset that matches your computer speed and canvas size.'
+			)
+			.addDropdown((dropdown) => {
+				dropdownComponent = dropdown;
+				dropdown
+					.addOption(
+						'performance',
+						t.lodPresetPerformance || '🚀 Performance (Fastest)'
+					)
+					.addOption(
+						'balanced',
+						t.lodPresetBalanced || '⚡ Balanced (Recommended)'
+					)
+					.addOption('high', t.lodPresetHigh || '🎨 High Quality')
+					.addOption('custom', t.lodPresetCustom || '⚙️ Custom (Advanced)')
+					.setValue(this.plugin.settings.lodPreset ?? 'balanced')
+					.onChange(async (v: string) => {
+						const value = v as 'performance' | 'balanced' | 'high' | 'custom';
+						this.plugin.settings.lodPreset = value;
+						if (value !== 'custom' && LOD_PRESETS[value]) {
+							const p = LOD_PRESETS[value];
+							this.plugin.settings.lodQualityFactor = p.qualityFactor;
+							this.plugin.settings.lodTiers = [...p.tiers];
+							this.plugin.settings.lodMinSourceWidth = p.minSourceWidth;
+							this.plugin.settings.lodQuality = p.quality;
+							this.plugin.settings.lodConcurrency = p.concurrency;
+							this.plugin.settings.lodFastRasterWhileMoving =
+								p.fastRasterWhileMoving;
+							this.plugin.settings.lodPrewarm = p.prewarm;
+
+							qualityFactorSlider?.setValue(p.qualityFactor);
+							tiersText?.setValue(p.tiers.join(', '));
+							minWidthText?.setValue(String(p.minSourceWidth));
+							qualitySlider?.setValue(p.quality);
+							prewarmToggle?.setValue(p.prewarm);
+							concurrencySlider?.setValue(p.concurrency);
+							fastRasterToggle?.setValue(p.fastRasterWhileMoving);
+
+							advancedContainer.style.display = 'none';
+						} else {
+							advancedContainer.style.display = 'block';
+						}
+						await this.plugin.saveSettings();
+					});
+			});
+
+		const where = containerEl.createEl('p', {
+			cls: 'setting-item-description',
+		});
+		where.setText(
+			t.lodCacheWhereDesc ||
+				'Image proxies are cached locally in your Obsidian application database (IndexedDB). They are isolated to this device and will not count against Obsidian Sync limits.'
+		);
+
+		new Setting(containerEl)
+			.setName(t.lodMaxCacheMBName || 'Maximum Cache Storage (MB)')
+			.setDesc(
+				t.lodMaxCacheMBDesc ||
+					'Maximum disk space used to save small image copies on your device.'
+			)
+			.addText((tx) =>
+				tx
+					.setValue(String(this.plugin.settings.lodMaxCacheMB ?? 300))
+					.onChange(async (v) => {
+						const n = parseInt(v, 10);
+						if (Number.isFinite(n) && n > 0) {
+							this.plugin.settings.lodMaxCacheMB = n;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		const sizeSetting = new Setting(containerEl)
+			.setName(t.lodCacheSizeLabel || 'Cache size')
+			.setDesc('measuring...');
+
+		const updateCacheSizeLabel = async () => {
+			if (this.plugin.cache && this.plugin.cache.store) {
+				const b = await this.plugin.cache.store.sizeBytes();
+				const mem = this.plugin.cache.mem;
+				sizeSetting.setDesc(
+					`${(b / 1024 / 1024).toFixed(1)} MB stored, ` +
+						`${mem.entries.size} proxies in memory (${(mem.bytes / 1024 / 1024).toFixed(1)} MB)`
+				);
+			}
+		};
+		void updateCacheSizeLabel();
+
+		sizeSetting.addButton((btn) =>
+			btn
+				.setButtonText(t.clearLodCacheBtn || 'Clear')
+				.setWarning()
+				.onClick(async () => {
+					if (this.plugin.cache) {
+						await this.plugin.cache.clear();
+					}
+					new Notice(t.lodCacheClearedNotice || 'Cache cleared');
+					await updateCacheSizeLabel();
+				})
+		);
+
+		advancedContainer.style.display =
+			this.plugin.settings.lodPreset === 'custom' ? 'block' : 'none';
+
+		new Setting(advancedContainer)
+			.setName(t.lodAdvancedHeading || 'Advanced Level of Detail Settings')
+			.setDesc(
+				t.lodAdvancedDesc ||
+					'Fine-tune image sharpness, resolution tiers, thread limits, and preloading behaviors.'
+			)
+			.setHeading();
+
+		const markCustom = async () => {
+			if (this.plugin.settings.lodPreset !== 'custom') {
+				this.plugin.settings.lodPreset = 'custom';
+				if (dropdownComponent) {
+					dropdownComponent.setValue('custom');
+				}
+				advancedContainer.style.display = 'block';
+				await this.plugin.saveSettings();
+			}
+		};
+
+		let qualityFactorSlider: any = null;
+		new Setting(advancedContainer)
+			.setName(t.lodQualityFactorName || 'Image Sharpness')
+			.setDesc(
+				t.lodQualityFactorDesc ||
+					'Higher values make images sharper when zooming in. Lower values save computer memory.'
+			)
+			.addSlider((sl) => {
+				qualityFactorSlider = sl;
+				sl.setLimits(0.75, 2, 0.05)
+					.setValue(this.plugin.settings.lodQualityFactor ?? 1.15)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodQualityFactor = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		let tiersText: any = null;
+		new Setting(advancedContainer)
+			.setName(t.lodTiersName || 'Image Size Tiers (px)')
+			.setDesc(
+				t.lodTiersDesc ||
+					'Step sizes in pixels for creating smaller image copies. Separate numbers with commas (e.g. 128, 320, 768, 1600).'
+			)
+			.addText((tx) => {
+				tiersText = tx;
+				tx.setValue(
+					(this.plugin.settings.lodTiers ?? [128, 320, 768, 1600]).join(', ')
+				).onChange(async (v) => {
+					const tiers = v
+						.split(',')
+						.map((x) => parseInt(x.trim(), 10))
+						.filter((x) => Number.isFinite(x) && x > 16)
+						.sort((a, b) => a - b);
+					if (!tiers.length) return;
+					this.plugin.settings.lodTiers = tiers;
+					await markCustom();
+					await this.plugin.saveSettings();
+				});
+			});
+
+		let minWidthText: any = null;
+		new Setting(advancedContainer)
+			.setName(t.lodMinSourceWidthName || 'Smallest Image to Optimize (px)')
+			.setDesc(
+				t.lodMinSourceWidthDesc ||
+					'Images smaller than this width will not be changed because they already load quickly.'
+			)
+			.addText((tx) => {
+				minWidthText = tx;
+				tx.setValue(
+					String(this.plugin.settings.lodMinSourceWidth ?? 900)
+				).onChange(async (v) => {
+					const n = parseInt(v, 10);
+					if (Number.isFinite(n) && n > 0) {
+						this.plugin.settings.lodMinSourceWidth = n;
+						await markCustom();
+						await this.plugin.saveSettings();
+					}
+				});
+			});
+
+		let qualitySlider: any = null;
+		new Setting(advancedContainer)
+			.setName(t.lodQualityName || 'Image Quality & Storage Size')
+			.setDesc(
+				t.lodQualityDesc ||
+					'Higher values make images clearer. Lower values save disk space.'
+			)
+			.addSlider((sl) => {
+				qualitySlider = sl;
+				sl.setLimits(0.5, 0.95, 0.01)
+					.setValue(this.plugin.settings.lodQuality ?? 0.82)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodQuality = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		let prewarmToggle: any = null;
+		new Setting(advancedContainer)
+			.setName(t.lodPrewarmName || 'Preload Hidden Images')
+			.setDesc(
+				t.lodPrewarmDesc ||
+					'Prepare images outside your screen view as soon as you open a canvas.'
+			)
+			.addToggle((tgl) => {
+				prewarmToggle = tgl;
+				tgl
+					.setValue(this.plugin.settings.lodPrewarm ?? true)
+					.onChange(async (v) => {
+						this.plugin.settings.lodPrewarm = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		let concurrencySlider: any = null;
+		new Setting(advancedContainer)
+			.setName(t.lodConcurrencyName || 'Simultaneous Image Loading')
+			.setDesc(
+				t.lodConcurrencyDesc ||
+					'How many images to process at the same time. Higher values load boards faster on strong computers.'
+			)
+			.addSlider((sl) => {
+				concurrencySlider = sl;
+				sl.setLimits(1, 6, 1)
+					.setValue(this.plugin.settings.lodConcurrency ?? 2)
+					.setDynamicTooltip()
+					.onChange(async (v) => {
+						this.plugin.settings.lodConcurrency = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
+
+		let fastRasterToggle: any = null;
+		new Setting(advancedContainer)
+			.setName(t.lodFastRasterName || 'Fast Pan & Zooming')
+			.setDesc(
+				t.lodFastRasterDesc ||
+					'Temporarily lowers image quality while panning or zooming so screen movement stays smooth.'
+			)
+			.addToggle((tgl) => {
+				fastRasterToggle = tgl;
+				tgl
+					.setValue(this.plugin.settings.lodFastRasterWhileMoving ?? false)
+					.onChange(async (v) => {
+						this.plugin.settings.lodFastRasterWhileMoving = v;
+						await markCustom();
+						await this.plugin.saveSettings();
+					});
+			});
 
 		new Setting(containerEl)
 			.setName(t.autoOptimizeBase64Name)
@@ -308,216 +645,9 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Canvas Image Level of Detail (LOD) Section Header
-		new Setting(containerEl).setName(t.lodHeading).setHeading();
-
-		new Setting(containerEl)
-			.setName(t.enableLodName)
-			.setDesc(t.enableLodDesc)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.enableLod ?? true)
-					.onChange(async (value) => {
-						this.plugin.settings.enableLod = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl).setName(t.lodQualityHeading || 'Quality').setHeading();
-
-		new Setting(containerEl)
-			.setName(t.lodQualityFactorName || 'Quality headroom')
-			.setDesc(
-				t.lodQualityFactorDesc ||
-					'How much larger than strictly needed each proxy is. Lower is faster and softer, higher is sharper. 1.15 is usually indistinguishable from the original.'
-			)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0.75, 2, 0.05)
-					.setValue(this.plugin.settings.lodQualityFactor ?? 1.15)
-					.setDynamicTooltip()
-					.onChange(async (v) => {
-						this.plugin.settings.lodQualityFactor = v;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t.lodTiersName || 'Detail levels')
-			.setDesc(t.lodTiersDesc || 'Proxy widths in pixels, comma separated, ascending.')
-			.addText((tx) =>
-				tx.setValue((this.plugin.settings.lodTiers ?? [128, 320, 768, 1600]).join(', ')).onChange(async (v) => {
-					const tiers = v
-						.split(',')
-						.map((x) => parseInt(x.trim(), 10))
-						.filter((x) => Number.isFinite(x) && x > 16)
-						.sort((a, b) => a - b);
-					if (!tiers.length) return;
-					this.plugin.settings.lodTiers = tiers;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName(t.lodMinSourceWidthName || 'Minimum source width')
-			.setDesc(t.lodMinSourceWidthDesc || 'Images narrower than this are left alone; the swap would not pay off.')
-			.addText((tx) =>
-				tx.setValue(String(this.plugin.settings.lodMinSourceWidth ?? 900)).onChange(async (v) => {
-					const n = parseInt(v, 10);
-					if (Number.isFinite(n) && n > 0) {
-						this.plugin.settings.lodMinSourceWidth = n;
-						await this.plugin.saveSettings();
-					}
-				})
-			);
-
-		new Setting(containerEl)
-			.setName(t.lodQualityName || 'Proxy compression')
-			.setDesc(t.lodQualityDesc || '0.6 is noticeably lighter, 0.9 is near lossless.')
-			.addSlider((sl) =>
-				sl
-					.setLimits(0.5, 0.95, 0.01)
-					.setValue(this.plugin.settings.lodQuality ?? 0.82)
-					.setDynamicTooltip()
-					.onChange(async (v) => {
-						this.plugin.settings.lodQuality = v;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl).setName(t.lodPerfHeading || 'Performance').setHeading();
-
-		new Setting(containerEl)
-			.setName(t.lodPrewarmName || 'Build proxies ahead of time')
-			.setDesc(t.lodPrewarmDesc || 'When a board opens, prepare every image in the background, including offscreen ones.')
-			.addToggle((tgl) =>
-				tgl.setValue(this.plugin.settings.lodPrewarm ?? true).onChange(async (v) => {
-					this.plugin.settings.lodPrewarm = v;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName(t.lodConcurrencyName || 'Concurrent decodes')
-			.setDesc(t.lodConcurrencyDesc || 'Each one briefly costs the full size of the image. Higher is faster but heavier.')
-			.addSlider((sl) =>
-				sl
-					.setLimits(1, 6, 1)
-					.setValue(this.plugin.settings.lodConcurrency ?? 2)
-					.setDynamicTooltip()
-					.onChange(async (v) => {
-						this.plugin.settings.lodConcurrency = v;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t.lodFastRasterName || 'Cheap rasterization while moving')
-			.setDesc(
-				t.lodFastRasterDesc ||
-					'For 200 ms during a zoom, images are drawn the quick way. Helps on the heaviest boards, but movement looks blockier.'
-			)
-			.addToggle((tgl) =>
-				tgl.setValue(this.plugin.settings.lodFastRasterWhileMoving ?? false).onChange(async (v) => {
-					this.plugin.settings.lodFastRasterWhileMoving = v;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName(t.lodProxyGifsName || 'Freeze GIFs when zoomed out')
-			.setDesc(t.lodProxyGifsDesc || 'Animated GIFs show their first frame while small. Animation returns up close.')
-			.addToggle((tgl) =>
-				tgl.setValue(this.plugin.settings.lodProxyGifs ?? true).onChange(async (v) => {
-					this.plugin.settings.lodProxyGifs = v;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl).setName(t.lodCacheHeading || 'Cache').setHeading();
-
-		const where = containerEl.createEl('p', { cls: 'setting-item-description' });
-		where.setText(
-			t.lodCacheWhereDesc ||
-				'Proxies are stored in the browser database inside your Obsidian profile, not in your vault. They never sync and never count against Obsidian Sync storage.'
-		);
-
-		new Setting(containerEl)
-			.setName(t.lodMaxCacheMBName)
-			.setDesc(t.lodMaxCacheMBDesc)
-			.addText((tx) =>
-				tx.setValue(String(this.plugin.settings.lodMaxCacheMB ?? 300)).onChange(async (v) => {
-					const n = parseInt(v, 10);
-					if (Number.isFinite(n) && n > 0) {
-						this.plugin.settings.lodMaxCacheMB = n;
-						await this.plugin.saveSettings();
-					}
-				})
-			);
-
-		new Setting(containerEl)
-			.setName(t.lodMaxMemoryMBName)
-			.setDesc(t.lodMaxMemoryMBDesc)
-			.addText((tx) =>
-				tx.setValue(String(this.plugin.settings.lodMaxMemoryMB ?? 96)).onChange(async (v) => {
-					const n = parseInt(v, 10);
-					if (Number.isFinite(n) && n > 0) {
-						this.plugin.settings.lodMaxMemoryMB = n;
-						await this.plugin.saveSettings();
-					}
-				})
-			);
-
-		const sizeSetting = new Setting(containerEl)
-			.setName(t.lodCacheSizeLabel || 'Cache size')
-			.setDesc('measuring...');
-
-		if (this.plugin.cache && this.plugin.cache.store) {
-			this.plugin.cache.store.sizeBytes().then((b) => {
-				const mem = this.plugin.cache.mem;
-				sizeSetting.setDesc(
-					`${(b / 1024 / 1024).toFixed(1)} MB stored, ` +
-						`${mem.entries.size} proxies in memory (${(mem.bytes / 1024 / 1024).toFixed(1)} MB)`
-				);
-			});
-		}
-
-		sizeSetting.addButton((btn) =>
-			btn
-				.setButtonText(t.clearLodCacheBtn || 'Clear')
-				.setWarning()
-				.onClick(async () => {
-					if (this.plugin.cache) {
-						await this.plugin.cache.clear();
-					}
-					new Notice(t.lodCacheClearedNotice || 'Cache cleared');
-					this.display();
-				})
-		);
-
-		new Setting(containerEl).setName(t.lodOtherHeading || 'Other').setHeading();
-
-		new Setting(containerEl)
-			.setName(t.lodShowStatusBarName || 'Show in status bar')
-			.addToggle((tgl) =>
-				tgl.setValue(this.plugin.settings.lodShowStatusBar ?? true).onChange(async (v) => {
-					this.plugin.settings.lodShowStatusBar = v;
-					await this.plugin.saveSettings();
-					new Notice(t.lodShowStatusBarNotice || 'Reload the plugin to apply');
-				})
-			);
-
-		new Setting(containerEl)
-			.setName(t.debugName || 'Debug logging')
-			.setDesc(t.debugDesc || 'Writes zoom level and swap counts to the developer console (Ctrl+Shift+I).')
-			.addToggle((tgl) =>
-				tgl.setValue(this.plugin.settings.debug ?? false).onChange(async (v) => {
-					this.plugin.settings.debug = v;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		// Visual Inspection Section
+		// ==========================================
+		// SECTION 3: 🔍 Inspection & Visual Tools
+		// ==========================================
 		new Setting(containerEl).setName(t.loupeHeading).setHeading();
 
 		new Setting(containerEl)
@@ -828,6 +958,42 @@ export class KambasSettingTab extends PluginSettingTab {
 						void this.plugin.saveSettings();
 					});
 			});
+
+		// ==========================================
+		// SECTION 5: 🛠️ Diagnostics & Status Bar
+		// ==========================================
+		new Setting(containerEl)
+			.setName(t.lodOtherHeading || 'Status Bar & Diagnostics')
+			.setHeading();
+
+		new Setting(containerEl)
+			.setName(t.lodShowStatusBarName || 'Show in status bar')
+			.addToggle((tgl) =>
+				tgl
+					.setValue(this.plugin.settings.lodShowStatusBar ?? true)
+					.onChange(async (v) => {
+						this.plugin.settings.lodShowStatusBar = v;
+						await this.plugin.saveSettings();
+						new Notice(
+							t.lodShowStatusBarNotice || 'Reload the plugin to apply'
+						);
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t.debugName || 'Debug logging')
+			.setDesc(
+				t.debugDesc ||
+					'Writes zoom level and swap counts to the developer console (Ctrl+Shift+I).'
+			)
+			.addToggle((tgl) =>
+				tgl
+					.setValue(this.plugin.settings.debug ?? false)
+					.onChange(async (v) => {
+						this.plugin.settings.debug = v;
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 
 	public async saveKeys(

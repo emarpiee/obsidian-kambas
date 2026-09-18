@@ -7,7 +7,11 @@ export class TagRenameModal extends Modal {
 	private onRename: (newTag: string) => void;
 	private newTagValue: string;
 
-	constructor(app: App, currentTag: string, onRename: (newTag: string) => void) {
+	constructor(
+		app: App,
+		currentTag: string,
+		onRename: (newTag: string) => void
+	) {
 		super(app);
 		this.currentTag = currentTag;
 		this.newTagValue = currentTag;
@@ -47,7 +51,12 @@ export class TagRenameModal extends Modal {
 			});
 
 		const btnRow = contentEl.createDiv({ cls: 'kambas-tag-btn-row' });
-		btnRow.setCssProps({ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' });
+		btnRow.setCssProps({
+			display: 'flex',
+			justifyContent: 'flex-end',
+			gap: '8px',
+			marginTop: '16px',
+		});
 
 		const cancelBtn = btnRow.createEl('button', {
 			text: t.cancelBtn ?? 'Cancel',

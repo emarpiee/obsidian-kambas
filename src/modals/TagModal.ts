@@ -67,9 +67,9 @@ export class TagModal extends Modal {
 
 		const titleText =
 			this.selectedCount > 1
-				? (t.itemsSelectedTitle
-						? t.itemsSelectedTitle(t.tagModalTitle ?? 'Tags', this.selectedCount)
-						: `${t.tagModalTitle ?? 'Tags'} (${this.selectedCount} items selected)`)
+				? t.itemsSelectedTitle
+					? t.itemsSelectedTitle(t.tagModalTitle ?? 'Tags', this.selectedCount)
+					: `${t.tagModalTitle ?? 'Tags'} (${this.selectedCount} items selected)`
 				: (t.tagModalTitle ?? 'Tags');
 		this.titleEl.setText(titleText);
 

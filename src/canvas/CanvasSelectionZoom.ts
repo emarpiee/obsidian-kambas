@@ -72,10 +72,7 @@ export class CanvasSelectionZoom {
 			}
 		});
 		return (
-			foundView ??
-			(activeLeaf?.getViewType() === 'canvas'
-				? (activeLeaf)
-				: null)
+			foundView ?? (activeLeaf?.getViewType() === 'canvas' ? activeLeaf : null)
 		);
 	}
 
@@ -117,8 +114,6 @@ export class CanvasSelectionZoom {
 
 		evt.preventDefault();
 		evt.stopPropagation();
-
-
 
 		// Determine if same selection as last zoom-in
 		const isSameSelection =

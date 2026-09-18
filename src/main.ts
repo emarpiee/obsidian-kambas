@@ -7,6 +7,8 @@ import { DEFAULT_SETTINGS, KambasSettingTab, KambasSettings } from './settings';
 import { CanvasImageHandler } from './canvas/CanvasImageHandler';
 import {
 	CanvasBinder,
+	EXPORT_ACTION_RE,
+	EXPORT_FORMAT_RE,
 	ProxyCache,
 	Semaphore,
 	getLodSettings,
@@ -17,9 +19,6 @@ import { CanvasSelectionZoom } from './canvas/CanvasSelectionZoom';
 import { CanvasItemView } from './canvas/CanvasTypes';
 import { FolderSuggestModal } from './modals/FolderSuggestModal';
 import { OpacityModal } from './modals/OpacityModal';
-
-const EXPORT_ACTION_RE = /export|screenshot/i;
-const EXPORT_FORMAT_RE = /image|png|svg|jpe?g|webp|screenshot/i;
 
 export default class KambasPlugin extends Plugin {
 	public settings!: KambasSettings;
@@ -46,23 +45,25 @@ export default class KambasPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'toggle-lod',
-			name: 'Toggle proxy swapping (Canvas Image LOD)',
+			name: 'Toggle proxy swapping (canvas image lod)',
 			callback: async () => {
 				this.settings.enableLod = !(this.settings.enableLod ?? true);
 				await this.saveSettings();
-				new Notice(`Canvas Image LOD: ${this.settings.enableLod ? 'enabled' : 'disabled'}`);
+				new Notice(
+					`Canvas image lod: ${this.settings.enableLod ? 'enabled' : 'disabled'}`
+				);
 			},
 		});
 
 		this.addCommand({
 			id: 'prewarm-active-lod',
-			name: 'Build proxies for current canvas (Canvas Image LOD)',
+			name: 'Build proxies for current canvas (canvas image lod)',
 			checkCallback: (checking) => {
 				const binder = this.activeBinder();
 				if (!binder) return false;
 				if (!checking) {
-					binder.prewarm();
-					new Notice('Canvas Image LOD: building proxies...');
+					void binder.prewarm();
+					new Notice('Canvas image lod: building proxies...');
 				}
 				return true;
 			},
@@ -70,18 +71,18 @@ export default class KambasPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'clear-lod-cache',
-			name: 'Clear proxy cache (Canvas Image LOD)',
+			name: 'Clear proxy cache (canvas image lod)',
 			callback: async () => {
 				for (const b of this.binders.values()) b.restoreAll();
 				await this.cache.clear();
-				new Notice('Canvas Image LOD: cache cleared');
+				new Notice('Canvas image lod: cache cleared');
 				this.scheduleSyncAll();
 			},
 		});
 
 		this.addCommand({
 			id: 'restore-originals-lod',
-			name: 'Restore original images on current canvas (Canvas Image LOD)',
+			name: 'Restore original images on current canvas (canvas image lod)',
 			checkCallback: (checking) => {
 				const binder = this.activeBinder();
 				if (!binder) return false;
@@ -143,7 +144,10 @@ export default class KambasPlugin extends Plugin {
 					const activeView = this.app.workspace.getActiveViewOfType(ItemView);
 					if (activeView?.getViewType() !== 'canvas') return;
 
-					if (this.binders.size !== this.app.workspace.getLeavesOfType('canvas').length) {
+					if (
+						this.binders.size !==
+						this.app.workspace.getLeavesOfType('canvas').length
+					) {
 						this.refreshBinders();
 					}
 					this._tick = (this._tick || 0) + 1;
@@ -166,7 +170,7 @@ export default class KambasPlugin extends Plugin {
 				try {
 					this.refreshBinders();
 					this.patchExportCommands();
-					this.cache.store.prune();
+					void this.cache.store.prune();
 				} catch (e) {
 					console.error('[canvas-image-lod] initial setup failed', e);
 				}
@@ -239,7 +243,11 @@ export default class KambasPlugin extends Plugin {
 						extractedPath = rawNodeObj.file.path;
 					} else if (typeof rawNodeObj.file === 'string') {
 						extractedPath = rawNodeObj.file;
-					} else if (rawNodeObj.file && typeof rawNodeObj.file === 'object' && 'path' in rawNodeObj.file) {
+					} else if (
+						rawNodeObj.file &&
+						typeof rawNodeObj.file === 'object' &&
+						'path' in rawNodeObj.file
+					) {
 						extractedPath = (rawNodeObj.file as { path: string }).path;
 					} else if (rawNodeObj.filePath) {
 						extractedPath = rawNodeObj.filePath;
@@ -247,8 +255,12 @@ export default class KambasPlugin extends Plugin {
 						extractedPath = unknownData.file;
 					}
 
-					const isEmbeddedLink = Boolean(nodeUrl && nodeUrl.startsWith('data:image/'));
-					const ext = extractedPath ? extractedPath.split('.').pop()?.toLowerCase() || '' : '';
+					const isEmbeddedLink = Boolean(
+						nodeUrl && nodeUrl.startsWith('data:image/')
+					);
+					const ext = extractedPath
+						? extractedPath.split('.').pop()?.toLowerCase() || ''
+						: '';
 					const isVaultImageFile = Boolean(
 						extractedPath &&
 						[
@@ -745,21 +757,27 @@ export default class KambasPlugin extends Plugin {
 	}
 
 	patchExportCommands(): void {
-		const commands = (this.app as any).commands?.commands || {};
+		const appWithCommands = this.app as unknown as { commands?: { commands?: Record<string, Record<string, unknown>> } };
+		const commands = appWithCommands.commands?.commands || {};
 		for (const id of Object.keys(commands)) {
 			if (!EXPORT_ACTION_RE.test(id) || !EXPORT_FORMAT_RE.test(id)) continue;
 			this.wrapCommand(commands[id], id);
 		}
 	}
 
-	wrapCommand(cmd: any, id: string): void {
+	wrapCommand(cmdObj: unknown, id: string): void {
+		const cmd = cmdObj as {
+			_cilPatched?: boolean;
+			callback?: (...args: unknown[]) => unknown;
+			checkCallback?: (checking: boolean, ...args: unknown[]) => unknown;
+		} | null;
 		if (!cmd || cmd._cilPatched) return;
 		const self = this;
 		cmd._cilPatched = true;
 
 		if (typeof cmd.callback === 'function') {
 			const orig = cmd.callback;
-			cmd.callback = function (...args: any[]) {
+			cmd.callback = function (...args: unknown[]): unknown {
 				return self.beforeExport(() => orig.apply(this, args));
 			};
 			this._patched.push(() => {
@@ -768,7 +786,7 @@ export default class KambasPlugin extends Plugin {
 			});
 		} else if (typeof cmd.checkCallback === 'function') {
 			const orig = cmd.checkCallback;
-			cmd.checkCallback = function (checking: boolean, ...args: any[]) {
+			cmd.checkCallback = function (checking: boolean, ...args: unknown[]): unknown {
 				if (checking) return orig.call(this, true, ...args);
 				self.beforeExport(() => orig.call(this, false, ...args));
 				return true;
@@ -778,21 +796,25 @@ export default class KambasPlugin extends Plugin {
 				delete cmd._cilPatched;
 			});
 		}
-		if (getLodSettings(this).debug) console.log('[canvas-image-lod] wrapped export command', id);
+		if (getLodSettings(this).debug) {
+			console.debug('[canvas-image-lod] wrapped export command', id);
+		}
 	}
 
 	beforeExport(run: () => void): void {
 		const binder = this.activeBinder();
 		if (!binder || !binder.hasProxies()) return run();
 		binder.suspend();
-		binder.waitForImages(8000).then(run, run);
+		void binder.waitForImages(8000).then(run, run);
 	}
 
 	activeBinder(): CanvasBinder | null {
-		const leaf = this.app.workspace.activeLeaf;
+		const leaf = (this.app.workspace as unknown as { activeLeaf?: WorkspaceLeaf }).activeLeaf;
 		const direct = leaf ? this.binders.get(leaf) : null;
 		if (direct) return direct;
-		return this.binders.size === 1 ? this.binders.values().next().value || null : null;
+		return this.binders.size === 1
+			? this.binders.values().next().value || null
+			: null;
 	}
 
 	refreshBinders(): void {
@@ -855,7 +877,7 @@ export default class KambasPlugin extends Plugin {
 		this._statusSig = sig;
 
 		if (!s.enabled) {
-			this.statusEl.setText('LOD off');
+			this.statusEl.setText('Lod off');
 			this.statusEl.className = 'status-bar-item cil-status cil-status-off';
 			return;
 		}

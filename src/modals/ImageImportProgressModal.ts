@@ -1,4 +1,5 @@
 import { App, Modal } from 'obsidian';
+
 import { getText } from '../i18n';
 
 export class ImageImportProgressModal extends Modal {
@@ -22,18 +23,26 @@ export class ImageImportProgressModal extends Modal {
 
 		titleEl.setText(t.importProgressTitle);
 
-		const container = contentEl.createDiv({ cls: 'kambas-import-progress-container' });
+		const container = contentEl.createDiv({
+			cls: 'kambas-import-progress-container',
+		});
 
 		this.countEl = container.createDiv({ cls: 'kambas-import-progress-count' });
 		this.countEl.setText(`0 / ${this.total}`);
 
-		this.progressBarEl = container.createEl('progress', { cls: 'kambas-import-progress-bar' });
+		this.progressBarEl = container.createEl('progress', {
+			cls: 'kambas-import-progress-bar',
+		});
 		this.progressBarEl.max = this.total;
 		this.progressBarEl.value = 0;
 
-		this.statusEl = container.createDiv({ cls: 'kambas-import-progress-status' });
+		this.statusEl = container.createDiv({
+			cls: 'kambas-import-progress-status',
+		});
 
-		const btnContainer = contentEl.createDiv({ cls: 'modal-button-container kambas-import-modal-buttons' });
+		const btnContainer = contentEl.createDiv({
+			cls: 'modal-button-container kambas-import-modal-buttons',
+		});
 
 		const cancelBtn = btnContainer.createEl('button', {
 			text: t.cancelBtn || 'Cancel',
@@ -45,7 +54,11 @@ export class ImageImportProgressModal extends Modal {
 		});
 	}
 
-	public updateProgress(current: number, filename: string, statusMessage?: string): void {
+	public updateProgress(
+		current: number,
+		filename: string,
+		statusMessage?: string
+	): void {
 		this.current = current;
 		this.currentFilename = filename;
 		const t = getText();
@@ -58,7 +71,10 @@ export class ImageImportProgressModal extends Modal {
 		}
 		if (this.statusEl) {
 			this.statusEl.setText(
-				statusMessage || (filename ? t.importProgressStatus(current, this.total, filename) : '')
+				statusMessage ||
+					(filename
+						? t.importProgressStatus(current, this.total, filename)
+						: '')
 			);
 		}
 	}

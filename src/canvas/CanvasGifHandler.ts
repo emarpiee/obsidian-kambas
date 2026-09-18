@@ -1,10 +1,15 @@
 import { App, Notice, TFile, requestUrl } from 'obsidian';
-import { CanvasGifDecoder } from './CanvasGifDecoder';
-import { CanvasGifToolbar } from '../views/CanvasGifToolbar';
-import { CanvasElement } from './CanvasTypes';
-import { arrayBufferToBase64DataUrl, saveFileToVault } from '../utils/imageUtils';
+
 import { getText } from '../i18n';
+import { CanvasGifDecoder } from './CanvasGifDecoder';
 import { getOrigSrcFromImg } from './CanvasImageLOD';
+import { CanvasElement } from './CanvasTypes';
+
+import {
+	arrayBufferToBase64DataUrl,
+	saveFileToVault,
+} from '../utils/imageUtils';
+import { CanvasGifToolbar } from '../views/CanvasGifToolbar';
 
 export interface ActiveGifSession {
 	nodeId: string;
@@ -21,7 +26,11 @@ export interface ActiveGifSession {
 	loopId: number;
 	isDisposed: boolean;
 	file?: TFile;
-	unknownData?: { kambasGifPaused?: boolean; kambasGifFrame?: number; kambasGifSpeed?: number };
+	unknownData?: {
+		kambasGifPaused?: boolean;
+		kambasGifFrame?: number;
+		kambasGifSpeed?: number;
+	};
 }
 
 export class CanvasGifHandler {
@@ -30,9 +39,15 @@ export class CanvasGifHandler {
 	private canceledSessions: Set<string> = new Set();
 	private activeToolbar: CanvasGifToolbar | null = null;
 	private activeToolbarNodeIds: string[] = [];
-	private lastKnownState: Map<string, { isPaused: boolean; frame: number; speed: number }> = new Map();
+	private lastKnownState: Map<
+		string,
+		{ isPaused: boolean; frame: number; speed: number }
+	> = new Map();
 
-	constructor(private app: App, private plugin: import('../main').default) {}
+	constructor(
+		private app: App,
+		private plugin: import('../main').default
+	) {}
 
 	public saveNodeGifState(
 		canvas: CanvasElement | undefined,
@@ -126,7 +141,11 @@ export class CanvasGifHandler {
 		imgEl: HTMLImageElement,
 		file?: TFile,
 		canvas?: CanvasElement,
-		unknownData?: { kambasGifPaused?: boolean; kambasGifFrame?: number; kambasGifSpeed?: number },
+		unknownData?: {
+			kambasGifPaused?: boolean;
+			kambasGifFrame?: number;
+			kambasGifSpeed?: number;
+		},
 		containerEl?: HTMLElement
 	): Promise<void> {
 		const existingSession = this.activeSessions.get(nodeId);
@@ -170,15 +189,28 @@ export class CanvasGifHandler {
 				try {
 					buffer = await this.app.vault.readBinary(file);
 				} catch (err) {
-					console.warn('Failed to read GIF binary from vault file, trying fetch fallback:', err);
+					console.warn(
+						'Failed to read GIF binary from vault file, trying fetch fallback:',
+						err
+					);
 				}
 			}
 
 			if (!buffer) {
 				const origSrc =
 					getOrigSrcFromImg(imgEl) ||
-					(canvas?.nodes?.get(nodeId) as unknown as { url?: string; unknownData?: { url?: string } })?.url ||
-					(canvas?.nodes?.get(nodeId) as unknown as { url?: string; unknownData?: { url?: string } })?.unknownData?.url ||
+					(
+						canvas?.nodes?.get(nodeId) as unknown as {
+							url?: string;
+							unknownData?: { url?: string };
+						}
+					)?.url ||
+					(
+						canvas?.nodes?.get(nodeId) as unknown as {
+							url?: string;
+							unknownData?: { url?: string };
+						}
+					)?.unknownData?.url ||
 					imgEl.src;
 
 				if (origSrc) {
@@ -195,11 +227,17 @@ export class CanvasGifHandler {
 								}
 								buffer = bytes.buffer;
 							}
-						} else if (origSrc.startsWith('app://') || origSrc.startsWith('http://') || origSrc.startsWith('https://') || origSrc.startsWith('file://')) {
+						} else if (
+							origSrc.startsWith('app://') ||
+							origSrc.startsWith('http://') ||
+							origSrc.startsWith('https://') ||
+							origSrc.startsWith('file://')
+						) {
 							const res = await requestUrl({ url: origSrc });
 							buffer = res.arrayBuffer;
 						} else {
-							const abstractFile = this.app.vault.getAbstractFileByPath(origSrc);
+							const abstractFile =
+								this.app.vault.getAbstractFileByPath(origSrc);
 							if (abstractFile instanceof TFile) {
 								buffer = await this.app.vault.readBinary(abstractFile);
 							} else if (imgEl.src) {
@@ -289,7 +327,10 @@ export class CanvasGifHandler {
 				rawNodeObj?.unknownData?.kambasGifSpeed ??
 				rawNodeObj?.kambasGifSpeed ??
 				1.0;
-			const clampedFrame = Math.max(0, Math.min(initialFrame, decoder.getFrameCount() - 1));
+			const clampedFrame = Math.max(
+				0,
+				Math.min(initialFrame, decoder.getFrameCount() - 1)
+			);
 
 			const session: ActiveGifSession = {
 				nodeId,
@@ -344,7 +385,8 @@ export class CanvasGifHandler {
 					.filter((el): el is HTMLElement => Boolean(el) && el.isConnected);
 
 				if (selectedNodeEls.length > 0) {
-					const targetContainer = containerEl || (selectedNodeEls[0].closest('.canvas'));
+					const targetContainer =
+						containerEl || selectedNodeEls[0].closest('.canvas');
 					this.activeToolbar.updatePosition(selectedNodeEls, targetContainer);
 					this.toolbarPositionRafId = window.requestAnimationFrame(loop);
 					return;
@@ -370,13 +412,21 @@ export class CanvasGifHandler {
 			if (session) {
 				const el = session.nodeEl;
 				if (!el || !el.isConnected) return false;
-				const canvasObj = canvas as unknown as { selection?: Set<unknown>; nodes?: Map<string, unknown> };
+				const canvasObj = canvas as unknown as {
+					selection?: Set<unknown>;
+					nodes?: Map<string, unknown>;
+				};
 				const canvasNode = canvasObj?.nodes?.get(id);
 				const hasSelectionObject = Boolean(canvasObj?.selection);
-				const isNodeInSelection = Boolean(canvasObj?.selection && canvasNode && canvasObj.selection.has(canvasNode));
+				const isNodeInSelection = Boolean(
+					canvasObj?.selection &&
+					canvasNode &&
+					canvasObj.selection.has(canvasNode)
+				);
 				const isSel = hasSelectionObject
 					? isNodeInSelection
-					: el.classList.contains('is-selected') || el.classList.contains('is-focused');
+					: el.classList.contains('is-selected') ||
+						el.classList.contains('is-focused');
 				return isSel;
 			}
 			return this.pendingSessions.has(id);
@@ -404,7 +454,9 @@ export class CanvasGifHandler {
 		const isSameSelection =
 			this.activeToolbar !== null &&
 			this.activeToolbarNodeIds.length === validSelectedIds.length &&
-			this.activeToolbarNodeIds.every((id, index) => id === validSelectedIds[index]);
+			this.activeToolbarNodeIds.every(
+				(id, index) => id === validSelectedIds[index]
+			);
 
 		const primaryId = validSelectedIds[0];
 		const primarySession = this.activeSessions.get(primaryId);
@@ -438,28 +490,32 @@ export class CanvasGifHandler {
 
 		const isMultiSelect = validSelectedIds.length > 1;
 
-		const toolbar = new CanvasGifToolbar(containerEl, primarySession.decoder.getFrameCount(), {
-			onTogglePlay: (): void => {
-				void this.togglePlayMulti(validSelectedIds, canvas);
-			},
-			onStepPrev: (): void => {
-				void this.stepFrameMulti(validSelectedIds, -1, canvas);
-			},
-			onStepNext: (): void => {
-				void this.stepFrameMulti(validSelectedIds, 1, canvas);
-			},
-			onSeek: (frameIndex: number): void => {
-				void this.seekFrameMulti(validSelectedIds, frameIndex, canvas);
-			},
-			onChangeSpeed: (speed: number): void => {
-				void this.setSpeedMulti(validSelectedIds, speed, canvas);
-			},
-			onExtractFrame: (): void => {
-				if (!isMultiSelect) {
-					void this.extractFrame(primaryId, canvas);
-				}
-			},
-		});
+		const toolbar = new CanvasGifToolbar(
+			containerEl,
+			primarySession.decoder.getFrameCount(),
+			{
+				onTogglePlay: (): void => {
+					void this.togglePlayMulti(validSelectedIds, canvas);
+				},
+				onStepPrev: (): void => {
+					void this.stepFrameMulti(validSelectedIds, -1, canvas);
+				},
+				onStepNext: (): void => {
+					void this.stepFrameMulti(validSelectedIds, 1, canvas);
+				},
+				onSeek: (frameIndex: number): void => {
+					void this.seekFrameMulti(validSelectedIds, frameIndex, canvas);
+				},
+				onChangeSpeed: (speed: number): void => {
+					void this.setSpeedMulti(validSelectedIds, speed, canvas);
+				},
+				onExtractFrame: (): void => {
+					if (!isMultiSelect) {
+						void this.extractFrame(primaryId, canvas);
+					}
+				},
+			}
+		);
 
 		toolbar.setMultiSelect(isMultiSelect);
 		toolbar.updateState(
@@ -504,7 +560,8 @@ export class CanvasGifHandler {
 				.filter((el): el is HTMLElement => Boolean(el) && el.isConnected);
 
 			if (selectedNodeEls.length > 0) {
-				const targetContainer = containerEl || (selectedNodeEls[0].closest('.canvas'));
+				const targetContainer =
+					containerEl || selectedNodeEls[0].closest('.canvas');
 				this.activeToolbar.updatePosition(selectedNodeEls, targetContainer);
 			} else {
 				this.destroyToolbar();
@@ -549,7 +606,8 @@ export class CanvasGifHandler {
 		}
 
 		// Only retain overlay if explicitly requested AND elements are still connected in DOM
-		const isDomValid = session.nodeEl.isConnected && session.canvasEl.isConnected;
+		const isDomValid =
+			session.nodeEl.isConnected && session.canvasEl.isConnected;
 
 		if (keepPausedFrame && isDomValid) {
 			session.isDisposed = false;
@@ -602,7 +660,13 @@ export class CanvasGifHandler {
 				session.unknownData.kambasGifFrame = session.currentFrame;
 				session.unknownData.kambasGifSpeed = session.speed;
 			}
-			this.saveNodeGifState(canvas, session.nodeId, isPaused, session.currentFrame, session.speed);
+			this.saveNodeGifState(
+				canvas,
+				session.nodeId,
+				isPaused,
+				session.currentFrame,
+				session.speed
+			);
 
 			if (session.isPlaying) {
 				session.lastFrameTime = performance.now();
@@ -651,7 +715,13 @@ export class CanvasGifHandler {
 				session.unknownData.kambasGifFrame = nextFrame;
 				session.unknownData.kambasGifSpeed = session.speed;
 			}
-			this.saveNodeGifState(canvas, session.nodeId, true, nextFrame, session.speed);
+			this.saveNodeGifState(
+				canvas,
+				session.nodeId,
+				true,
+				nextFrame,
+				session.speed
+			);
 			await this.renderFrame(session, nextFrame);
 		}
 
@@ -686,7 +756,13 @@ export class CanvasGifHandler {
 				session.unknownData.kambasGifFrame = clampedFrame;
 				session.unknownData.kambasGifSpeed = session.speed;
 			}
-			this.saveNodeGifState(canvas, session.nodeId, isPaused, clampedFrame, session.speed);
+			this.saveNodeGifState(
+				canvas,
+				session.nodeId,
+				isPaused,
+				clampedFrame,
+				session.speed
+			);
 			await this.renderFrame(session, clampedFrame);
 		}
 
@@ -699,7 +775,11 @@ export class CanvasGifHandler {
 		);
 	}
 
-	private setSpeedMulti(nodeIds: string[], speed: number, canvas?: CanvasElement): void {
+	private setSpeedMulti(
+		nodeIds: string[],
+		speed: number,
+		canvas?: CanvasElement
+	): void {
 		const sessions = nodeIds
 			.map((id) => this.activeSessions.get(id))
 			.filter((s): s is ActiveGifSession => Boolean(s));
@@ -709,7 +789,13 @@ export class CanvasGifHandler {
 			if (session.unknownData) {
 				session.unknownData.kambasGifSpeed = speed;
 			}
-			this.saveNodeGifState(canvas, session.nodeId, !session.isPlaying, session.currentFrame, speed);
+			this.saveNodeGifState(
+				canvas,
+				session.nodeId,
+				!session.isPlaying,
+				session.currentFrame,
+				speed
+			);
 		}
 
 		const primary = sessions[0];
@@ -761,12 +847,17 @@ export class CanvasGifHandler {
 		}
 
 		const loop = async (now: number): Promise<void> => {
-			if (session.isDisposed || !session.isPlaying || session.loopId !== currentLoopId) {
+			if (
+				session.isDisposed ||
+				!session.isPlaying ||
+				session.loopId !== currentLoopId
+			) {
 				session.animFrameId = null;
 				return;
 			}
 
-			const delay = session.decoder.getFrameDuration(session.currentFrame) / session.speed;
+			const delay =
+				session.decoder.getFrameDuration(session.currentFrame) / session.speed;
 			const elapsed = now - session.lastFrameTime;
 
 			if (elapsed >= delay) {
@@ -780,7 +871,11 @@ export class CanvasGifHandler {
 					console.error('Error rendering GIF frame:', err);
 				}
 
-				if (session.isDisposed || !session.isPlaying || session.loopId !== currentLoopId) {
+				if (
+					session.isDisposed ||
+					!session.isPlaying ||
+					session.loopId !== currentLoopId
+				) {
 					session.animFrameId = null;
 					return;
 				}
@@ -789,11 +884,20 @@ export class CanvasGifHandler {
 					const isAnyPlaying = this.activeToolbarNodeIds.some(
 						(id) => this.activeSessions.get(id)?.isPlaying ?? false
 					);
-					this.activeToolbar?.updateState(isAnyPlaying, session.currentFrame, total, session.speed);
+					this.activeToolbar?.updateState(
+						isAnyPlaying,
+						session.currentFrame,
+						total,
+						session.speed
+					);
 				}
 			}
 
-			if (!session.isDisposed && session.isPlaying && session.loopId === currentLoopId) {
+			if (
+				!session.isDisposed &&
+				session.isPlaying &&
+				session.loopId === currentLoopId
+			) {
 				session.animFrameId = window.requestAnimationFrame((time) => {
 					void loop(time);
 				});
@@ -807,7 +911,10 @@ export class CanvasGifHandler {
 		});
 	}
 
-	private async renderFrame(session: ActiveGifSession, frameIndex: number): Promise<void> {
+	private async renderFrame(
+		session: ActiveGifSession,
+		frameIndex: number
+	): Promise<void> {
 		await session.decoder.renderFrameToCanvas(
 			frameIndex,
 			session.ctx,
@@ -816,7 +923,10 @@ export class CanvasGifHandler {
 		);
 	}
 
-	private async extractFrame(nodeId: string, canvas?: CanvasElement): Promise<void> {
+	private async extractFrame(
+		nodeId: string,
+		canvas?: CanvasElement
+	): Promise<void> {
 		const session = this.activeSessions.get(nodeId);
 		if (!session) return;
 
@@ -836,16 +946,19 @@ export class CanvasGifHandler {
 			};
 			const isEmbedded = Boolean(
 				(rawNode?.url && rawNode.url.startsWith('data:image/')) ||
-				(rawNode?.unknownData?.url && rawNode.unknownData.url.startsWith('data:image/')) ||
-				(rawNode?.unknownData?.type === 'link') ||
+				(rawNode?.unknownData?.url &&
+					rawNode.unknownData.url.startsWith('data:image/')) ||
+				rawNode?.unknownData?.type === 'link' ||
 				(session.imgEl?.src && session.imgEl.src.startsWith('data:image/'))
 			);
-			const isVaultFile = !isEmbedded && Boolean(
-				session.file ||
-				rawNode?.file ||
-				rawNode?.unknownData?.file ||
-				rawNode?.unknownData?.type === 'file'
-			);
+			const isVaultFile =
+				!isEmbedded &&
+				Boolean(
+					session.file ||
+					rawNode?.file ||
+					rawNode?.unknownData?.file ||
+					rawNode?.unknownData?.type === 'file'
+				);
 
 			const posX = (canvasNode?.x ?? 0) + (canvasNode?.width ?? 300) + 40;
 			const posY = canvasNode?.y ?? 0;
@@ -856,7 +969,9 @@ export class CanvasGifHandler {
 
 			if (isVaultFile) {
 				// Save extracted frame as PNG into vault file
-				const baseName = session.file ? session.file.basename : 'extracted_frame';
+				const baseName = session.file
+					? session.file.basename
+					: 'extracted_frame';
 				const fileName = `${baseName}_frame_${session.currentFrame + 1}_${Date.now()}.png`;
 				const arrayBuffer = await blob.arrayBuffer();
 				const folderPath =
@@ -873,7 +988,11 @@ export class CanvasGifHandler {
 				);
 				const savedFile = this.app.vault.getAbstractFileByPath(targetPath);
 
-				if (canvas && savedFile instanceof TFile && typeof canvas.createFileNode === 'function') {
+				if (
+					canvas &&
+					savedFile instanceof TFile &&
+					typeof canvas.createFileNode === 'function'
+				) {
 					canvas.createFileNode({
 						file: savedFile,
 						pos: { x: posX, y: posY },
@@ -881,7 +1000,10 @@ export class CanvasGifHandler {
 						save: true,
 					});
 				}
-				new Notice(t.gifExtractSuccess?.(session.currentFrame + 1) || `Extracted frame ${session.currentFrame + 1} to vault!`);
+				new Notice(
+					t.gifExtractSuccess?.(session.currentFrame + 1) ||
+						`Extracted frame ${session.currentFrame + 1} to vault!`
+				);
 			} else {
 				// Save extracted frame as embedded base64 Data URL inside .canvas file
 				const arrayBuffer = await blob.arrayBuffer();
@@ -904,7 +1026,10 @@ export class CanvasGifHandler {
 						rawN.unknownData.url = dataUrl;
 					}
 				}
-				new Notice(t.gifExtractSuccessEmbed?.(session.currentFrame + 1) || `Extracted frame ${session.currentFrame + 1} into canvas file!`);
+				new Notice(
+					t.gifExtractSuccessEmbed?.(session.currentFrame + 1) ||
+						`Extracted frame ${session.currentFrame + 1} into canvas file!`
+				);
 			}
 		} catch (err) {
 			console.error('Failed to save extracted frame:', err);

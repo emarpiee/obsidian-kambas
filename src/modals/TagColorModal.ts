@@ -43,7 +43,9 @@ export class TagColorModal extends Modal {
 		titleEl.setText(titleText);
 
 		// ── Preview Section ──────────────────────────────────────────────────
-		const previewWrap = contentEl.createDiv({ cls: 'kambas-tag-color-preview-wrap' });
+		const previewWrap = contentEl.createDiv({
+			cls: 'kambas-tag-color-preview-wrap',
+		});
 		previewWrap.createSpan({
 			cls: 'kambas-tag-color-preview-label',
 			text: t.tagColorPreview ?? 'Preview:',
@@ -60,9 +62,16 @@ export class TagColorModal extends Modal {
 			cls: 'kambas-tag-preset-header',
 			text: t.tagColorPresets ?? 'Presets:',
 		});
-		presetHeader.setCssProps({ marginTop: '12px', marginBottom: '6px', fontSize: '12px', fontWeight: '500' });
+		presetHeader.setCssProps({
+			marginTop: '12px',
+			marginBottom: '6px',
+			fontSize: '12px',
+			fontWeight: '500',
+		});
 
-		const presetRow = contentEl.createDiv({ cls: 'kambas-tag-color-preset-row' });
+		const presetRow = contentEl.createDiv({
+			cls: 'kambas-tag-color-preset-row',
+		});
 		const colorPresets: Array<{ name: string; bg: string; text: string }> = [
 			{ name: 'Red', bg: '#fee2e2', text: '#991b1b' },
 			{ name: 'Orange', bg: '#ffedd5', text: '#9a3412' },
@@ -111,7 +120,8 @@ export class TagColorModal extends Modal {
 			.setName(t.textColorLabel ?? 'Text color')
 			.addText((text) => {
 				textInputEl = text.inputEl;
-				text.setPlaceholder('#000000')
+				text
+					.setPlaceholder('#000000')
 					.setValue(this.textColor)
 					.onChange((val) => {
 						this.textColor = val;
@@ -126,7 +136,9 @@ export class TagColorModal extends Modal {
 		const textColorPicker = textSetting.controlEl.createEl('input', {
 			type: 'color',
 			cls: 'kambas-color-picker-input',
-			value: /^#[0-9A-Fa-f]{6}$/.test(this.textColor) ? this.textColor : '#1e88e5',
+			value: /^#[0-9A-Fa-f]{6}$/.test(this.textColor)
+				? this.textColor
+				: '#1e88e5',
 		});
 		textColorPickerEl = textColorPicker;
 		textColorPicker.addEventListener('input', () => {
@@ -140,7 +152,8 @@ export class TagColorModal extends Modal {
 			.setName(t.bgColorLabel ?? 'Background color')
 			.addText((text) => {
 				bgInputEl = text.inputEl;
-				text.setPlaceholder('#Ffffff')
+				text
+					.setPlaceholder('#Ffffff')
 					.setValue(this.bgColor)
 					.onChange((val) => {
 						this.bgColor = val;

@@ -1,11 +1,11 @@
-import { App, Notice, TFile, WorkspaceLeaf, normalizePath } from 'obsidian';
+import { App, TFile, normalizePath } from 'obsidian';
+
 import type KambasPlugin from '../main';
 
 const RASTER_RE = /\.(png|jpe?g|webp|bmp|avif)$/i;
-const GIF_RE = /\.gif$/i;
 
-const EXPORT_ACTION_RE = /export|screenshot/i;
-const EXPORT_FORMAT_RE = /image|png|svg|jpe?g|webp|screenshot/i;
+export const EXPORT_ACTION_RE = /export|screenshot/i;
+export const EXPORT_FORMAT_RE = /image|png|svg|jpe?g|webp|screenshot/i;
 
 const DB_NAME = 'canvas-image-lod';
 const DB_VERSION = 1;
@@ -21,7 +21,6 @@ export interface LodSettings {
 	maxMemoryMB: number;
 	prewarm: boolean;
 	concurrency: number;
-	proxyGifs: boolean;
 	fastRasterWhileMoving: boolean;
 	quality: number;
 	showStatusBar: boolean;
@@ -39,7 +38,6 @@ export function getLodSettings(plugin: KambasPlugin): LodSettings {
 		maxMemoryMB: s.lodMaxMemoryMB ?? 96,
 		prewarm: s.lodPrewarm ?? true,
 		concurrency: s.lodConcurrency ?? 2,
-		proxyGifs: s.lodProxyGifs ?? true,
 		fastRasterWhileMoving: s.lodFastRasterWhileMoving ?? false,
 		quality: s.lodQuality ?? 0.82,
 		showStatusBar: s.lodShowStatusBar ?? true,
@@ -79,11 +77,11 @@ export function srcKey(src: string): string {
 	}
 }
 
-export function isProxyable(src: string, settings: LodSettings): boolean {
+export function isProxyable(src: string, _settings?: LodSettings): boolean {
 	if (!src) return false;
 	if (src.startsWith('data:image/')) {
 		if (src.startsWith('data:image/svg+xml')) return false;
-		if (src.startsWith('data:image/gif')) return settings.proxyGifs;
+		if (src.startsWith('data:image/gif')) return false;
 		return true;
 	}
 	if (src.startsWith('blob:')) return false;
@@ -94,7 +92,6 @@ export function isProxyable(src: string, settings: LodSettings): boolean {
 		/* relative path */
 	}
 	if (RASTER_RE.test(path)) return true;
-	if (settings.proxyGifs && GIF_RE.test(path)) return true;
 	return false;
 }
 
@@ -102,23 +99,23 @@ export function getOrigSrcFromImg(img: HTMLImageElement): string {
 	if (img.dataset.cilOrig) {
 		const orig = img.dataset.cilOrig;
 		if (RAW_BASE64_REGISTRY.has(orig)) {
-			return RAW_BASE64_REGISTRY.get(orig)!;
+			return RAW_BASE64_REGISTRY.get(orig);
 		}
 		return orig;
 	}
 	const key = img.dataset.cilKey;
 	if (key && RAW_BASE64_REGISTRY.has(key)) {
-		return RAW_BASE64_REGISTRY.get(key)!;
+		return RAW_BASE64_REGISTRY.get(key);
 	}
 	const src = img.getAttribute('src') || '';
 	if (src && EMBEDDED_BLOB_MAP.has(src)) {
-		const b64Key = EMBEDDED_BLOB_MAP.get(src)!;
-		if (RAW_BASE64_REGISTRY.has(b64Key)) {
-			return RAW_BASE64_REGISTRY.get(b64Key)!;
+		const b64Key = EMBEDDED_BLOB_MAP.get(src);
+		if (b64Key && RAW_BASE64_REGISTRY.has(b64Key)) {
+			return RAW_BASE64_REGISTRY.get(b64Key);
 		}
-		return b64Key;
+		return b64Key || '';
 	}
-	const nodeEl = img.closest('.canvas-node') as HTMLElement | null;
+	const nodeEl = img.closest<HTMLElement>('.canvas-node');
 	if (nodeEl) {
 		const nodeUrl = nodeEl.dataset.url || nodeEl.getAttribute('data-url');
 		if (nodeUrl && nodeUrl.startsWith('data:image/')) return nodeUrl;
@@ -162,11 +159,12 @@ export class ProxyStore {
 	}
 
 	open(): Promise<IDBDatabase> {
-		if (!this.available) return Promise.reject(new Error('IndexedDB unavailable'));
-		if (!this.dbPromise) {
+		if (!this.available)
+			return Promise.reject(new Error('IndexedDB unavailable'));
+		if (this.dbPromise === null) {
 			this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
 				const req = indexedDB.open(DB_NAME, DB_VERSION);
-				req.onupgradeneeded = () => {
+				req.onupgradeneeded = (): void => {
 					const db = req.result;
 					if (!db.objectStoreNames.contains(STORE_BLOBS)) {
 						db.createObjectStore(STORE_BLOBS, { keyPath: 'key' });
@@ -176,9 +174,9 @@ export class ProxyStore {
 						meta.createIndex('used', 'used');
 					}
 				};
-				req.onsuccess = () => resolve(req.result);
-				req.onerror = () => reject(req.error);
-				req.onblocked = () => reject(new Error('IndexedDB blocked'));
+				req.onsuccess = (): void => resolve(req.result);
+				req.onerror = (): void => reject(req.error);
+				req.onblocked = (): void => reject(new Error('IndexedDB blocked'));
 			}).catch((e) => {
 				this.available = false;
 				throw e;
@@ -192,8 +190,11 @@ export class ProxyStore {
 		return new Promise((res, rej) => {
 			const t = db.transaction(STORE_BLOBS, 'readonly');
 			const r = t.objectStore(STORE_BLOBS).get(key);
-			r.onsuccess = () => res(r.result ? (r.result.blob as Blob) : null);
-			r.onerror = () => rej(r.error);
+			r.onsuccess = (): void => {
+				const resVal = r.result as { blob?: Blob } | undefined;
+				res(resVal?.blob ?? null);
+			};
+			r.onerror = (): void => rej(r.error);
 		});
 	}
 
@@ -202,10 +203,15 @@ export class ProxyStore {
 		return new Promise((res, rej) => {
 			const t = db.transaction([STORE_BLOBS, STORE_META], 'readwrite');
 			t.objectStore(STORE_BLOBS).put({ key, blob });
-			t.objectStore(STORE_META).put({ key, tier, size: blob.size, used: Date.now() });
-			t.oncomplete = () => res();
-			t.onerror = () => rej(t.error);
-			t.onabort = () => rej(t.error);
+			t.objectStore(STORE_META).put({
+				key,
+				tier,
+				size: blob.size,
+				used: Date.now(),
+			});
+			t.oncomplete = (): void => res();
+			t.onerror = (): void => rej(t.error);
+			t.onabort = (): void => rej(t.error);
 		});
 	}
 
@@ -218,32 +224,41 @@ export class ProxyStore {
 			const now = Date.now();
 			for (const key of keys) {
 				const r = store.get(key);
-				r.onsuccess = () => {
+				r.onsuccess = (): void => {
 					if (r.result) store.put(Object.assign(r.result, { used: now }));
 				};
 			}
-			t.oncomplete = () => res();
-			t.onerror = () => res();
-			t.onabort = () => res();
+			t.oncomplete = (): void => res();
+			t.onerror = (): void => res();
+			t.onabort = (): void => res();
 		});
 	}
 
-	async allMeta(): Promise<Array<{ key: string; tier: number; size: number; used: number }>> {
+	async allMeta(): Promise<
+		Array<{ key: string; tier: number; size: number; used: number }>
+	> {
 		const db = await this.open();
 		return new Promise((res, rej) => {
-			const out: Array<{ key: string; tier: number; size: number; used: number }> = [];
+			const out: Array<{
+				key: string;
+				tier: number;
+				size: number;
+				used: number;
+			}> = [];
 			const t = db.transaction(STORE_META, 'readonly');
 			const cur = t.objectStore(STORE_META).openCursor();
-			cur.onsuccess = () => {
+			cur.onsuccess = (): void => {
 				const c = cur.result;
 				if (!c) {
 					res(out);
 					return;
 				}
-				out.push(c.value as { key: string; tier: number; size: number; used: number });
+				out.push(
+					c.value as { key: string; tier: number; size: number; used: number }
+				);
 				c.continue();
 			};
-			cur.onerror = () => rej(cur.error);
+			cur.onerror = (): void => rej(cur.error);
 		});
 	}
 
@@ -258,9 +273,9 @@ export class ProxyStore {
 				blobs.delete(k);
 				meta.delete(k);
 			}
-			t.oncomplete = () => res();
-			t.onerror = () => rej(t.error);
-			t.onabort = () => rej(t.error);
+			t.oncomplete = (): void => res();
+			t.onerror = (): void => rej(t.error);
+			t.onabort = (): void => rej(t.error);
 		});
 	}
 
@@ -290,7 +305,8 @@ export class ProxyStore {
 			await this.remove(doomed);
 			return doomed.length;
 		} catch (e) {
-			if (getLodSettings(this.plugin).debug) console.error('[canvas-image-lod] prune', e);
+			if (getLodSettings(this.plugin).debug)
+				console.error('[canvas-image-lod] prune', e);
 			return 0;
 		}
 	}
@@ -302,8 +318,8 @@ export class ProxyStore {
 				const t = db.transaction([STORE_BLOBS, STORE_META], 'readwrite');
 				t.objectStore(STORE_BLOBS).clear();
 				t.objectStore(STORE_META).clear();
-				t.oncomplete = () => res();
-				t.onerror = () => rej(t.error);
+				t.oncomplete = (): void => res();
+				t.onerror = (): void => rej(t.error);
 			});
 		} catch {
 			/* nothing to clear */
@@ -315,7 +331,10 @@ export class ProxyStore {
 
 export class MemoryCache {
 	private plugin: KambasPlugin;
-	public entries = new Map<string, { url: string; size: number; used: number }>();
+	public entries = new Map<
+		string,
+		{ url: string; size: number; used: number }
+	>();
 	public bytes = 0;
 	private tick = 0;
 
@@ -426,7 +445,7 @@ export class ProxyCache {
 		if (!s.enabled) return null;
 		const k = srcKey(src);
 		if (this.failed.has(k) || this.noProxy.has(k)) return null;
-		if (this.inflight.has(k)) return this.inflight.get(k) || null;
+		if (this.inflight.has(k)) return this.inflight.get(k) ?? null;
 		if (this.hasTierInMemory(src, targetTier)) return null;
 
 		this.stats.pending++;
@@ -437,7 +456,8 @@ export class ProxyCache {
 			.catch((err) => {
 				this.failed.add(k);
 				this.stats.failed++;
-				if (getLodSettings(this.plugin).debug) console.error('[canvas-image-lod]', src, err);
+				if (getLodSettings(this.plugin).debug)
+					console.error('[canvas-image-lod]', src, err);
 			})
 			.finally(() => {
 				this.inflight.delete(k);
@@ -483,8 +503,8 @@ export class ProxyCache {
 			const u = new URL(src);
 			let p = decodeURIComponent(u.pathname);
 			if (/^\/[A-Za-z]:/.test(p)) p = p.slice(1);
-			const adapter = this.app.vault.adapter as any;
-			const base = adapter.getBasePath && adapter.getBasePath();
+			const adapter = this.app.vault.adapter as unknown as { getBasePath?: () => string };
+			const base = (adapter && typeof adapter.getBasePath === 'function') ? adapter.getBasePath() : null;
 			if (!base) return null;
 			const nb = base.replace(/\\/g, '/');
 			if (p.toLowerCase().startsWith(nb.toLowerCase() + '/')) {
@@ -524,10 +544,13 @@ export class ProxyCache {
 		if (file) {
 			const buf = await this.app.vault.readBinary(file);
 			const ext = (file.extension || '').toLowerCase();
-			const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext || 'png'}`;
+			const mime =
+				ext === 'jpg' || ext === 'jpeg'
+					? 'image/jpeg'
+					: `image/${ext || 'png'}`;
 			return new Blob([buf], { type: mime });
 		}
-		const resp = await fetch(src);
+		const resp = await window.fetch(src);
 		if (!resp.ok) throw new Error(`fetch ${resp.status}`);
 		return await resp.blob();
 	}
@@ -552,14 +575,22 @@ export class ProxyCache {
 					const w = frame0VideoFrame.displayWidth || 300;
 					const h = frame0VideoFrame.displayHeight || 300;
 					const frameCanvas = this._makeCanvas(w, h);
-					const ctx = frameCanvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+					const ctx = frameCanvas.getContext('2d');
 					if (ctx) {
-						ctx.drawImage(frame0VideoFrame as unknown as CanvasImageSource, 0, 0);
+						ctx.drawImage(
+							frame0VideoFrame,
+							0,
+							0
+						);
 					}
 					bmp = frameCanvas;
 					dec.close();
 				} catch (e) {
-					if (getLodSettings(this.plugin).debug) console.warn('[canvas-image-lod] ImageDecoder fallback for GIF:', e);
+					if (getLodSettings(this.plugin).debug)
+						console.warn(
+							'[canvas-image-lod] ImageDecoder fallback for GIF:',
+							e
+						);
 				} finally {
 					if (frame0VideoFrame) {
 						try {
@@ -586,9 +617,7 @@ export class ProxyCache {
 				return;
 			}
 
-			const tiers = s.tiers
-				.filter((t) => t < natW * 0.9)
-				.sort((a, b) => b - a);
+			const tiers = s.tiers.filter((t) => t < natW * 0.9).sort((a, b) => b - a);
 
 			if (!tiers.length) {
 				this.noProxy.add(k);
@@ -599,11 +628,11 @@ export class ProxyCache {
 			for (const t of tiers) {
 				const h = Math.max(1, Math.round(natH * (t / natW)));
 				const canvas = this._makeCanvas(t, h);
-				const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+				const ctx = canvas.getContext('2d');
 				if (ctx) {
 					ctx.imageSmoothingEnabled = true;
 					ctx.imageSmoothingQuality = 'high';
-					ctx.drawImage(source as CanvasImageSource, 0, 0, t, h);
+					ctx.drawImage(source, 0, 0, t, h);
 				}
 
 				const out = await this._toBlob(canvas);
@@ -613,47 +642,56 @@ export class ProxyCache {
 					this.store.put(key, t, out).catch(() => {});
 				}
 				if (source !== bmp && 'width' in source) {
-					(source as any).width = 0;
-					(source as any).height = 0;
+					(source as unknown as { width?: number; height?: number }).width = 0;
+					(source as unknown as { width?: number; height?: number }).height = 0;
 				}
 				source = canvas;
 			}
 			if (source !== bmp && 'width' in source) {
-				(source as any).width = 0;
-				(source as any).height = 0;
+				(source as unknown as { width?: number; height?: number }).width = 0;
+				(source as unknown as { width?: number; height?: number }).height = 0;
 			}
 		} finally {
 			if (bmp) {
-				if ('close' in bmp && typeof (bmp as ImageBitmap).close === 'function') {
+				if (
+					'close' in bmp &&
+					typeof (bmp as unknown as { close?: () => void }).close === 'function'
+				) {
 					try {
-						(bmp as ImageBitmap).close();
+						(bmp as unknown as { close: () => void }).close();
 					} catch {
 						/* ignore */
 					}
 				} else if ('width' in bmp) {
-					(bmp as any).width = 0;
-					(bmp as any).height = 0;
+					(bmp as unknown as { width?: number; height?: number }).width = 0;
+					(bmp as unknown as { width?: number; height?: number }).height = 0;
 				}
 			}
 		}
 	}
 
-	private _makeCanvas(w: number, h: number): HTMLCanvasElement | OffscreenCanvas {
-		if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
-		const c = document.createElement('canvas');
+	private _makeCanvas(
+		w: number,
+		h: number
+	): HTMLCanvasElement | OffscreenCanvas {
+		if (typeof OffscreenCanvas !== 'undefined')
+			return new OffscreenCanvas(w, h);
+		const c = createEl('canvas');
 		c.width = w;
 		c.height = h;
 		return c;
 	}
 
-	private async _toBlob(canvas: HTMLCanvasElement | OffscreenCanvas): Promise<Blob> {
+	private async _toBlob(
+		canvas: HTMLCanvasElement | OffscreenCanvas
+	): Promise<Blob> {
 		const q = getLodSettings(this.plugin).quality;
 		const encode = (type: string): Promise<Blob> => {
 			if ('convertToBlob' in canvas) {
-				return (canvas as OffscreenCanvas).convertToBlob({ type, quality: q });
+				return (canvas).convertToBlob({ type, quality: q });
 			}
 			return new Promise((res, rej) => {
-				(canvas as HTMLCanvasElement).toBlob(
+				(canvas).toBlob(
 					(b) => (b ? res(b) : rej(new Error('toBlob failed'))),
 					type,
 					q
@@ -701,9 +739,18 @@ export class ProxyCache {
 
 /* ------------------------------------------------- one canvas view binding */
 
+export interface CanvasView {
+	containerEl?: HTMLElement;
+	contentEl?: HTMLElement;
+	canvas?: {
+		zoom?: number;
+	};
+	file?: TFile;
+}
+
 export class CanvasBinder {
 	public plugin: KambasPlugin;
-	public view: any;
+	public view: CanvasView;
 	public wrapperEl: HTMLElement | null = null;
 	public canvasEl: HTMLElement | null = null;
 	public lastScale = -1;
@@ -721,16 +768,18 @@ export class CanvasBinder {
 	private ro: ResizeObserver | null = null;
 	private _moveOff: (() => void) | null = null;
 
-	constructor(plugin: KambasPlugin, view: any) {
+	constructor(plugin: KambasPlugin, view: CanvasView) {
 		this.plugin = plugin;
 		this.view = view;
 	}
 
 	start(): boolean {
-		const root = this.view && this.view.contentEl;
+		const root = this.view?.contentEl;
 		if (!root || typeof root.querySelector !== 'function') return false;
 		this.wrapperEl = root.querySelector('.canvas-wrapper');
-		this.canvasEl = root.querySelector('.canvas-wrapper .canvas') || root.querySelector('.canvas');
+		this.canvasEl =
+			root.querySelector('.canvas-wrapper .canvas') ||
+			root.querySelector('.canvas');
 		if (!this.canvasEl) return false;
 
 		this.attachMoveListeners();
@@ -748,8 +797,9 @@ export class CanvasBinder {
 		if (typeof ResizeObserver !== 'undefined') {
 			this.ro = new ResizeObserver((entries) => {
 				for (const e of entries) {
-					if (e.target instanceof HTMLImageElement) {
-						this.widths.set(e.target, e.target.offsetWidth);
+					const el = e.target as HTMLElement;
+					if (el && el.tagName === 'IMG') {
+						this.widths.set(el as HTMLImageElement, el.offsetWidth);
 					}
 				}
 				this.dirty = true;
@@ -758,7 +808,7 @@ export class CanvasBinder {
 			this.cleanups.push(() => this.ro?.disconnect());
 		}
 
-		if (getLodSettings(this.plugin).prewarm) this.prewarm();
+		if (getLodSettings(this.plugin).prewarm) void this.prewarm();
 		this.schedule();
 		return true;
 	}
@@ -783,34 +833,48 @@ export class CanvasBinder {
 		if (this._moveOff) this._moveOff();
 		const target = this.wrapperEl || this.canvasEl;
 		if (!target || typeof target.addEventListener !== 'function') return;
-		const onMove = () => this.markMoving();
-		const onTransitionEnd = () => {
+		const onMove = (): void => this.markMoving();
+		const onTransitionEnd = (): void => {
 			this.dirty = true;
 			this.schedule();
 			if (this.zoomSettleTimer) window.clearTimeout(this.zoomSettleTimer);
 			this.zoomSettleTimer = window.setTimeout(() => this.sync(true), 150);
 		};
 		const evs = ['wheel', 'pointerdown', 'touchstart', 'keydown'];
-		for (const ev of evs) target.addEventListener(ev, onMove, { passive: true, capture: true });
-		target.addEventListener('transitionend', onTransitionEnd, { passive: true, capture: true });
-		target.addEventListener('animationend', onTransitionEnd, { passive: true, capture: true });
+		for (const ev of evs)
+			target.addEventListener(ev, onMove, { passive: true, capture: true });
+		target.addEventListener('transitionend', onTransitionEnd, {
+			passive: true,
+			capture: true,
+		});
+		target.addEventListener('animationend', onTransitionEnd, {
+			passive: true,
+			capture: true,
+		});
 
-		this._moveOff = () => {
-			for (const ev of evs) target.removeEventListener(ev, onMove, { capture: true });
-			target.removeEventListener('transitionend', onTransitionEnd, { capture: true });
-			target.removeEventListener('animationend', onTransitionEnd, { capture: true });
+		this._moveOff = (): void => {
+			for (const ev of evs)
+				target.removeEventListener(ev, onMove, { capture: true });
+			target.removeEventListener('transitionend', onTransitionEnd, {
+				capture: true,
+			});
+			target.removeEventListener('animationend', onTransitionEnd, {
+				capture: true,
+			});
 			this._moveOff = null;
 		};
 	}
 
 	revalidate(): boolean {
-		if (this.canvasEl && (this.canvasEl as any).isConnected !== false) return true;
-		const root = this.view && this.view.contentEl;
+		if (this.canvasEl && this.canvasEl.isConnected) return true;
+		const root = this.view?.contentEl;
 		if (!root || typeof root.querySelector !== 'function') return false;
-		const canvas = root.querySelector('.canvas-wrapper .canvas') || root.querySelector('.canvas');
+		const canvas =
+			root.querySelector('.canvas-wrapper .canvas') ||
+			root.querySelector('.canvas');
 		if (!canvas) return false;
 		this.wrapperEl = root.querySelector('.canvas-wrapper') || this.wrapperEl;
-		this.canvasEl = canvas;
+		this.canvasEl = canvas as HTMLElement;
 		if (this.mo) {
 			this.mo.disconnect();
 			this.mo.observe(this.canvasEl, { childList: true, subtree: true });
@@ -823,7 +887,7 @@ export class CanvasBinder {
 
 	reconcile(): void {
 		if (this.suspended || this.moving) return this.schedule();
-		if (!this.canvasEl || (this.canvasEl as any).isConnected === false) {
+		if (!this.canvasEl || !this.canvasEl.isConnected) {
 			if (!this.revalidate()) return;
 		}
 		if (!this.hasProxies()) return this.schedule();
@@ -846,7 +910,7 @@ export class CanvasBinder {
 				this.deferredUpgrade = false;
 				this.sync(true);
 			}
-			this.plugin.cache.flushTouches();
+			void this.plugin.cache.flushTouches();
 			this.plugin.cache.evictMemory();
 		}, 200);
 		this.schedule();
@@ -874,13 +938,15 @@ export class CanvasBinder {
 
 	waitForImages(timeoutMs?: number): Promise<void> {
 		if (!this.canvasEl) return Promise.resolve();
-		const pending = Array.from(this.canvasEl.querySelectorAll('img')).filter((img) => !img.complete);
+		const pending = Array.from(this.canvasEl.querySelectorAll('img')).filter(
+			(img) => !img.complete
+		);
 		if (!pending.length) return Promise.resolve();
 		const loaded = Promise.all(
 			pending.map(
 				(img) =>
 					new Promise<void>((res) => {
-						const done = () => {
+						const done = (): void => {
 							img.removeEventListener('load', done);
 							img.removeEventListener('error', done);
 							res();
@@ -898,20 +964,24 @@ export class CanvasBinder {
 
 	schedule(): void {
 		if (this.rafId) return;
-		this.rafId = requestAnimationFrame(() => {
+		this.rafId = window.requestAnimationFrame(() => {
 			this.rafId = 0;
 			this.sync(false);
 		});
 	}
 
 	readScale(): number {
-		if (this.view && this.view.canvas && typeof this.view.canvas.zoom === 'number' && this.view.canvas.zoom > 0) {
+		if (this.view?.canvas?.zoom && this.view.canvas.zoom > 0) {
 			return this.view.canvas.zoom;
 		}
 		if (!this.canvasEl) return 1;
 		const stop = this.wrapperEl ? this.wrapperEl.parentElement : null;
 		let el: HTMLElement | null = this.canvasEl;
-		for (let depth = 0; el && el !== stop && depth < 6; el = el.parentElement, depth++) {
+		for (
+			let depth = 0;
+			el && el !== stop && depth < 6;
+			el = el.parentElement, depth++
+		) {
 			let t: string;
 			try {
 				t = getComputedStyle(el).transform;
@@ -934,7 +1004,10 @@ export class CanvasBinder {
 		const swapped = !!img.dataset.cilTier;
 		let w = this.widths.get(img);
 		if (!swapped || w === undefined || w === 0) {
-			const m = img.offsetWidth || (img.parentElement && img.parentElement.offsetWidth) || 0;
+			const m =
+				img.offsetWidth ||
+				(img.parentElement && img.parentElement.offsetWidth) ||
+				0;
 			if (m) {
 				w = m;
 				this.widths.set(img, m);
@@ -947,7 +1020,7 @@ export class CanvasBinder {
 	sync(force?: boolean): void {
 		const s = getLodSettings(this.plugin);
 		if (!s.enabled || this.suspended) return;
-		if (!this.canvasEl || (this.canvasEl as any).isConnected === false) {
+		if (!this.canvasEl || !this.canvasEl.isConnected) {
 			if (!this.revalidate()) return;
 		}
 
@@ -958,7 +1031,8 @@ export class CanvasBinder {
 				this.sync(true);
 			}, 250);
 		}
-		if (!force && !this.dirty && Math.abs(scale - this.lastScale) < 1e-4) return;
+		if (!force && !this.dirty && Math.abs(scale - this.lastScale) < 1e-4)
+			return;
 		this.lastScale = scale;
 		this.dirty = false;
 
@@ -983,10 +1057,10 @@ export class CanvasBinder {
 		}> = [];
 
 		for (const img of Array.from(imgs)) {
-			const orig = getOrigSrcFromImg(img as HTMLImageElement);
+			const orig = getOrigSrcFromImg(img);
 			if (!orig || !isProxyable(orig, s)) continue;
 
-			const htmlImg = img as HTMLImageElement;
+			const htmlImg = img;
 			const imgRect = htmlImg.getBoundingClientRect();
 			const isNearView =
 				imgRect.right >= viewMinX &&
@@ -1006,7 +1080,7 @@ export class CanvasBinder {
 					nat = htmlImg.naturalWidth;
 					htmlImg.dataset.cilNat = String(nat);
 				} else if (orig) {
-					this.plugin.cache.request(orig);
+					void this.plugin.cache.request(orig);
 				}
 			}
 
@@ -1021,7 +1095,7 @@ export class CanvasBinder {
 						htmlImg.dataset.cilTier = String(best.tier);
 						htmlImg.src = best.url;
 					} else {
-						this.plugin.cache.request(orig, lowestTier);
+						void this.plugin.cache.request(orig, lowestTier);
 					}
 				}
 				continue;
@@ -1051,12 +1125,19 @@ export class CanvasBinder {
 
 		let swapped = 0;
 		for (const item of plan) {
-			const cur = item.img.dataset.cilTier ? Number(item.img.dataset.cilTier) : 0;
+			const cur = item.img.dataset.cilTier
+				? Number(item.img.dataset.cilTier)
+				: 0;
 
 			if (item.tier === null) {
 				let fullResUrl = item.orig;
-				if (item.orig.startsWith('data:image/') && this.plugin.canvasImageHandler) {
-					fullResUrl = this.plugin.canvasImageHandler.getOrCreateBlobUrl(item.orig);
+				if (
+					item.orig.startsWith('data:image/') &&
+					this.plugin.canvasImageHandler
+				) {
+					fullResUrl = this.plugin.canvasImageHandler.getOrCreateBlobUrl(
+						item.orig
+					);
 				}
 				if (cur !== 0 || item.img.src !== fullResUrl) {
 					if (this.moving) {
@@ -1080,7 +1161,7 @@ export class CanvasBinder {
 
 			const best = this.plugin.cache.peekBest(item.orig, item.tier);
 			if (!best) {
-				this.plugin.cache.request(item.orig, item.tier);
+				void this.plugin.cache.request(item.orig, item.tier);
 				continue;
 			}
 			if (!item.img.dataset.cilOrig) item.img.dataset.cilOrig = item.orig;
@@ -1091,14 +1172,18 @@ export class CanvasBinder {
 		}
 
 		if (swapped && s.debug) {
-			console.log(`[canvas-image-lod] scale=${scale.toFixed(3)} swapped=${swapped}`);
+			console.debug(
+				`[canvas-image-lod] scale=${scale.toFixed(3)} swapped=${swapped}`
+			);
 		}
 		this.plugin.updateStatus();
 	}
 
 	restoreAll(): void {
 		if (!this.canvasEl) return;
-		for (const img of Array.from(this.canvasEl.querySelectorAll('img[data-cil-orig]'))) {
+		for (const img of Array.from(
+			this.canvasEl.querySelectorAll('img[data-cil-orig]')
+		)) {
 			const htmlImg = img as HTMLImageElement;
 			if (htmlImg.dataset.cilOrig) {
 				htmlImg.src = htmlImg.dataset.cilOrig;
@@ -1110,25 +1195,34 @@ export class CanvasBinder {
 	}
 
 	async prewarm(): Promise<void> {
-		const file = this.view && this.view.file;
+		const file = this.view?.file;
 		if (!file) return;
 		try {
-			const data = JSON.parse(await this.plugin.app.vault.cachedRead(file));
+			const data = JSON.parse(await this.plugin.app.vault.cachedRead(file)) as {
+				nodes?: Array<{ type?: string; file?: string; url?: string }>;
+			};
 			const s = getLodSettings(this.plugin);
 			for (const node of data.nodes || []) {
 				if (node.type === 'file' && node.file) {
-					if (!RASTER_RE.test(node.file) && !(s.proxyGifs && GIF_RE.test(node.file))) continue;
-					const tf = this.plugin.app.vault.getAbstractFileByPath(normalizePath(node.file));
+					if (!RASTER_RE.test(node.file)) continue;
+					const tf = this.plugin.app.vault.getAbstractFileByPath(
+						normalizePath(node.file)
+					);
 					if (!(tf instanceof TFile)) continue;
-					this.plugin.cache.request(this.plugin.app.vault.getResourcePath(tf));
-				} else if (node.type === 'link' && node.url && node.url.startsWith('data:image/')) {
+					void this.plugin.cache.request(this.plugin.app.vault.getResourcePath(tf));
+				} else if (
+					node.type === 'link' &&
+					node.url &&
+					node.url.startsWith('data:image/')
+				) {
 					if (isProxyable(node.url, s)) {
-						this.plugin.cache.request(node.url);
+						void this.plugin.cache.request(node.url);
 					}
 				}
 			}
 		} catch (e) {
-			if (getLodSettings(this.plugin).debug) console.error('[canvas-image-lod] prewarm', e);
+			if (getLodSettings(this.plugin).debug)
+				console.error('[canvas-image-lod] prewarm', e);
 		}
 	}
 }

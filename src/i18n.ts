@@ -23,9 +23,18 @@ export interface TranslationSchema {
 	duplicateKeyNotice: string;
 
 	// LOD Settings
+	performanceHeading?: string;
 	lodHeading: string;
 	enableLodName: string;
 	enableLodDesc: string;
+	lodPresetName?: string;
+	lodPresetDesc?: string;
+	lodPresetPerformance?: string;
+	lodPresetBalanced?: string;
+	lodPresetHigh?: string;
+	lodPresetCustom?: string;
+	lodAdvancedHeading?: string;
+	lodAdvancedDesc?: string;
 	lodQualityHeading?: string;
 	lodQualityFactorName?: string;
 	lodQualityFactorDesc?: string;
@@ -68,7 +77,11 @@ export interface TranslationSchema {
 	saveToVault: string;
 	embedInCanvas: string;
 	importProgressTitle: string;
-	importProgressStatus: (current: number, total: number, filename: string) => string;
+	importProgressStatus: (
+		current: number,
+		total: number,
+		filename: string
+	) => string;
 	importCompleteNotice: (count: number) => string;
 	importCancelledNotice: (count: number) => string;
 
@@ -285,10 +298,12 @@ const en: TranslationSchema = {
 	gifExtractFrameTooltip: 'Extract current frame to canvas',
 	gifExtractFrameLabel: 'Extract',
 	gifExtractSuccess: (frame: number) => `Extracted frame ${frame} to vault!`,
-	gifExtractSuccessEmbed: (frame: number) => `Extracted frame ${frame} into canvas file!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`Extracted frame ${frame} into canvas file!`,
 	gifExtractError: 'Failed to extract GIF frame',
 	gifEnableSettingName: 'Enable GIF controls',
-	gifEnableSettingDesc: 'Show GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes.',
+	gifEnableSettingDesc:
+		'Show GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes.',
 	gifToggleCommandName: 'Toggle GIF controls on/off',
 	gifControlsEnabledNotice: 'GIF controls enabled',
 	gifControlsDisabledNotice: 'GIF controls disabled',
@@ -316,43 +331,63 @@ const en: TranslationSchema = {
 	duplicateKeyNotice:
 		'Duplicate key bindings are not allowed. Please choose unique keys for each action.',
 
+	performanceHeading: 'Canvas Performance & Optimization',
 	lodHeading: 'Canvas Level of Detail (LOD)',
-	enableLodName: 'Enable proxy swapping',
-	enableLodDesc: 'Original files are never modified -- only what is drawn on screen is swapped.',
-	lodQualityHeading: 'Quality',
-	lodQualityFactorName: 'Quality headroom',
-	lodQualityFactorDesc: 'How much larger than strictly needed each proxy is. Lower is faster and softer, higher is sharper. 1.15 is usually indistinguishable from the original.',
-	lodTiersName: 'Detail levels',
-	lodTiersDesc: 'Proxy widths in pixels, comma separated, ascending.',
-	lodMinSourceWidthName: 'Minimum source width',
-	lodMinSourceWidthDesc: 'Images narrower than this are left alone; the swap would not pay off.',
-	lodQualityName: 'Proxy compression',
-	lodQualityDesc: '0.6 is noticeably lighter, 0.9 is near lossless.',
-	lodPerfHeading: 'Performance',
-	lodPrewarmName: 'Build proxies ahead of time',
-	lodPrewarmDesc: 'When a board opens, prepare every image in the background, including offscreen ones.',
-	lodConcurrencyName: 'Concurrent decodes',
-	lodConcurrencyDesc: 'Each one briefly costs the full size of the image. Higher is faster but heavier.',
-	lodFastRasterName: 'Cheap rasterization while moving',
-	lodFastRasterDesc: 'For 200 ms during a zoom, images are drawn the quick way. Helps on the heaviest boards, but movement looks blockier.',
-	lodProxyGifsName: 'Freeze GIFs when zoomed out',
-	lodProxyGifsDesc: 'Animated GIFs show their first frame while small. Animation returns up close.',
+	enableLodName: 'Enable image optimization',
+	enableLodDesc:
+		'Original files are never modified -- only what is drawn on screen is optimized.',
+	lodPresetName: 'Performance Profile',
+	lodPresetDesc:
+		'Choose a preset that matches your computer speed and canvas size.',
+	lodPresetPerformance: '🚀 Performance (Fastest)',
+	lodPresetBalanced: '⚡ Balanced (Recommended)',
+	lodPresetHigh: '🎨 High Quality',
+	lodPresetCustom: '⚙️ Custom (Advanced)',
+	lodAdvancedHeading: 'Advanced Level of Detail Settings',
+	lodAdvancedDesc:
+		'Fine-tune image sharpness, resolution tiers, thread limits, and preloading behaviors.',
+	lodQualityFactorName: 'Image Sharpness',
+	lodQualityFactorDesc:
+		'Higher values make images sharper when zooming in. Lower values save computer memory.',
+	lodTiersName: 'Image Size Tiers (px)',
+	lodTiersDesc:
+		'Step sizes in pixels for creating smaller image copies. Separate numbers with commas (e.g. 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'Smallest Image to Optimize (px)',
+	lodMinSourceWidthDesc:
+		'Images smaller than this width will not be changed because they already load quickly.',
+	lodQualityName: 'Image Quality & Storage Size',
+	lodQualityDesc:
+		'Higher values make images clearer. Lower values save disk space.',
+	lodPrewarmName: 'Preload Hidden Images',
+	lodPrewarmDesc:
+		'Prepare images outside your screen view as soon as you open a canvas.',
+	lodConcurrencyName: 'Simultaneous Image Loading',
+	lodConcurrencyDesc:
+		'How many images to process at the same time. Higher values load boards faster on strong computers.',
+	lodFastRasterName: 'Fast Pan & Zooming',
+	lodFastRasterDesc:
+		'Temporarily lowers image quality while panning or zooming so screen movement stays smooth.',
 	lodCacheHeading: 'Cache',
-	lodCacheWhereDesc: 'Proxies are stored in the browser database inside your Obsidian profile, not in your vault. They never sync and never count against Obsidian Sync storage.',
-	lodMaxCacheMBName: 'Cache budget (MB)',
-	lodMaxCacheMBDesc: 'Least recently used proxies are dropped once this is exceeded.',
+	lodCacheWhereDesc:
+		'Image proxies are cached locally in your Obsidian application database (IndexedDB). They are isolated to this device and will not count against Obsidian Sync limits.',
+	lodMaxCacheMBName: 'Maximum Cache Storage (MB)',
+	lodMaxCacheMBDesc:
+		'Maximum disk space used to save small image copies on your device.',
 	lodMaxMemoryMBName: 'Memory budget (MB)',
-	lodMaxMemoryMBDesc: 'How much of the cache may be held in RAM at once. Anything dropped is reloaded from the database without re-decoding.',
+	lodMaxMemoryMBDesc:
+		'How much of the cache may be held in RAM at once. Anything dropped is reloaded from the database without re-decoding.',
 	lodCacheSizeLabel: 'Cache size',
 	clearLodCacheName: 'Clear proxy cache',
-	clearLodCacheDesc: 'Remove all generated image proxy tiers from IndexedDB persistent storage.',
+	clearLodCacheDesc:
+		'Remove all generated image proxy tiers from IndexedDB persistent storage.',
 	clearLodCacheBtn: 'Clear',
 	lodCacheClearedNotice: 'Cache cleared',
 	lodOtherHeading: 'Other',
 	lodShowStatusBarName: 'Show in status bar',
 	lodShowStatusBarNotice: 'Reload the plugin to apply',
 	debugName: 'Debug logging',
-	debugDesc: 'Writes zoom level and swap counts to the developer console (Ctrl+Shift+I).',
+	debugDesc:
+		'Writes zoom level and swap counts to the developer console (Ctrl+Shift+I).',
 
 	modalTitle: 'Add media to canvas file',
 	modalDescription: (filename: string) =>
@@ -578,10 +613,12 @@ const zh: TranslationSchema = {
 	gifExtractFrameTooltip: '提取当前帧到画布',
 	gifExtractFrameLabel: '提取帧',
 	gifExtractSuccess: (frame: number) => `已将第 ${frame} 帧提取到 Vault!`,
-	gifExtractSuccessEmbed: (frame: number) => `已将第 ${frame} 帧嵌入到画布文件!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`已将第 ${frame} 帧嵌入到画布文件!`,
 	gifExtractError: '提取 GIF 帧失败',
 	gifEnableSettingName: '启用 GIF 控制工具',
-	gifEnableSettingDesc: '在 GIF 节点上显示 GIF 播放工具栏、时间轴进度条和帧提取功能。',
+	gifEnableSettingDesc:
+		'在 GIF 节点上显示 GIF 播放工具栏、时间轴进度条和帧提取功能。',
 	gifToggleCommandName: '切换 GIF 控制工具显示/隐藏',
 	gifControlsEnabledNotice: '已启用 GIF 控制工具',
 	gifControlsDisabledNotice: '已禁用 GIF 控制工具',
@@ -604,9 +641,34 @@ const zh: TranslationSchema = {
 	zoomSpeedDesc: '每帧缩放变化率',
 	duplicateKeyNotice: '不允许重复绑定按键。请为每个操作选择唯一的按键。',
 
+	performanceHeading: '画布性能与图像优化',
 	lodHeading: '画布多细节层次 (LOD) 图像优化',
-	enableLodName: '启用视口缩放感知图像 LOD',
-	enableLodDesc: '缩小画布时自动将图像替换为低分辨率代理，消除大型图片画布上的缩放卡顿。',
+	enableLodName: '启用图像优化',
+	enableLodDesc: '原始文件永远不会被修改，仅优化屏幕上的显示图像。',
+	lodPresetName: '性能预设方案',
+	lodPresetDesc: '选择符合您电脑配置与画布大小的预设方案。',
+	lodPresetPerformance: '🚀 性能优先（最快）',
+	lodPresetBalanced: '⚡ 均衡推荐（推荐）',
+	lodPresetHigh: '🎨 画质优先',
+	lodPresetCustom: '⚙️ 自定义（高级）',
+	lodAdvancedHeading: '高级 LOD 细节设置',
+	lodAdvancedDesc: '微调图像清晰度、分辨率阶梯、并发加载数与预加载行为。',
+	lodQualityFactorName: '图像清晰度',
+	lodQualityFactorDesc: '数值越高放大时图像越清晰；数值越低越节省内存。',
+	lodTiersName: '代理分辨率阶梯 (px)',
+	lodTiersDesc:
+		'生成低分辨率副本的像素阶梯，用逗号分隔（如 128, 320, 768, 1600）。',
+	lodMinSourceWidthName: '优化最小宽度 (px)',
+	lodMinSourceWidthDesc: '小于此宽度的图片将保持原样，因为其本身加载速度极快。',
+	lodQualityName: '图像质量与存储体积',
+	lodQualityDesc: '数值越高画质越清晰，数值越低越节省磁盘空间。',
+	lodPrewarmName: '预加载视口外图像',
+	lodPrewarmDesc: '在打开画布时立即预先准备视口外的图片。',
+	lodConcurrencyName: '同时加载图像数',
+	lodConcurrencyDesc:
+		'并发处理的图像数量，性能较强电脑上设置较高可加快加载速度。',
+	lodFastRasterName: '平移与缩放加速',
+	lodFastRasterDesc: '在拖动或缩放画布时临时降低画质，以保持 60 FPS 顺畅滑动。',
 	lodMaxCacheMBName: '最大磁盘缓存 (MB)',
 	lodMaxCacheMBDesc: 'IndexedDB 中缓存代理图像的最高存储容量上限。',
 	lodMaxMemoryMBName: '最大内存缓存 (MB)',
@@ -738,8 +800,7 @@ const zh: TranslationSchema = {
 
 	// Palette Swatches & Base64 Optimization
 	paletteSwatchCountName: '调色板色块数量',
-	paletteSwatchCountDesc:
-		'在图片上启用调色板时显示的代表颜色数量（3–10）。',
+	paletteSwatchCountDesc: '在图片上启用调色板时显示的代表颜色数量（3–10）。',
 	base64Heading: 'Base64 图片优化',
 	autoOptimizeBase64Name: '粘贴 / 拖放时自动优化 Base64',
 	autoOptimizeBase64Desc:
@@ -756,17 +817,13 @@ const zh: TranslationSchema = {
 	// Visual Inspection (Loupe Tool)
 	loupeHeading: '视觉检查（放大镜工具）',
 	loupeHotkeyName: '放大镜激活热键',
-	loupeHotkeyDesc:
-		'悬停在图片节点上时按住此键以检查细节（默认：Q）。',
+	loupeHotkeyDesc: '悬停在图片节点上时按住此键以检查细节（默认：Q）。',
 	loupeZoomLevelName: '放大镜放大倍率',
-	loupeZoomLevelDesc:
-		'放大镜镜头的缩放倍数，从 1.5x 到 10.0x（默认：3.0x）。',
+	loupeZoomLevelDesc: '放大镜镜头的缩放倍数，从 1.5x 到 10.0x（默认：3.0x）。',
 	loupeSizeName: '放大镜镜头直径 (px)',
-	loupeSizeDesc:
-		'放大镜镜头的像素大小，从 100px 到 600px（默认：260px）。',
+	loupeSizeDesc: '放大镜镜头的像素大小，从 100px 到 600px（默认：260px）。',
 	loupeShapeName: '放大镜镜头形状',
-	loupeShapeDesc:
-		'放大镜框的视觉形状（默认：圆形）。',
+	loupeShapeDesc: '放大镜框的视觉形状（默认：圆形）。',
 	loupeShapeCircle: '圆形',
 	loupeShapeRounded: '圆角矩形',
 	loupeShapeSquare: '方形',
@@ -807,8 +864,7 @@ const zh: TranslationSchema = {
 	namingModalTitleMove: '移动媒体到宝库',
 	namingModalVaultRoot: '/ (宝库根目录)',
 	destinationFolderNotice: '目标文件夹：',
-	chooseNamingStrategy:
-		'选择媒体文件在宝库中的命名方式：',
+	chooseNamingStrategy: '选择媒体文件在宝库中的命名方式：',
 	defaultFilenameOptTitle: '默认文件名',
 	tagFilenameOptTitle: '标签文件名',
 	noTagsFallbackNotice: '（当前媒体没有标签 - 将回退到默认设置）',
@@ -817,10 +873,8 @@ const zh: TranslationSchema = {
 	numberingFormatName: '编号格式',
 	numberingFormatDesc:
 		'用于递增计数器的格式（例如，当存在重复名称或批量导出时）。',
-	applyToAllRemaining: (count: number) =>
-		`应用到剩余的 ${count} 项`,
-	applyToAllRemainingDesc:
-		'为所有剩余项使用选定的命名策略和编号格式。',
+	applyToAllRemaining: (count: number) => `应用到剩余的 ${count} 项`,
+	applyToAllRemainingDesc: '为所有剩余项使用选定的命名策略和编号格式。',
 	numberFormatPadded2: '01, 02, 03... (2 位数)',
 	numberFormatPadded3: '001, 002, 003... (3 位数)',
 	numberFormatSimple: '1, 2, 3... (无补零)',
@@ -839,10 +893,12 @@ const zhTW: TranslationSchema = {
 	gifExtractFrameTooltip: '擷取當前幀到畫布',
 	gifExtractFrameLabel: '擷取幀',
 	gifExtractSuccess: (frame: number) => `已將第 ${frame} 幀擷取到 Vault!`,
-	gifExtractSuccessEmbed: (frame: number) => `已將第 ${frame} 幀嵌入至畫布檔案!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`已將第 ${frame} 幀嵌入至畫布檔案!`,
 	gifExtractError: '擷取 GIF 幀失敗',
 	gifEnableSettingName: '啟用 GIF 控制工具',
-	gifEnableSettingDesc: '在 GIF 節點上顯示 GIF 播放工具列、時間軸進度條和幀擷取功能。',
+	gifEnableSettingDesc:
+		'在 GIF 節點上顯示 GIF 播放工具列、時間軸進度條和幀擷取功能。',
 	gifToggleCommandName: '切換 GIF 控制工具顯示/隱藏',
 	gifControlsEnabledNotice: '已啟用 GIF 控制工具',
 	gifControlsDisabledNotice: '已禁用 GIF 控制工具',
@@ -865,9 +921,34 @@ const zhTW: TranslationSchema = {
 	zoomSpeedDesc: '每幀縮放變化率',
 	duplicateKeyNotice: '不允許重複綁定按鍵。請為每個操作選擇唯一的按鍵。',
 
+	performanceHeading: '畫布效能與影像優化',
 	lodHeading: '畫布多細節層次 (LOD) 影像優化',
-	enableLodName: '啟用視口縮放感知影像 LOD',
-	enableLodDesc: '縮小畫布時自動將影像替換為低解析度代理，消除大型圖片畫布上的縮放卡頓。',
+	enableLodName: '啟用影像優化',
+	enableLodDesc: '原始檔案永遠不會被修改，僅優化螢幕上的顯示影像。',
+	lodPresetName: '效能預設方案',
+	lodPresetDesc: '選擇符合您電腦規格與畫布大小的預設方案。',
+	lodPresetPerformance: '🚀 效能優先（最快）',
+	lodPresetBalanced: '⚡ 均衡推薦（推薦）',
+	lodPresetHigh: '🎨 畫質優先',
+	lodPresetCustom: '⚙️ 自訂（進階）',
+	lodAdvancedHeading: '進階 LOD 細節設定',
+	lodAdvancedDesc: '微調影像清晰度、解析度階梯、並行載入數與預載入行為。',
+	lodQualityFactorName: '影像清晰度',
+	lodQualityFactorDesc: '數值越高放大時影像越清晰；數值越低越節省記憶體。',
+	lodTiersName: '代理解析度階梯 (px)',
+	lodTiersDesc:
+		'生成低解析度副本的像素階梯，用逗號分隔（如 128, 320, 768, 1600）。',
+	lodMinSourceWidthName: '優化最小寬度 (px)',
+	lodMinSourceWidthDesc: '小於此寬度的圖片將保持原樣，因為其本身載入速度極快。',
+	lodQualityName: '影像畫質與儲存容量',
+	lodQualityDesc: '數值越高畫質越清晰，數值越低越節省磁碟空間。',
+	lodPrewarmName: '預載入視埠外影像',
+	lodPrewarmDesc: '在開啟畫布時立即預先準備視埠外的圖片。',
+	lodConcurrencyName: '同時載入影像數',
+	lodConcurrencyDesc:
+		'並行處理的影像數量，效能較強電腦上設定較高可加快載入速度。',
+	lodFastRasterName: '平移與縮放加速',
+	lodFastRasterDesc: '在拖曳或縮放畫布時臨時降低畫質，以維持 60 FPS 順暢滑動。',
 	lodMaxCacheMBName: '最大磁碟快取 (MB)',
 	lodMaxCacheMBDesc: 'IndexedDB 中快取代理影像的最高儲存容量上限。',
 	lodMaxMemoryMBName: '最大記憶體快取 (MB)',
@@ -1001,12 +1082,15 @@ const zhTW: TranslationSchema = {
 	paletteSwatchCountDesc: '在圖片上啟用調色板時顯示的代表顏色數量（3–10）。',
 	base64Heading: 'Base64 圖片優化',
 	autoOptimizeBase64Name: '貼上 / 拖放時自動優化 Base64',
-	autoOptimizeBase64Desc: '自動將貼上或拖放的 Base64 圖片壓縮為 WebP 格式（預設：停用）。',
+	autoOptimizeBase64Desc:
+		'自動將貼上或拖放的 Base64 圖片壓縮為 WebP 格式（預設：停用）。',
 	base64MaxDimensionName: '最大圖片尺寸 (px)',
-	base64MaxDimensionDesc: '在嵌入畫布前，將超過此寬度/高度的圖片調整大小（預設：2048px）。',
+	base64MaxDimensionDesc:
+		'在嵌入畫布前，將超過此寬度/高度的圖片調整大小（預設：2048px）。',
 	base64QualityName: 'WebP 壓縮品質',
 	base64QualityDesc: 'WebP 圖片壓縮品質目標 (0.10 至 1.00)。',
-	optimizedNotice: (count: number, kbSaved: number) => `已優化 ${count} 張嵌入圖片，節省了約 ${kbSaved} KB！`,
+	optimizedNotice: (count: number, kbSaved: number) =>
+		`已優化 ${count} 張嵌入圖片，節省了約 ${kbSaved} KB！`,
 	noCompressibleNotice: '未選擇可壓縮的 base64 圖片。',
 
 	loupeHeading: '視覺檢查（放大鏡工具）',
@@ -1022,10 +1106,12 @@ const zhTW: TranslationSchema = {
 	loupeShapeRounded: '圓角矩形',
 	loupeShapeSquare: '方形',
 	loupeSmoothingName: '放大鏡運動平滑 / 緩衝',
-	loupeSmoothingDesc: '在平移圖片時平滑滑鼠抖動（越低越平滑且靈敏度越低，越高追蹤越快。預設：0.50）。',
+	loupeSmoothingDesc:
+		'在平移圖片時平滑滑鼠抖動（越低越平滑且靈敏度越低，越高追蹤越快。預設：0.50）。',
 
 	selectionZoomHotkeyName: '縮放適應選取項熱鍵',
-	selectionZoomHotkeyDesc: '選取元素時按下此熱鍵可縮放適應它們。再次按下可縮放回原位（預設：空白鍵）。',
+	selectionZoomHotkeyDesc:
+		'選取元素時按下此熱鍵可縮放適應它們。再次按下可縮放回原位（預設：空白鍵）。',
 
 	dimOpacityLabel: '遮罩不透明度',
 	resetOpacityTooltip: '恢復預設不透明度',
@@ -1046,7 +1132,8 @@ const zhTW: TranslationSchema = {
 	resetActiveFilter: '重置目前篩選',
 	quickTagsHeader: '快捷標籤：',
 	doneBtn: '完成',
-	itemsSelectedTitle: (title: string, count: number) => `${title}（已選擇 ${count} 項）`,
+	itemsSelectedTitle: (title: string, count: number) =>
+		`${title}（已選擇 ${count} 項）`,
 
 	namingModalTitleCopy: '複製媒體至寶庫',
 	namingModalTitleMove: '移動媒體至寶庫',
@@ -1059,7 +1146,8 @@ const zhTW: TranslationSchema = {
 	customFilenameOptTitle: '自訂檔案名稱',
 	customFilenamePlaceholder: '例如 my-image',
 	numberingFormatName: '編號格式',
-	numberingFormatDesc: '用於遞增計數器的格式（例如，當存在重複名稱或批次匯出時）。',
+	numberingFormatDesc:
+		'用於遞增計數器的格式（例如，當存在重複名稱或批次匯出時）。',
 	applyToAllRemaining: (count: number) => `套用至剩餘的 ${count} 項`,
 	applyToAllRemainingDesc: '為所有剩餘項使用選定的命名策略和編號格式。',
 	numberFormatPadded2: '01, 02, 03... (2 位數)',
@@ -1079,11 +1167,14 @@ const es: TranslationSchema = {
 	gifSpeedLabel: 'Velocidad de reproducción',
 	gifExtractFrameTooltip: 'Extraer fotograma actual al lienzo',
 	gifExtractFrameLabel: 'Extraer',
-	gifExtractSuccess: (frame: number) => `¡Fotograma ${frame} extraído a la bóveda!`,
-	gifExtractSuccessEmbed: (frame: number) => `¡Fotograma ${frame} incrustado en el archivo de lienzo!`,
+	gifExtractSuccess: (frame: number) =>
+		`¡Fotograma ${frame} extraído a la bóveda!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`¡Fotograma ${frame} incrustado en el archivo de lienzo!`,
 	gifExtractError: 'Error al extraer el fotograma GIF',
 	gifEnableSettingName: 'Habilitar controles de GIF',
-	gifEnableSettingDesc: 'Muestra la barra de herramientas de reproducción de GIF, la línea de tiempo y la extracción de fotogramas.',
+	gifEnableSettingDesc:
+		'Muestra la barra de herramientas de reproducción de GIF, la línea de tiempo y la extracción de fotogramas.',
 	gifToggleCommandName: 'Activar/desactivar controles de GIF',
 	gifControlsEnabledNotice: 'Controles de GIF habilitados',
 	gifControlsDisabledNotice: 'Controles de GIF desactivados',
@@ -1107,15 +1198,51 @@ const es: TranslationSchema = {
 	duplicateKeyNotice:
 		'No se permiten asignaciones de teclas duplicadas. Por favor, elija teclas únicas para cada acción.',
 
+	performanceHeading: 'Rendimiento del lienzo y optimización de imágenes',
 	lodHeading: 'Optimización de Nivel de Detalle (LOD) del Lienzo',
-	enableLodName: 'Habilitar proxy LOD',
-	enableLodDesc: 'Reduce las imágenes grandes del lienzo al alejar el zoom para evitar retrasos y picos de memoria. La resolución completa se restaura al acercar.',
+	enableLodName: 'Habilitar optimización de imágenes',
+	enableLodDesc:
+		'Los archivos originales nunca se modifican: solo se optimizan las imágenes mostradas en pantalla.',
+	lodPresetName: 'Perfil de rendimiento',
+	lodPresetDesc:
+		'Elija un perfil según la velocidad de su equipo y el tamaño del lienzo.',
+	lodPresetPerformance: '🚀 Rendimiento (Más rápido)',
+	lodPresetBalanced: '⚡ Equilibrado (Recomendado)',
+	lodPresetHigh: '🎨 Alta calidad',
+	lodPresetCustom: '⚙️ Personalizado (Avanzado)',
+	lodAdvancedHeading: 'Ajustes avanzados de nivel de detalle (LOD)',
+	lodAdvancedDesc:
+		'Ajuste la nitidez, niveles de resolución, hilos de procesamiento y precarga.',
+	lodQualityFactorName: 'Nitidez de imagen',
+	lodQualityFactorDesc:
+		'Valores más altos aumentan la nitidez al acercar. Valores más bajos ahorran memoria.',
+	lodTiersName: 'Escalas de tamaño (px)',
+	lodTiersDesc:
+		'Pasos en píxeles para copias más pequeñas, separados por comas (ej. 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'Ancho mínimo para optimizar (px)',
+	lodMinSourceWidthDesc:
+		'Las imágenes más pequeñas que este ancho no se modificarán porque ya cargan rápido.',
+	lodQualityName: 'Calidad de imagen y espacio de disco',
+	lodQualityDesc:
+		'Valores más altos mejoran la claridad. Valores más bajos ahorran espacio en disco.',
+	lodPrewarmName: 'Precargar imágenes ocultas',
+	lodPrewarmDesc:
+		'Prepara las imágenes fuera de la pantalla al abrir un lienzo.',
+	lodConcurrencyName: 'Carga simultánea de imágenes',
+	lodConcurrencyDesc:
+		'Número de imágenes procesadas al mismo tiempo. Valores más altos aceleran la carga.',
+	lodFastRasterName: 'Desplazamiento y zoom rápido',
+	lodFastRasterDesc:
+		'Reduce temporalmente la calidad durante el movimiento para mantener el desplazamiento fluido.',
 	lodMaxCacheMBName: 'Caché de disco máxima (MB)',
-	lodMaxCacheMBDesc: 'Límite máximo de almacenamiento asignado para proxys de imágenes LOD en IndexedDB.',
+	lodMaxCacheMBDesc:
+		'Límite máximo de almacenamiento asignado para proxys de imágenes LOD en IndexedDB.',
 	lodMaxMemoryMBName: 'Caché de RAM máxima (MB)',
-	lodMaxMemoryMBDesc: 'Límite máximo de memoria asignado para URL de objetos proxy en RAM.',
+	lodMaxMemoryMBDesc:
+		'Límite máximo de memoria asignado para URL de objetos proxy en RAM.',
 	clearLodCacheName: 'Borrar caché de proxys LOD',
-	clearLodCacheDesc: 'Eliminar todos los proxys de imágenes LOD de la caché IndexedDB.',
+	clearLodCacheDesc:
+		'Eliminar todos los proxys de imágenes LOD de la caché IndexedDB.',
 	clearLodCacheBtn: 'Borrar Caché',
 	lodCacheClearedNotice: 'Caché de proxys LOD borrada con éxito.',
 
@@ -1129,7 +1256,8 @@ const es: TranslationSchema = {
 	importProgressStatus: (current, total, filename) =>
 		`Importando imagen ${current} de ${total}: ${filename}`,
 	importCompleteNotice: (count) => `${count} imagen(es) importada(s) con éxito`,
-	importCancelledNotice: (count) => `Importación cancelada tras ${count} imagen(es)`,
+	importCancelledNotice: (count) =>
+		`Importación cancelada tras ${count} imagen(es)`,
 
 	convertModalTitle: 'Incrustar medios en el archivo de lienzo',
 	convertModalDesc: (filename: string) =>
@@ -1346,11 +1474,14 @@ const fr: TranslationSchema = {
 	gifSpeedLabel: 'Vitesse de lecture',
 	gifExtractFrameTooltip: 'Extraire l’image actuelle sur le canevas',
 	gifExtractFrameLabel: 'Extraire',
-	gifExtractSuccess: (frame: number) => `Image ${frame} extraite dans le coffre !`,
-	gifExtractSuccessEmbed: (frame: number) => `Image ${frame} intégrée dans le fichier de canevas !`,
+	gifExtractSuccess: (frame: number) =>
+		`Image ${frame} extraite dans le coffre !`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`Image ${frame} intégrée dans le fichier de canevas !`,
 	gifExtractError: 'Échec de l’extraction de l’image GIF',
 	gifEnableSettingName: 'Activer les contrôles GIF',
-	gifEnableSettingDesc: 'Afficher la barre d’outils de lecture GIF, la chronologie et l’extraction d’images.',
+	gifEnableSettingDesc:
+		'Afficher la barre d’outils de lecture GIF, la chronologie et l’extraction d’images.',
 	gifToggleCommandName: 'Activer/désactiver les contrôles GIF',
 	gifControlsEnabledNotice: 'Contrôles GIF activés',
 	gifControlsDisabledNotice: 'Contrôles GIF désactivés',
@@ -1375,15 +1506,51 @@ const fr: TranslationSchema = {
 	duplicateKeyNotice:
 		'Les raccourcis clavier en double ne sont pas autorisés. Veuillez choisir des touches uniques pour chaque action.',
 
+	performanceHeading: 'Performance du canvas et optimisation des images',
 	lodHeading: 'Optimisation du Niveau de Détail (LOD) du Canvas',
-	enableLodName: 'Activer le proxy LOD',
-	enableLodDesc: 'Réduit la taille des grandes images lors du dézoom pour éviter les ralentissements et les pics de mémoire. La haute résolution est restaurée au zoom.',
+	enableLodName: "Activer l'optimisation d'images",
+	enableLodDesc:
+		"Les fichiers originaux ne sont jamais modifiés -- seules les images affichées à l'écran sont optimisées.",
+	lodPresetName: 'Profil de performance',
+	lodPresetDesc:
+		'Choisissez un préréglage adapté à la vitesse de votre ordinateur et à la taille du canvas.',
+	lodPresetPerformance: '🚀 Performance (Plus rapide)',
+	lodPresetBalanced: '⚡ Équilibré (Recommandé)',
+	lodPresetHigh: '🎨 Haute qualité',
+	lodPresetCustom: '⚙️ Personnalisé (Avancé)',
+	lodAdvancedHeading: 'Paramètres avancés du niveau de détail (LOD)',
+	lodAdvancedDesc:
+		'Ajustez la netteté, les paliers de résolution, la charge réseau et le préchargement.',
+	lodQualityFactorName: "Netteté de l'image",
+	lodQualityFactorDesc:
+		'Des valeurs plus élevées rendent les images plus nettes lors du zoom. Des valeurs plus basses économisent la mémoire.',
+	lodTiersName: 'Paliers de taille (px)',
+	lodTiersDesc:
+		'Largeurs en pixels pour créer des copies réduites, séparées par des virgules (ex: 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'Taille minimale à optimiser (px)',
+	lodMinSourceWidthDesc:
+		'Les images plus petites que cette largeur ne sont pas modifiées car elles se chargent déjà rapidement.',
+	lodQualityName: "Qualité d'image et taille de stockage",
+	lodQualityDesc:
+		"Des valeurs plus élevées améliorent la clarté. Des valeurs plus basses économisent l'espace disque.",
+	lodPrewarmName: 'Précharger les images masquées',
+	lodPrewarmDesc:
+		"Prépare les images situées en dehors de l'écran dès l'ouverture d'un canvas.",
+	lodConcurrencyName: "Chargement simultané d'images",
+	lodConcurrencyDesc:
+		"Nombre d'images traitées en même temps. Des valeurs plus élevées accélèrent le chargement.",
+	lodFastRasterName: 'Zoom et déplacement rapides',
+	lodFastRasterDesc:
+		'Réduit temporairement la qualité lors du déplacement pour maintenir une fluidité parfaite.',
 	lodMaxCacheMBName: 'Cache disque maximal (Mo)',
-	lodMaxCacheMBDesc: 'Stockage maximal alloué aux proxies d\'images LOD dans IndexedDB.',
+	lodMaxCacheMBDesc:
+		"Stockage maximal alloué aux proxies d'images LOD dans IndexedDB.",
 	lodMaxMemoryMBName: 'Cache RAM maximal (Mo)',
-	lodMaxMemoryMBDesc: 'Mémoire maximale allouée aux URL d\'objets proxies dans la RAM.',
+	lodMaxMemoryMBDesc:
+		"Mémoire maximale allouée aux URL d'objets proxies dans la RAM.",
 	clearLodCacheName: 'Vider le cache des proxies LOD',
-	clearLodCacheDesc: 'Supprimer tous les proxies d\'images LOD générés dans la base IndexedDB.',
+	clearLodCacheDesc:
+		"Supprimer tous les proxies d'images LOD générés dans la base IndexedDB.",
 	clearLodCacheBtn: 'Vider le cache LOD',
 	lodCacheClearedNotice: 'Le cache des proxies LOD a été vidé avec succès.',
 
@@ -1398,7 +1565,8 @@ const fr: TranslationSchema = {
 	importProgressStatus: (current, total, filename) =>
 		`Importation de l'image ${current} sur ${total} : ${filename}`,
 	importCompleteNotice: (count) => `${count} image(s) importée(s) avec succès`,
-	importCancelledNotice: (count) => `Importation annulée après ${count} image(s)`,
+	importCancelledNotice: (count) =>
+		`Importation annulée après ${count} image(s)`,
 
 	convertModalTitle: 'Intégrer le média dans le fichier de canevas',
 	convertModalDesc: (filename: string) =>
@@ -1522,9 +1690,9 @@ const fr: TranslationSchema = {
 		'Optimiser automatiquement le Base64 au coller / déposer',
 	autoOptimizeBase64Desc:
 		'Compresse automatiquement les images Base64 collées ou déposées au format WebP (Par défaut : Désactivé).',
-	base64MaxDimensionName: 'Dimension maximale de l\'image (px)',
+	base64MaxDimensionName: "Dimension maximale de l'image (px)",
 	base64MaxDimensionDesc:
-		'Redimensionne les images dépassant cette largeur/hauteur avant l\'intégration sur le canevas (Par défaut : 2048px).',
+		"Redimensionne les images dépassant cette largeur/hauteur avant l'intégration sur le canevas (Par défaut : 2048px).",
 	base64QualityName: 'Qualité de compression WebP',
 	base64QualityDesc:
 		'Objectif de qualité pour la compression d’image WebP (0,10 à 1,00).',
@@ -1533,9 +1701,9 @@ const fr: TranslationSchema = {
 	noCompressibleNotice: 'Aucune image base64 compressible sélectionnée.',
 
 	loupeHeading: 'Inspection visuelle (Outil Loupe)',
-	loupeHotkeyName: 'Raccourci d\'activation de la loupe',
+	loupeHotkeyName: "Raccourci d'activation de la loupe",
 	loupeHotkeyDesc:
-		'Maintenez cette touche enfoncée en survolant un nœud d\'image pour l\'inspecter (Par défaut : Q).',
+		"Maintenez cette touche enfoncée en survolant un nœud d'image pour l'inspecter (Par défaut : Q).",
 	loupeZoomLevelName: 'Niveau de grossissement de la loupe',
 	loupeZoomLevelDesc:
 		'Multiplicateur de zoom pour la loupe de 1.5x à 10.0x (Par défaut : 3.0x).',
@@ -1543,8 +1711,7 @@ const fr: TranslationSchema = {
 	loupeSizeDesc:
 		'Taille de la loupe en pixels de 100px à 600px (Par défaut : 260px).',
 	loupeShapeName: 'Forme de la loupe',
-	loupeShapeDesc:
-		'Forme visuelle du cadre de la loupe (Par défaut : Cercle).',
+	loupeShapeDesc: 'Forme visuelle du cadre de la loupe (Par défaut : Cercle).',
 	loupeShapeCircle: 'Cercle',
 	loupeShapeRounded: 'Rectangle arrondi',
 	loupeShapeSquare: 'Carré',
@@ -1556,8 +1723,8 @@ const fr: TranslationSchema = {
 	selectionZoomHotkeyDesc:
 		'Appuyez sur ce raccourci lorsque des éléments sont sélectionnés pour faire un zoom ajusté (Par défaut : Espace).',
 
-	dimOpacityLabel: 'Opacité d\'atténuation',
-	resetOpacityTooltip: 'Réinitialiser l\'opacité par défaut',
+	dimOpacityLabel: "Opacité d'atténuation",
+	resetOpacityTooltip: "Réinitialiser l'opacité par défaut",
 	searchColorsPlaceholder: 'Rechercher des couleurs…',
 	searchTagsPlaceholder: 'Rechercher des étiquettes…',
 	includeMinorColors: 'Inclure les couleurs secondaires',
@@ -1566,7 +1733,7 @@ const fr: TranslationSchema = {
 	inViewCount: (count: number) => `${count} visibles`,
 	itemCount: (count: number) => `${count} élément${count === 1 ? '' : 's'}`,
 	notInCurrentView: 'Pas dans la vue actuelle',
-	deleteTagTooltip: 'Supprimer l\'étiquette de tous les nœuds',
+	deleteTagTooltip: "Supprimer l'étiquette de tous les nœuds",
 	noColorsMatch: 'Aucune couleur ne correspond.',
 	noTagsMatch: 'Aucune étiquette ne correspond.',
 	noTagsOnCanvas: 'Aucune étiquette sur ce canevas pour le moment.',
@@ -1615,11 +1782,14 @@ const de: TranslationSchema = {
 	gifSpeedLabel: 'Wiedergabegeschwindigkeit',
 	gifExtractFrameTooltip: 'Aktuellen Frame auf Canvas extrahieren',
 	gifExtractFrameLabel: 'Extrahieren',
-	gifExtractSuccess: (frame: number) => `Frame ${frame} erfolgreich im Vault gespeichert!`,
-	gifExtractSuccessEmbed: (frame: number) => `Frame ${frame} in Canvas-Datei eingebettet!`,
+	gifExtractSuccess: (frame: number) =>
+		`Frame ${frame} erfolgreich im Vault gespeichert!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`Frame ${frame} in Canvas-Datei eingebettet!`,
 	gifExtractError: 'Fehler beim Extrahieren des GIF-Frames',
 	gifEnableSettingName: 'GIF-Steuerung aktivieren',
-	gifEnableSettingDesc: 'Zeigt die GIF-Wiedergabeleiste, Zeitleiste und Frame-Extraktion an.',
+	gifEnableSettingDesc:
+		'Zeigt die GIF-Wiedergabeleiste, Zeitleiste und Frame-Extraktion an.',
 	gifToggleCommandName: 'GIF-Steuerung ein-/ausschalten',
 	gifControlsEnabledNotice: 'GIF-Steuerung aktiviert',
 	gifControlsDisabledNotice: 'GIF-Steuerung deaktiviert',
@@ -1644,15 +1814,51 @@ const de: TranslationSchema = {
 	duplicateKeyNotice:
 		'Doppelte Tastenbelegungen sind nicht erlaubt. Bitte wählen Sie eindeutige Tasten für jede Aktion.',
 
+	performanceHeading: 'Canvas-Leistung & Bildoptimierung',
 	lodHeading: 'Canvas Level of Detail (LOD) Optimierung',
-	enableLodName: 'LOD-Proxying aktivieren',
-	enableLodDesc: 'Skaliert große Canvas-Bilder beim Herauszoomen herunter, um Ruckler und Speicherspitzen zu vermeiden. Vollauflösung wird beim Hineinzoomen wiederhergestellt.',
+	enableLodName: 'Bildoptimierung aktivieren',
+	enableLodDesc:
+		'Originaldateien werden niemals verändert -- nur die auf dem Bildschirm angezeigten Bilder werden optimiert.',
+	lodPresetName: 'Leistungsprofil',
+	lodPresetDesc:
+		'Wählen Sie ein Profil, das zur Geschwindigkeit Ihres Computers und Ihrer Canvas-Größe passt.',
+	lodPresetPerformance: '🚀 Leistung (Am schnellsten)',
+	lodPresetBalanced: '⚡ Ausgewogen (Empfohlen)',
+	lodPresetHigh: '🎨 Hohe Qualität',
+	lodPresetCustom: '⚙️ Benutzerdefiniert (Erweitert)',
+	lodAdvancedHeading: 'Erweiterte LOD-Einstellungen',
+	lodAdvancedDesc:
+		'Feineinstellung von Bildschärfe, Auflösungsstufen, parallelem Laden und Vorladen.',
+	lodQualityFactorName: 'Bildschärfe',
+	lodQualityFactorDesc:
+		'Höhere Werte sorgen für schärfere Details beim Einzoomen. Niedrigere Werte sparen Arbeitsspeicher.',
+	lodTiersName: 'Auflösungsstufen (px)',
+	lodTiersDesc:
+		'Schrittgrößen in Pixeln für kleinere Bildkopien, durch Kommas getrennt (z. B. 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'Mindestbreite für Optimierung (px)',
+	lodMinSourceWidthDesc:
+		'Bilder, die schmaler als diese Breite sind, werden nicht verändert, da sie bereits schnell laden.',
+	lodQualityName: 'Bildqualität & Speicherplatz',
+	lodQualityDesc:
+		'Höhere Werte sorgen für klarere Bilder. Niedrigere Werte sparen Speicherplatz.',
+	lodPrewarmName: 'Versteckte Bilder vorladen',
+	lodPrewarmDesc:
+		'Bereitet Bilder außerhalb des sichtbaren Bereichs sofort beim Öffnen vor.',
+	lodConcurrencyName: 'Gleichzeitiges Laden von Bildern',
+	lodConcurrencyDesc:
+		'Anzahl der gleichzeitig verarbeiteten Bilder. Höhere Werte beschleunigen das Laden auf schnellen PCs.',
+	lodFastRasterName: 'Schneller Zoom & Bewegung',
+	lodFastRasterDesc:
+		'Verringert beim Zoomen oder Bewegen kurzzeitig die Qualität für flüssige Bewegungen.',
 	lodMaxCacheMBName: 'Max. Festplatten-Cache (MB)',
-	lodMaxCacheMBDesc: 'Maximaler Speicherplatz für generierte LOD-Bild-Proxys in IndexedDB.',
+	lodMaxCacheMBDesc:
+		'Maximaler Speicherplatz für generierte LOD-Bild-Proxys in IndexedDB.',
 	lodMaxMemoryMBName: 'Max. RAM-Cache (MB)',
-	lodMaxMemoryMBDesc: 'Maximaler Arbeitsspeicher für dekodierte Proxy-Objekt-URLs im RAM.',
+	lodMaxMemoryMBDesc:
+		'Maximaler Arbeitsspeicher für dekodierte Proxy-Objekt-URLs im RAM.',
 	clearLodCacheName: 'LOD-Proxy-Cache leeren',
-	clearLodCacheDesc: 'Löscht alle generierten LOD-Bild-Proxys aus dem IndexedDB-Speicher.',
+	clearLodCacheDesc:
+		'Löscht alle generierten LOD-Bild-Proxys aus dem IndexedDB-Speicher.',
 	clearLodCacheBtn: 'LOD-Cache leeren',
 	lodCacheClearedNotice: 'LOD-Proxy-Cache erfolgreich geleert.',
 
@@ -1667,7 +1873,8 @@ const de: TranslationSchema = {
 	importProgressStatus: (current, total, filename) =>
 		`Bild ${current} von ${total} wird importiert: ${filename}`,
 	importCompleteNotice: (count) => `${count} Bild(er) erfolgreich importiert`,
-	importCancelledNotice: (count) => `Import nach ${count} Bild(ern) abgebrochen`,
+	importCancelledNotice: (count) =>
+		`Import nach ${count} Bild(ern) abgebrochen`,
 
 	convertModalTitle: 'Medien in Canvas-Datei einbetten',
 	convertModalDesc: (filename: string) =>
@@ -1821,8 +2028,7 @@ const de: TranslationSchema = {
 	loupeSmoothingDesc:
 		'Glättet Mauszeiger-Ruckeln beim Bewegen über Bilder (Niedriger = glatter, Höher = schneller. Standard: 0,50).',
 
-	selectionZoomHotkeyName:
-		'Hot-Key zum Anpassen des Zooms an die Auswahl',
+	selectionZoomHotkeyName: 'Hot-Key zum Anpassen des Zooms an die Auswahl',
 	selectionZoomHotkeyDesc:
 		'Drücken Sie diesen Hot-Key bei ausgewählten Elementen, um sie einzupassen (Standard: Leertaste).',
 
@@ -1885,11 +2091,14 @@ const ja: TranslationSchema = {
 	gifSpeedLabel: '再生速度',
 	gifExtractFrameTooltip: '現在のフレームをキャンバスに抽出',
 	gifExtractFrameLabel: '抽出',
-	gifExtractSuccess: (frame: number) => `フレーム ${frame} を保管庫に抽出しました！`,
-	gifExtractSuccessEmbed: (frame: number) => `フレーム ${frame} をキャンバスファイルに埋め込みました！`,
+	gifExtractSuccess: (frame: number) =>
+		`フレーム ${frame} を保管庫に抽出しました！`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`フレーム ${frame} をキャンバスファイルに埋め込みました！`,
 	gifExtractError: 'GIF フレームの抽出に失敗しました',
 	gifEnableSettingName: 'GIF コントロールを有効化',
-	gifEnableSettingDesc: 'GIF ノードに再生ツールバー、タイムライン、フレーム抽出機能を表示します。',
+	gifEnableSettingDesc:
+		'GIF ノードに再生ツールバー、タイムライン、フレーム抽出機能を表示します。',
 	gifToggleCommandName: 'GIF コントロールの有効/無効を切り替え',
 	gifControlsEnabledNotice: 'GIF コントロールが有効になりました',
 	gifControlsDisabledNotice: 'GIF コントロールが無効になりました',
@@ -1913,15 +2122,49 @@ const ja: TranslationSchema = {
 	duplicateKeyNotice:
 		'重複したキー割り当ては許可されていません。各操作に一意のキーを選択してください。',
 
+	performanceHeading: 'キャンバスのパフォーマンスと画像最適化',
 	lodHeading: 'キャンバス詳細レベル (LOD) 画像最適化',
-	enableLodName: 'LODプロキシを有効化',
-	enableLodDesc: 'ズームアウト時に画像を縮小してラグやメモリ消費を防止します。ズームイン時に高解像度に戻ります。',
+	enableLodName: '画像最適化を有効化',
+	enableLodDesc:
+		'元のファイルは一切変更されません。画面上に表示される画像のみを最適化します。',
+	lodPresetName: 'パフォーマンスプロファイル',
+	lodPresetDesc:
+		'お使いのPCの速度やキャンバスの大きさに合わせたプリセットを選択します。',
+	lodPresetPerformance: '🚀 パフォーマンス（最速）',
+	lodPresetBalanced: '⚡ バランス（推奨）',
+	lodPresetHigh: '🎨 高画質',
+	lodPresetCustom: '⚙️ カスタム（詳細）',
+	lodAdvancedHeading: '詳細なLOD設定',
+	lodAdvancedDesc:
+		'画像の鮮明度、解像度段階、並列読み込み数、事前ロード動作を調整します。',
+	lodQualityFactorName: '画像の鮮明度',
+	lodQualityFactorDesc:
+		'高い値ほどズームイン時の画像が鮮明になります。低い値ほどメモリを節約できます。',
+	lodTiersName: '画像サイズ段階 (px)',
+	lodTiersDesc:
+		'縮小版画像を作成するためのピクセル幅ステップ（カンマ区切り、例: 128, 320, 768, 1600）。',
+	lodMinSourceWidthName: '最適化の最小幅 (px)',
+	lodMinSourceWidthDesc:
+		'この幅より小さな画像は元々読み込みが速いため最適化をスキップします。',
+	lodQualityName: '画質と保存サイズ',
+	lodQualityDesc:
+		'高い値ほど画像がクリアになります。低い値ほどディスク容量を節約できます。',
+	lodPrewarmName: '画面外画像の事前ロード',
+	lodPrewarmDesc:
+		'キャンバスを開いた直後に画面外にある画像もバックグラウンドで準備します。',
+	lodConcurrencyName: '同時画像読み込み数',
+	lodConcurrencyDesc:
+		'同時に処理する画像の数。ハイスペックなPCでは値を大きくすると高速化します。',
+	lodFastRasterName: '高速パン＆ズーム表示',
+	lodFastRasterDesc:
+		'移動やズーム中の描画画質を一時的に下げ、滑らかな動きを維持します。',
 	lodMaxCacheMBName: '最大ディスクキャッシュ (MB)',
 	lodMaxCacheMBDesc: 'IndexedDBに保存するLODプロキシ画像の最大ストレージ容量。',
 	lodMaxMemoryMBName: '最大RAMキャッシュ (MB)',
 	lodMaxMemoryMBDesc: 'RAM上に展開するプロキシObject URLの最大メモリ容量。',
 	clearLodCacheName: 'LODプロキシキャッシュを消去',
-	clearLodCacheDesc: 'IndexedDBキャッシュ内のすべてのLODプロキシ画像を削除します。',
+	clearLodCacheDesc:
+		'IndexedDBキャッシュ内のすべてのLODプロキシ画像を削除します。',
 	clearLodCacheBtn: 'LODキャッシュを消去',
 	lodCacheClearedNotice: 'LODプロキシキャッシュを正常に消去しました。',
 
@@ -1935,8 +2178,10 @@ const ja: TranslationSchema = {
 	importProgressTitle: '画像をインポート中',
 	importProgressStatus: (current, total, filename) =>
 		`画像 ${current} / ${total} をインポート中: ${filename}`,
-	importCompleteNotice: (count) => `${count} 枚の画像を正常にインポートしました`,
-	importCancelledNotice: (count) => `${count} 枚の画像処理後にインポートをキャンセルしました`,
+	importCompleteNotice: (count) =>
+		`${count} 枚の画像を正常にインポートしました`,
+	importCancelledNotice: (count) =>
+		`${count} 枚の画像処理後にインポートをキャンセルしました`,
 
 	convertModalTitle: 'キャンバスファイルにメディアを埋め込む',
 	convertModalDesc: (filename: string) =>
@@ -2080,8 +2325,7 @@ const ja: TranslationSchema = {
 	loupeSizeDesc:
 		'ルーペレンズのサイズを100pxから600pxの間で設定します（デフォルト: 260px）。',
 	loupeShapeName: 'ルーペレンズの形状',
-	loupeShapeDesc:
-		'拡大レンズフレームの視覚形状（デフォルト: 円形）。',
+	loupeShapeDesc: '拡大レンズフレームの視覚形状（デフォルト: 円形）。',
 	loupeShapeCircle: '円形',
 	loupeShapeRounded: '角丸長方形',
 	loupeShapeSquare: '正方形',
@@ -2126,14 +2370,14 @@ const ja: TranslationSchema = {
 		'Vault内でのメディアファイルの命名方法を選択してください:',
 	defaultFilenameOptTitle: 'デフォルトファイル名',
 	tagFilenameOptTitle: 'タグファイル名',
-	noTagsFallbackNotice: '(現在のメディアにタグがありません - デフォルトに戻ります)',
+	noTagsFallbackNotice:
+		'(現在のメディアにタグがありません - デフォルトに戻ります)',
 	customFilenameOptTitle: 'カスタムファイル名',
 	customFilenamePlaceholder: '例: my-image',
 	numberingFormatName: '連番フォーマット',
 	numberingFormatDesc:
 		'同名ファイルが存在する場合や一括エクスポート時に使用される連番カウンターの形式。',
-	applyToAllRemaining: (count: number) =>
-		`残りの${count}件すべてに適用`,
+	applyToAllRemaining: (count: number) => `残りの${count}件すべてに適用`,
 	applyToAllRemainingDesc:
 		'選択した命名戦略と連番フォーマットを残りのすべてのアイテムに適用します。',
 	numberFormatPadded2: '01, 02, 03... (2桁)',
@@ -2153,11 +2397,14 @@ const ko: TranslationSchema = {
 	gifSpeedLabel: '재생 속도',
 	gifExtractFrameTooltip: '현재 프레임을 캔버스로 추출',
 	gifExtractFrameLabel: '추출',
-	gifExtractSuccess: (frame: number) => `프레임 ${frame}을(를) 보관소로 추출했습니다!`,
-	gifExtractSuccessEmbed: (frame: number) => `프레임 ${frame}을(를) 캔버스 파일에 임베드했습니다!`,
+	gifExtractSuccess: (frame: number) =>
+		`프레임 ${frame}을(를) 보관소로 추출했습니다!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`프레임 ${frame}을(를) 캔버스 파일에 임베드했습니다!`,
 	gifExtractError: 'GIF 프레임 추출 실패',
 	gifEnableSettingName: 'GIF 제어 도구 활성화',
-	gifEnableSettingDesc: 'GIF 노드에 재생 도구 모음, 타임라인 및 프레임 추출 기능을 표시합니다.',
+	gifEnableSettingDesc:
+		'GIF 노드에 재생 도구 모음, 타임라인 및 프레임 추출 기능을 표시합니다.',
 	gifToggleCommandName: 'GIF 제어 도구 켜기/끄기',
 	gifControlsEnabledNotice: 'GIF 제어 도구가 활성화되었습니다',
 	gifControlsDisabledNotice: 'GIF 제어 도구가 비활성화되었습니다',
@@ -2181,15 +2428,48 @@ const ko: TranslationSchema = {
 	duplicateKeyNotice:
 		'중복된 키 바인딩은 허용되지 않습니다. 각 작업에 고유한 키를 선택하세요.',
 
+	performanceHeading: '캔버스 성능 및 이미지 최적화',
 	lodHeading: '캔버스 세부 수준 (LOD) 이미지 최적화',
-	enableLodName: 'LOD 프록시 활성화',
-	enableLodDesc: '축소 시 대형 이미지를 축소하여 랙과 메모리 급증을 방지합니다. 확대 시 원본 해상도로 복원됩니다.',
+	enableLodName: '이미지 최적화 활성화',
+	enableLodDesc:
+		'원본 파일은 절대로 변경되지 않으며, 화면에 표시되는 이미지만 최적화됩니다.',
+	lodPresetName: '성능 프로필',
+	lodPresetDesc: '컴퓨터 성능 및 캔버스 크기에 맞는 프로필을 선택하세요.',
+	lodPresetPerformance: '🚀 성능 우선 (가장 빠름)',
+	lodPresetBalanced: '⚡ 균형 추천 (권장)',
+	lodPresetHigh: '🎨 고화질',
+	lodPresetCustom: '⚙️ 사용자 지정 (고급)',
+	lodAdvancedHeading: '고급 세부 수준 (LOD) 설정',
+	lodAdvancedDesc:
+		'선명도, 해상도 단계, 동시 처리 수 및 사전 로딩 동작을 미세 조정합니다.',
+	lodQualityFactorName: '이미지 선명도',
+	lodQualityFactorDesc:
+		'값이 높을수록 확대 시 이미지가 선명해집니다. 값이 낮을수록 메모리가 절약됩니다.',
+	lodTiersName: '해상도 축소 단계 (px)',
+	lodTiersDesc:
+		'축소 이미지를 생성할 픽셀 크기 단계 (쉼표로 구분, 예: 128, 320, 768, 1600).',
+	lodMinSourceWidthName: '최적화 최소 너비 (px)',
+	lodMinSourceWidthDesc:
+		'이 너비보다 작은 이미지는 이미 로딩이 빠르므로 최적화하지 않습니다.',
+	lodQualityName: '이미지 화질 및 저장 용량',
+	lodQualityDesc:
+		'값이 높을수록 화질이 깨끗해집니다. 값이 낮을수록 저장 공간을 절약합니다.',
+	lodPrewarmName: '화면 밖 이미지 사전 로드',
+	lodPrewarmDesc: '캔버스를 열 때 화면 밖에 있는 이미지까지 미리 준비합니다.',
+	lodConcurrencyName: '동시 이미지 로딩 수',
+	lodConcurrencyDesc:
+		'동시에 처리할 이미지 개수입니다. 높은 사양의 PC에서는 값을 높이면 빠르게 로드됩니다.',
+	lodFastRasterName: '빠른 이동 및 확대/축소',
+	lodFastRasterDesc:
+		'화면을 이동하거나 확대할 때 일시적으로 화질을 낮춰 부드러운 움직임을 유지합니다.',
 	lodMaxCacheMBName: '최대 디스크 캐시 (MB)',
-	lodMaxCacheMBDesc: 'IndexedDB에 저장되는 생성된 LOD 프록시 이미지의 최대 디스크 용량.',
+	lodMaxCacheMBDesc:
+		'IndexedDB에 저장되는 생성된 LOD 프록시 이미지의 최대 디스크 용량.',
 	lodMaxMemoryMBName: '최대 RAM 캐시 (MB)',
 	lodMaxMemoryMBDesc: 'RAM에 디코딩된 프록시 Object URL의 최대 메모리 용량.',
 	clearLodCacheName: 'LOD 프록시 캐시 지우기',
-	clearLodCacheDesc: 'IndexedDB 캐시의 모든 생성된 LOD 프록시 이미지를 삭제합니다.',
+	clearLodCacheDesc:
+		'IndexedDB 캐시의 모든 생성된 LOD 프록시 이미지를 삭제합니다.',
 	clearLodCacheBtn: 'LOD 캐시 지우기',
 	lodCacheClearedNotice: 'LOD 프록시 캐시가 성공적으로 지워졌습니다.',
 
@@ -2202,8 +2482,10 @@ const ko: TranslationSchema = {
 	importProgressTitle: '이미지 가져오는 중',
 	importProgressStatus: (current, total, filename) =>
 		`이미지 가져오는 중 (${current} / ${total}): ${filename}`,
-	importCompleteNotice: (count) => `${count}개 이미지를 성공적으로 가져왔습니다`,
-	importCancelledNotice: (count) => `${count}개 이미지 처리 후 가져오기가 취소되었습니다`,
+	importCompleteNotice: (count) =>
+		`${count}개 이미지를 성공적으로 가져왔습니다`,
+	importCancelledNotice: (count) =>
+		`${count}개 이미지 처리 후 가져오기가 취소되었습니다`,
 
 	convertModalTitle: '캔버스 파일에 미디어 임베드',
 	convertModalDesc: (filename: string) =>
@@ -2412,11 +2694,14 @@ const ru: TranslationSchema = {
 	gifSpeedLabel: 'Скорость воспроизведения',
 	gifExtractFrameTooltip: 'Извлечь текущий кадр на холст',
 	gifExtractFrameLabel: 'Извлечь',
-	gifExtractSuccess: (frame: number) => `Кадр ${frame} успешно извлечен в хранилище!`,
-	gifExtractSuccessEmbed: (frame: number) => `Кадр ${frame} успешно встроен в файл холста!`,
+	gifExtractSuccess: (frame: number) =>
+		`Кадр ${frame} успешно извлечен в хранилище!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`Кадр ${frame} успешно встроен в файл холста!`,
 	gifExtractError: 'Ошибка извлечения кадра GIF',
 	gifEnableSettingName: 'Включить элементы управления GIF',
-	gifEnableSettingDesc: 'Отображать панель воспроизведения GIF, временную шкалу и извлечение кадров.',
+	gifEnableSettingDesc:
+		'Отображать панель воспроизведения GIF, временную шкалу и извлечение кадров.',
 	gifToggleCommandName: 'Включить/выключить управление GIF',
 	gifControlsEnabledNotice: 'Элементы управления GIF включены',
 	gifControlsDisabledNotice: 'Элементы управления GIF отключены',
@@ -2440,15 +2725,51 @@ const ru: TranslationSchema = {
 	duplicateKeyNotice:
 		'Дублирование привязок клавиш не допускается. Пожалуйста, выберите уникальные клавиши для каждого действия.',
 
+	performanceHeading: 'Производительность холста и оптимизация изображений',
 	lodHeading: 'Оптимизация уровня детализации (LOD) холста',
-	enableLodName: 'Включить LOD-проксирование',
-	enableLodDesc: 'Уменьшает масштаб крупных изображений при отдалении для предотвращения задержек и скачков памяти. Полное разрешение восстанавливается при приближении.',
+	enableLodName: 'Включить оптимизацию изображений',
+	enableLodDesc:
+		'Оригинальные файлы никогда не изменяются — оптимизируются только изображения, отображаемые на экране.',
+	lodPresetName: 'Профиль производительности',
+	lodPresetDesc:
+		'Выберите профиль, подходящий под скорость вашего компьютера и размер холста.',
+	lodPresetPerformance: '🚀 Производительность (Самый быстрый)',
+	lodPresetBalanced: '⚡ Сбалансированный (Рекомендуется)',
+	lodPresetHigh: '🎨 Высокое качество',
+	lodPresetCustom: '⚙️ Пользовательский (Расширенный)',
+	lodAdvancedHeading: 'Расширенные настройки уровня детализации (LOD)',
+	lodAdvancedDesc:
+		'Настройка четкости, уровней разрешения, потоков загрузки и предварительной загрузки.',
+	lodQualityFactorName: 'Четкость изображений',
+	lodQualityFactorDesc:
+		'Чем выше значение, тем четче изображения при приближении. Низкие значения экономят память.',
+	lodTiersName: 'Уровни разрешения (px)',
+	lodTiersDesc:
+		'Шаги размера в пикселях для создания уменьшенных копий, через запятую (напр. 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'Минимальная ширина для оптимизации (px)',
+	lodMinSourceWidthDesc:
+		'Изображения меньше этой ширины не изменяются, так как они и так загружаются быстро.',
+	lodQualityName: 'Качество изображений и размер файла',
+	lodQualityDesc:
+		'Высокие значения делают картинку четче. Низкие значения экономят место на диске.',
+	lodPrewarmName: 'Предзагрузка скрытых изображений',
+	lodPrewarmDesc:
+		'Подготавливает изображения за пределами экрана сразу при открытии холста.',
+	lodConcurrencyName: 'Одновременная загрузка изображений',
+	lodConcurrencyDesc:
+		'Количество одновременно обрабатываемых изображений. Высокие значения ускоряют загрузку.',
+	lodFastRasterName: 'Быстрое перемещение и зум',
+	lodFastRasterDesc:
+		'Временно снижает качество при перемещении или зуме для сохранения плавности 60 FPS.',
 	lodMaxCacheMBName: 'Лимит дискового кэша (МБ)',
-	lodMaxCacheMBDesc: 'Максимальный объем памяти, выделенный под LOD-прокси в IndexedDB.',
+	lodMaxCacheMBDesc:
+		'Максимальный объем памяти, выделенный под LOD-прокси в IndexedDB.',
 	lodMaxMemoryMBName: 'Лимит RAM-кэша (МБ)',
-	lodMaxMemoryMBDesc: 'Максимальный объем оперативной памяти под Object URL прокси.',
+	lodMaxMemoryMBDesc:
+		'Максимальный объем оперативной памяти под Object URL прокси.',
 	clearLodCacheName: 'Очистить кэш LOD-прокси',
-	clearLodCacheDesc: 'Удалить все сгенерированные LOD-прокси из кэша IndexedDB.',
+	clearLodCacheDesc:
+		'Удалить все сгенерированные LOD-прокси из кэша IndexedDB.',
 	clearLodCacheBtn: 'Очистить кэш LOD',
 	lodCacheClearedNotice: 'Кэш LOD-прокси успешно очищен.',
 
@@ -2462,7 +2783,8 @@ const ru: TranslationSchema = {
 	importProgressTitle: 'Импорт изображений',
 	importProgressStatus: (current, total, filename) =>
 		`Импорт изображения ${current} из ${total}: ${filename}`,
-	importCompleteNotice: (count) => `Успешно импортировано изображений: ${count}`,
+	importCompleteNotice: (count) =>
+		`Успешно импортировано изображений: ${count}`,
 	importCancelledNotice: (count) => `Импорт отменен после ${count} изобр.`,
 
 	convertModalTitle: 'Встроить медиа в файл холста',
@@ -2613,8 +2935,7 @@ const ru: TranslationSchema = {
 	loupeSmoothingDesc:
 		'Сглаживает дрожание мыши при перемещении (Ниже = глаже, Выше = быстрее. По умолчанию: 0.50).',
 
-	selectionZoomHotkeyName:
-		'Горячая клавиша масштабирования к выделенному',
+	selectionZoomHotkeyName: 'Горячая клавиша масштабирования к выделенному',
 	selectionZoomHotkeyDesc:
 		'Нажмите эту клавишу при выделении элементов, чтобы приблизить их (По умолчанию: Пробел).',
 
@@ -2633,8 +2954,7 @@ const ru: TranslationSchema = {
 	noTagsMatch: 'Совпадающих тегов не найдено.',
 	noTagsOnCanvas: 'На этом холсте пока нет тегов.',
 	extractingOrNoColors: 'Извлечение или цвета не найдены…',
-	clickToExtractColors:
-		'Нажмите кнопку выше, чтобы извлечь цвета.',
+	clickToExtractColors: 'Нажмите кнопку выше, чтобы извлечь цвета.',
 	resetActiveFilter: 'Сбросить активный фильтр',
 	quickTagsHeader: 'Быстрые теги:',
 	doneBtn: 'Готово',
@@ -2645,8 +2965,7 @@ const ru: TranslationSchema = {
 	namingModalTitleMove: 'Переместить медиафайл в хранилище',
 	namingModalVaultRoot: '/ (Корень хранилища)',
 	destinationFolderNotice: 'Целевая папка: ',
-	chooseNamingStrategy:
-		'Выберите способ именования медиафайла в хранилище:',
+	chooseNamingStrategy: 'Выберите способ именования медиафайла в хранилище:',
 	defaultFilenameOptTitle: 'Имя по умолчанию',
 	tagFilenameOptTitle: 'Имя на основе тегов',
 	noTagsFallbackNotice:
@@ -2677,11 +2996,14 @@ const pt: TranslationSchema = {
 	gifSpeedLabel: 'Velocidade de reprodução',
 	gifExtractFrameTooltip: 'Extrair quadro atual para a tela',
 	gifExtractFrameLabel: 'Extrair',
-	gifExtractSuccess: (frame: number) => `Quadro ${frame} extraído para o cofre!`,
-	gifExtractSuccessEmbed: (frame: number) => `Quadro ${frame} incorporado no arquivo de tela!`,
+	gifExtractSuccess: (frame: number) =>
+		`Quadro ${frame} extraído para o cofre!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`Quadro ${frame} incorporado no arquivo de tela!`,
 	gifExtractError: 'Falha ao extrair quadro GIF',
 	gifEnableSettingName: 'Ativar controles GIF',
-	gifEnableSettingDesc: 'Exibir barra de ferramentas de reprodução GIF, linha do tempo e extração de quadros.',
+	gifEnableSettingDesc:
+		'Exibir barra de ferramentas de reprodução GIF, linha do tempo e extração de quadros.',
 	gifToggleCommandName: 'Alternar controles GIF',
 	gifControlsEnabledNotice: 'Controles GIF ativados',
 	gifControlsDisabledNotice: 'Controles GIF desativados',
@@ -2705,15 +3027,51 @@ const pt: TranslationSchema = {
 	duplicateKeyNotice:
 		'Teclas duplicadas não são permitidas. Por favor, escolha teclas únicas para cada ação.',
 
+	performanceHeading: 'Desempenho do canvas e otimização de imagens',
 	lodHeading: 'Otimização de Nível de Detalhe (LOD) do Canvas',
-	enableLodName: 'Ativar proxy LOD',
-	enableLodDesc: 'Reduz o tamanho de imagens grandes ao afastar o zoom para evitar travamentos e picos de memória. A resolução total é restaurada ao aproximar.',
+	enableLodName: 'Ativar otimização de imagem',
+	enableLodDesc:
+		'Os arquivos originais nunca são modificados -- apenas as imagens exibidas na tela são otimizadas.',
+	lodPresetName: 'Perfil de desempenho',
+	lodPresetDesc:
+		'Escolha um perfil adequado à velocidade do seu computador e ao tamanho do canvas.',
+	lodPresetPerformance: '🚀 Desempenho (Mais rápido)',
+	lodPresetBalanced: '⚡ Equilibrado (Recomendado)',
+	lodPresetHigh: '🎨 Alta qualidade',
+	lodPresetCustom: '⚙️ Personalizado (Avançado)',
+	lodAdvancedHeading: 'Configurações avançadas de Nível de Detalhe (LOD)',
+	lodAdvancedDesc:
+		'Ajuste a nitidez, etapas de resolução, limites de processamento e pré-carregamento.',
+	lodQualityFactorName: 'Nitidez da imagem',
+	lodQualityFactorDesc:
+		'Valores maiores deixam as imagens mais nítidas ao aproximar. Valores menores economizam memória.',
+	lodTiersName: 'Etapas de resolução (px)',
+	lodTiersDesc:
+		'Tamanhos em pixels para criar cópias reduzidas, separados por vírgula (ex: 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'Largura mínima para otimizar (px)',
+	lodMinSourceWidthDesc:
+		'Imagens menores que esta largura não serão alteradas porque já carregam rapidamente.',
+	lodQualityName: 'Qualidade de imagem e espaço em disco',
+	lodQualityDesc:
+		'Valores maiores tornam as imagens mais nítidas. Valores menores economizam espaço em disco.',
+	lodPrewarmName: 'Pré-carregar imagens ocultas',
+	lodPrewarmDesc:
+		'Prepara imagens fora da tela imediatamente ao abrir um canvas.',
+	lodConcurrencyName: 'Carregamento simultâneo de imagens',
+	lodConcurrencyDesc:
+		'Quantidade de imagens processadas ao mesmo tempo. Valores maiores aceleram o carregamento.',
+	lodFastRasterName: 'Navegação e zoom rápido',
+	lodFastRasterDesc:
+		'Reduz temporariamente a qualidade durante o movimento para manter a navegação fluida.',
 	lodMaxCacheMBName: 'Limite do cache de disco (MB)',
-	lodMaxCacheMBDesc: 'Armazenamento máximo alocado para proxies de imagem LOD no IndexedDB.',
+	lodMaxCacheMBDesc:
+		'Armazenamento máximo alocado para proxies de imagem LOD no IndexedDB.',
 	lodMaxMemoryMBName: 'Limite do cache de RAM (MB)',
-	lodMaxMemoryMBDesc: 'Memória máxima alocada para URLs de objetos proxy na RAM.',
+	lodMaxMemoryMBDesc:
+		'Memória máxima alocada para URLs de objetos proxy na RAM.',
 	clearLodCacheName: 'Limpar cache de proxies LOD',
-	clearLodCacheDesc: 'Excluir todos os proxies de imagem LOD gerados do cache IndexedDB.',
+	clearLodCacheDesc:
+		'Excluir todos os proxies de imagem LOD gerados do cache IndexedDB.',
 	clearLodCacheBtn: 'Limpar Cache LOD',
 	lodCacheClearedNotice: 'Cache de proxies LOD limpo com sucesso.',
 
@@ -2727,8 +3085,10 @@ const pt: TranslationSchema = {
 	importProgressTitle: 'Importando imagens',
 	importProgressStatus: (current, total, filename) =>
 		`Importando imagem ${current} de ${total}: ${filename}`,
-	importCompleteNotice: (count) => `${count} imagem(ns) importada(s) com sucesso`,
-	importCancelledNotice: (count) => `Importação cancelada após ${count} imagem(ns)`,
+	importCompleteNotice: (count) =>
+		`${count} imagem(ns) importada(s) com sucesso`,
+	importCancelledNotice: (count) =>
+		`Importação cancelada após ${count} imagem(ns)`,
 
 	convertModalTitle: 'Incorporar mídia no arquivo de tela',
 	convertModalDesc: (filename: string) =>
@@ -2900,7 +3260,8 @@ const pt: TranslationSchema = {
 	noTagsMatch: 'Nenhuma tag correspondente.',
 	noTagsOnCanvas: 'Nenhuma tag nesta tela ainda.',
 	extractingOrNoColors: 'Extraindo ou nenhuma cor encontrada…',
-	clickToExtractColors: 'Clique para extrair cores dominantes das imagens da tela',
+	clickToExtractColors:
+		'Clique para extrair cores dominantes das imagens da tela',
 	resetActiveFilter: 'Redefinir filtro ativo',
 	namingModalTitleCopy: 'Copiar mídia para o cofre',
 	namingModalTitleMove: 'Mover mídia para o cofre',
@@ -2909,8 +3270,7 @@ const pt: TranslationSchema = {
 	chooseNamingStrategy: 'Escolha como nomear o arquivo de mídia no cofre:',
 	defaultFilenameOptTitle: 'Nome de arquivo padrão',
 	tagFilenameOptTitle: 'Nome de arquivo por tag',
-	noTagsFallbackNotice:
-		'(Nenhuma tag na mídia - usará o padrão)',
+	noTagsFallbackNotice: '(Nenhuma tag na mídia - usará o padrão)',
 	customFilenameOptTitle: 'Nome de arquivo personalizado',
 	customFilenamePlaceholder: 'ex. minha-imagem',
 	numberingFormatName: 'Formato de numeração',
@@ -2937,11 +3297,14 @@ const it: TranslationSchema = {
 	gifSpeedLabel: 'Velocità di riproduzione',
 	gifExtractFrameTooltip: 'Estrai fotogramma corrente sulla tela',
 	gifExtractFrameLabel: 'Estrai',
-	gifExtractSuccess: (frame: number) => `Fotogramma ${frame} estratto nella cassaforte!`,
-	gifExtractSuccessEmbed: (frame: number) => `Fotogramma ${frame} incorporato nel file della tela!`,
+	gifExtractSuccess: (frame: number) =>
+		`Fotogramma ${frame} estratto nella cassaforte!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`Fotogramma ${frame} incorporato nel file della tela!`,
 	gifExtractError: 'Impossibile estrarre il fotogramma GIF',
 	gifEnableSettingName: 'Abilita controlli GIF',
-	gifEnableSettingDesc: 'Mostra barra degli strumenti di riproduzione GIF, timeline ed estrazione fotogrammi.',
+	gifEnableSettingDesc:
+		'Mostra barra degli strumenti di riproduzione GIF, timeline ed estrazione fotogrammi.',
 	gifToggleCommandName: 'Attiva/disattiva controlli GIF',
 	gifControlsEnabledNotice: 'Controlli GIF abilitati',
 	gifControlsDisabledNotice: 'Controlli GIF disabilitati',
@@ -2965,15 +3328,51 @@ const it: TranslationSchema = {
 	duplicateKeyNotice:
 		'I tasti duplicati non sono consentiti. Scegli tasti univoci per ciascuna azione.',
 
+	performanceHeading: 'Prestazioni della tela e ottimizzazione delle immagini',
 	lodHeading: 'Ottimizzazione Livello di Dettaglio (LOD) della Tela',
-	enableLodName: 'Abilita proxy LOD',
-	enableLodDesc: 'Riduce la dimensione delle grandi immagini quando si riduce lo zoom per evitare ritardi e picchi di memoria. La risoluzione originale viene ripristinata aumentando lo zoom.',
+	enableLodName: 'Abilita ottimizzazione immagini',
+	enableLodDesc:
+		'I file originali non vengono mai modificati: vengono ottimizzate solo le immagini visualizzate sullo schermo.',
+	lodPresetName: 'Profilo di prestazioni',
+	lodPresetDesc:
+		'Scegli un profilo adatto alla velocità del tuo computer e alla dimensione della tela.',
+	lodPresetPerformance: '🚀 Prestazioni (Più veloce)',
+	lodPresetBalanced: '⚡ Bilanciato (Consigliato)',
+	lodPresetHigh: '🎨 Alta qualità',
+	lodPresetCustom: '⚙️ Personalizzato (Avanzato)',
+	lodAdvancedHeading: 'Impostazioni avanzate del Livello di Dettaglio (LOD)',
+	lodAdvancedDesc:
+		'Regola la nitidezza delle immagini, i livelli di risoluzione, il caricamento e il precaricamento.',
+	lodQualityFactorName: 'Nitidezza immagine',
+	lodQualityFactorDesc:
+		'Valori più alti rendono le immagini più nitide quando si ingrandisce. Valori più bassi risparmiano memoria.',
+	lodTiersName: 'Livelli di risoluzione (px)',
+	lodTiersDesc:
+		'Dimensioni in pixel per creare copie ridotte, separate da virgole (es. 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'Larghezza minima da ottimizzare (px)',
+	lodMinSourceWidthDesc:
+		'Le immagini più piccole di questa larghezza non verranno modificate perché si caricano già rapidamente.',
+	lodQualityName: 'Qualità immagine e spazio su disco',
+	lodQualityDesc:
+		'Valori più alti migliorano la chiarezza. Valori più bassi risparmiano spazio su disco.',
+	lodPrewarmName: 'Precarica immagini nascoste',
+	lodPrewarmDesc:
+		"Prepara le immagini fuori dallo schermo subito dopo l'apertura della tela.",
+	lodConcurrencyName: 'Caricamento simultaneo immagini',
+	lodConcurrencyDesc:
+		'Numero di immagini elaborate contemporaneamente. Valori più alti velocizzano il caricamento.',
+	lodFastRasterName: 'Zoom e spostamento rapido',
+	lodFastRasterDesc:
+		'Riduce temporaneamente la qualità durante il movimento per mantenere la fluidità.',
 	lodMaxCacheMBName: 'Budget cache disco proxy (MB)',
-	lodMaxCacheMBDesc: 'Spazio massimo allocato per i proxy di immagini LOD in IndexedDB.',
+	lodMaxCacheMBDesc:
+		'Spazio massimo allocato per i proxy di immagini LOD in IndexedDB.',
 	lodMaxMemoryMBName: 'Budget cache RAM proxy (MB)',
-	lodMaxMemoryMBDesc: 'Memoria massima allocata per gli Object URL dei proxy in RAM.',
+	lodMaxMemoryMBDesc:
+		'Memoria massima allocata per gli Object URL dei proxy in RAM.',
 	clearLodCacheName: 'Cancella cache proxy LOD',
-	clearLodCacheDesc: 'Elimina tutti i proxy di immagini LOD generati dalla cache IndexedDB.',
+	clearLodCacheDesc:
+		'Elimina tutti i proxy di immagini LOD generati dalla cache IndexedDB.',
 	clearLodCacheBtn: 'Cancella Cache LOD',
 	lodCacheClearedNotice: 'Cache proxy LOD cancellata con successo.',
 
@@ -2987,8 +3386,10 @@ const it: TranslationSchema = {
 	importProgressTitle: 'Importazione immagini',
 	importProgressStatus: (current, total, filename) =>
 		`Importazione immagine ${current} di ${total}: ${filename}`,
-	importCompleteNotice: (count) => `${count} immagine/i importata/e con successo`,
-	importCancelledNotice: (count) => `Importazione annullata dopo ${count} immagine/i`,
+	importCompleteNotice: (count) =>
+		`${count} immagine/i importata/e con successo`,
+	importCancelledNotice: (count) =>
+		`Importazione annullata dopo ${count} immagine/i`,
 
 	convertModalTitle: 'Incorpora media nel file della tela',
 	convertModalDesc: (filename: string) =>
@@ -3093,7 +3494,8 @@ const it: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automatico alla selezione tag',
 	tagZoomOnSelectDesc:
 		'Ingrandisce e adatta automaticamente gli elementi visibili quando si selezionano o rimuovono i filtri tag.',
-	tagPanelAutoCloseName: 'Chiudi automaticamente il pannello quando perde il focus',
+	tagPanelAutoCloseName:
+		'Chiudi automaticamente il pannello quando perde il focus',
 	tagPanelAutoCloseDesc:
 		'Chiude automaticamente il pannello dei filtri quando si fa clic all’esterno o si perde il focus.',
 	paletteCopySeparatorName: 'Separatore di copia tavolozza colori',
@@ -3107,10 +3509,10 @@ const it: TranslationSchema = {
 
 	paletteSwatchCountName: 'Campioni della tavolozza colori',
 	paletteSwatchCountDesc:
-		'Numero di colori dominanti da mostrare quando la tavolozza colori è abilitata su un\'immagine (3–10).',
+		"Numero di colori dominanti da mostrare quando la tavolozza colori è abilitata su un'immagine (3–10).",
 	base64Heading: 'Ottimizzazione immagini Base64',
 	autoOptimizeBase64Name:
-		'Ottimizza automaticamente Base64 all\'incolla / rilascia',
+		"Ottimizza automaticamente Base64 all'incolla / rilascia",
 	autoOptimizeBase64Desc:
 		'Comprime automaticamente le immagini Base64 incollate o rilasciate nel formato WebP (Predefinito: Disabilitato).',
 	base64MaxDimensionName: 'Dimensione massima immagine (px)',
@@ -3124,7 +3526,7 @@ const it: TranslationSchema = {
 	loupeHotkeyName: 'Scorciatoia attivazione lente',
 	loupeHotkeyDesc:
 		'Tieni premuto questo tasto mentre passi sopra un nodo immagine per ispezionarlo (Predefinito: Q).',
-	loupeZoomLevelName: 'Livello d\'ingrandimento della lente',
+	loupeZoomLevelName: "Livello d'ingrandimento della lente",
 	loupeZoomLevelDesc:
 		'Moltiplicatore di zoom per la lente da 1.5x a 10.0x (Predefinito: 3.0x).',
 	loupeSizeName: 'Diametro lente (px)',
@@ -3132,7 +3534,7 @@ const it: TranslationSchema = {
 		'Dimensione della lente in pixel da 100px a 600px (Predefinito: 260px).',
 	loupeShapeName: 'Forma della lente',
 	loupeShapeDesc:
-		'Forma visiva della lente d\'ingrandimento (Predefinito: Cerchio).',
+		"Forma visiva della lente d'ingrandimento (Predefinito: Cerchio).",
 	loupeShapeCircle: 'Cerchio',
 	loupeShapeRounded: 'Rettangolo arrotondato',
 	loupeShapeSquare: 'Quadrato',
@@ -3170,8 +3572,7 @@ const it: TranslationSchema = {
 	namingModalTitleMove: 'Sposta media nel vault',
 	namingModalVaultRoot: '/ (Radice della cassaforte)',
 	destinationFolderNotice: 'Cartella di destinazione: ',
-	chooseNamingStrategy:
-		'Scegli come nominare il file multimediale nel vault:',
+	chooseNamingStrategy: 'Scegli come nominare il file multimediale nel vault:',
 	defaultFilenameOptTitle: 'Nome file predefinito',
 	tagFilenameOptTitle: 'Nome file per tag',
 	noTagsFallbackNotice:
@@ -3203,10 +3604,12 @@ const ar: TranslationSchema = {
 	gifExtractFrameTooltip: 'استخراج الإطار الحالي إلى اللوحة',
 	gifExtractFrameLabel: 'استخراج',
 	gifExtractSuccess: (frame: number) => `تم استخراج الإطار ${frame} بنجاح!`,
-	gifExtractSuccessEmbed: (frame: number) => `تم تضمين الإطار ${frame} في ملف اللوحة!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`تم تضمين الإطار ${frame} في ملف اللوحة!`,
 	gifExtractError: 'فشل استخراج إطار GIF',
 	gifEnableSettingName: 'تمكين أدوات التحكم في GIF',
-	gifEnableSettingDesc: 'عرض شريط أدوات تشغيل GIF والجدول الزمني واستخراج الإطارات.',
+	gifEnableSettingDesc:
+		'عرض شريط أدوات تشغيل GIF والجدول الزمني واستخراج الإطارات.',
 	gifToggleCommandName: 'تبديل أدوات التحكم في GIF',
 	gifControlsEnabledNotice: 'تم تمكين أدوات التحكم في GIF',
 	gifControlsDisabledNotice: 'تم تعطيل أدوات التحكم في GIF',
@@ -3230,13 +3633,45 @@ const ar: TranslationSchema = {
 	duplicateKeyNotice:
 		'غير مسموح بتكرار تعيين المفاتيح. يرجى اختيار مفاتيح فريدة لكل إجراء.',
 
+	performanceHeading: 'أداء اللوحة وتحسين الصور',
 	lodHeading: 'تحسين مستوى التفاصيل (LOD) للوحة',
-	enableLodName: 'تفعيل الوكيل LOD',
-	enableLodDesc: 'تقليل حجم الصور الكبيرة عند تصغير العرض لمنع البطء واستهلاك الذاكرة. يتم استعادة الدقة الكاملة عند التكبير.',
+	enableLodName: 'تفعيل تحسين الصور',
+	enableLodDesc:
+		'الملفات الأصلية لا تقتطع أو تتغير أبداً -- يتم تحسين الصور المعروضة على الشاشة فقط.',
+	lodPresetName: 'نمط الأداء',
+	lodPresetDesc: 'اختر نمطًا يناسب سرعة جهازك وحجم اللوحة.',
+	lodPresetPerformance: '🚀 الأداء (الأسرع)',
+	lodPresetBalanced: '⚡ متوازن (موصى به)',
+	lodPresetHigh: '🎨 جودة عالية',
+	lodPresetCustom: '⚙️ مخصص (متقدم)',
+	lodAdvancedHeading: 'إعدادات مستوى التفاصيل المتقدمة (LOD)',
+	lodAdvancedDesc:
+		'ضبط وضوح الصور، درجات الدقة، قيود المعالجة والتحميل المسبق.',
+	lodQualityFactorName: 'وضوح الصورة',
+	lodQualityFactorDesc:
+		'القيم الأعلى تجعل الصور أكثر وضوحًا عند التكبير. القيم الأقل توفر الذاكرة.',
+	lodTiersName: 'درجات الدقة (بكسل)',
+	lodTiersDesc:
+		'أحجام بالبكسل لإنشاء نسخ أصغر، مفصولة بفواصل (مثال: 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'أدنى عرض للتحسين (بكسل)',
+	lodMinSourceWidthDesc:
+		'الصور أصغر من هذا العرض لن تتغير لأنها سريعة التحميل بالفعل.',
+	lodQualityName: 'جودة الصورة ومساحة التخزين',
+	lodQualityDesc:
+		'القيم الأعلى تجعل الصور أنقى. القيم الأقل توفر مساحة التخزين.',
+	lodPrewarmName: 'تحميل الصور المخفية مسبقًا',
+	lodPrewarmDesc: 'تجهيز الصور خارج الشاشة فور فتح اللوحة.',
+	lodConcurrencyName: 'تحميل الصور المتزامن',
+	lodConcurrencyDesc:
+		'عدد الصور المعالجة في نفس الوقت. القيم الأعلى تسرّع التحميل.',
+	lodFastRasterName: 'تكبير وتحريك سريع',
+	lodFastRasterDesc:
+		'تقليل جودة الصورة مؤقتًا أثناء التحريك لضمان سلاسة الحركة.',
 	lodMaxCacheMBName: 'سعة التخزين المؤقت للقرص (ميغابايت)',
 	lodMaxCacheMBDesc: 'الحد الأقصى للمساحة المخصصة لصور LOD في IndexedDB.',
 	lodMaxMemoryMBName: 'سعة التخزين المؤقت للذاكرة (ميغابايت)',
-	lodMaxMemoryMBDesc: 'الحد الأقصى للذاكرة المخصصة لعناوين Object URL في الذاكرة العشوائية.',
+	lodMaxMemoryMBDesc:
+		'الحد الأقصى للذاكرة المخصصة لعناوين Object URL في الذاكرة العشوائية.',
 	clearLodCacheName: 'مسح التخزين المؤقت لـ LOD',
 	clearLodCacheDesc: 'حذف جميع صور LOD المنشأة من التخزين المؤقت في IndexedDB.',
 	clearLodCacheBtn: 'مسح التخزين المؤقت',
@@ -3376,7 +3811,8 @@ const he: TranslationSchema = {
 	gifExtractFrameTooltip: 'חלץ פריים נוכחי לקנבס',
 	gifExtractFrameLabel: 'חלץ',
 	gifExtractSuccess: (frame: number) => `פריים ${frame} חולץ בהצלחה בכספת!`,
-	gifExtractSuccessEmbed: (frame: number) => `פריים ${frame} הוטמע בקובץ הקנבס!`,
+	gifExtractSuccessEmbed: (frame: number) =>
+		`פריים ${frame} הוטמע בקובץ הקנבס!`,
 	gifExtractError: 'חילוץ פריים ה-GIF נכשל',
 	gifEnableSettingName: 'אפשר בקרת GIF',
 	gifEnableSettingDesc: 'הצג סרגל כלים להפעלת GIF, ציר זמן וחילוץ פריימים.',
@@ -3402,9 +3838,40 @@ const he: TranslationSchema = {
 	zoomSpeedDesc: 'קצב שינוי התקריב לכל פריים',
 	duplicateKeyNotice: 'כפילות מקשים אינה מותרת. נא לבחור מקש ייחודי לכל פעולה.',
 
+	performanceHeading: 'ביצועי הקנבס ומיטוב תמונות',
 	lodHeading: 'מיטוב רמת פירוט (LOD) של לוח הקנבס',
-	enableLodName: 'הפעל LOD תמונות מותאם לתקריב',
-	enableLodDesc: 'החלף תמונות בגרסאות מוקטנות בעת הקטנת תצוגה למניעת איטיות בלוחות גדולים.',
+	enableLodName: 'הפעל מיטוב תמונות',
+	enableLodDesc:
+		'הקבצים המקוריים אינם משתנים לעולם -- רק התמונות המוצגות על המסך ממוטבות.',
+	lodPresetName: 'פרופיל ביצועים',
+	lodPresetDesc: 'בחר פרופיל המתאים למהירות המחשב וגודל הקנבס שלך.',
+	lodPresetPerformance: '🚀 ביצועים (הכי מהיר)',
+	lodPresetBalanced: '⚡ מאוזן (מומלץ)',
+	lodPresetHigh: '🎨 איכות גבוהה',
+	lodPresetCustom: '⚙️ מותאם אישית (מתקדם)',
+	lodAdvancedHeading: 'הגדרות רמת פירוט מתקדמות (LOD)',
+	lodAdvancedDesc:
+		'כוונון חדות תמונה, רמות רזולוציה, מגבלות טעינה וטעינה מראש.',
+	lodQualityFactorName: 'חדות תמונה',
+	lodQualityFactorDesc:
+		'ערכים גבוהים יותר הופכים תמונות לחדות יותר בתקריב. ערכים נמוכים חוסכים זיכרון.',
+	lodTiersName: 'רמות רזולוציה (px)',
+	lodTiersDesc:
+		'גודלי פיקסלים ליצירת עותקים מוקטנים, מופרדים בפסיקים (למשל: 128, 320, 768, 1600).',
+	lodMinSourceWidthName: 'רוחב מינימלי למיטוב (px)',
+	lodMinSourceWidthDesc:
+		'תמונות קטנות מרוחב זה לא ישתנו מכיוון שהן נטענות מהר ממילא.',
+	lodQualityName: 'איכות תמונה וגודל אחסון',
+	lodQualityDesc:
+		'ערכים גבוהים הופכים את התמונות לברורות יותר. ערכים נמוכים חוסכים מקום בכונן.',
+	lodPrewarmName: 'טעינת תמונות מוסתרות מראש',
+	lodPrewarmDesc: 'הכנת תמונות מחוץ למסך מיד עם פתיחת הקנבס.',
+	lodConcurrencyName: 'טעינת תמונות במקביל',
+	lodConcurrencyDesc:
+		'כמות התמונות שמעובדות בו-זמנית. ערכים גבוהים מאיצים את הטעינה.',
+	lodFastRasterName: 'זום ותנועה מהירה',
+	lodFastRasterDesc:
+		'מפחית זמנית את איכות התמונה בזמן הזזה או זום לשמירה על תנועה חלקה.',
 	lodMaxCacheMBName: 'זיכרון מטמון דיסק מרבי (MB)',
 	lodMaxCacheMBDesc: 'מגבלת אחסון מרבית עבור תמונות מוקטנות ב-IndexedDB.',
 	lodMaxMemoryMBName: 'זיכרון מטמון RAM מרבי (MB)',

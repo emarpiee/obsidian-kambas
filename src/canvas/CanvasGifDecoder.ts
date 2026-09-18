@@ -107,7 +107,10 @@ export class CanvasGifDecoder {
 			ctx.drawImage(videoFrame, 0, 0, canvasWidth, canvasHeight);
 			return true;
 		} catch (err) {
-			console.error(`Failed to decode & render GIF frame ${clampedIndex}:`, err);
+			console.error(
+				`Failed to decode & render GIF frame ${clampedIndex}:`,
+				err
+			);
 			return false;
 		} finally {
 			if (videoFrame) {
@@ -144,7 +147,7 @@ export class CanvasGifDecoder {
 			ctx.drawImage(videoFrame, 0, 0);
 
 			return new Promise<Blob | null>((resolve) => {
-				offscreen!.toBlob((blob) => resolve(blob), 'image/png');
+				offscreen.toBlob((blob) => resolve(blob), 'image/png');
 			});
 		} catch (err) {
 			console.error(`Failed to extract GIF frame ${clampedIndex}:`, err);

@@ -375,7 +375,13 @@ export function extractImagePalette(
 					return rgbDist;
 				};
 
-				const selected: Array<{ r: number; g: number; b: number; h: number; s: number }> = [];
+				const selected: Array<{
+					r: number;
+					g: number;
+					b: number;
+					h: number;
+					s: number;
+				}> = [];
 				for (const cand of candidateClusters) {
 					if (selected.every((s) => colorDistance(s, cand) >= 35)) {
 						selected.push(cand);

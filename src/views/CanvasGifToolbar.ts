@@ -1,4 +1,5 @@
 import { setIcon } from 'obsidian';
+
 import { getText } from '../i18n';
 
 export interface GifToolbarCallbacks {
@@ -78,7 +79,9 @@ export class CanvasGifToolbar {
 			const val = parseInt(this.scrubberInput?.value || '0', 10);
 			this.callbacks.onSeek(val);
 		});
-		this.scrubberInput.addEventListener('mousedown', (e) => e.stopPropagation());
+		this.scrubberInput.addEventListener('mousedown', (e) =>
+			e.stopPropagation()
+		);
 		this.scrubberInput.addEventListener('click', (e) => e.stopPropagation());
 
 		// Frame Counter label
@@ -112,7 +115,10 @@ export class CanvasGifToolbar {
 		// Extract Frame button
 		this.extractBtn = this.containerEl.createDiv({
 			cls: 'kambas-gif-toolbar-btn kambas-gif-extract-btn',
-			attr: { 'aria-label': t.gifExtractFrameTooltip || 'Extract current frame to canvas' },
+			attr: {
+				'aria-label':
+					t.gifExtractFrameTooltip || 'Extract current frame to canvas',
+			},
 		});
 		setIcon(this.extractBtn, 'camera');
 		const _extractLabel = this.extractBtn.createSpan({
@@ -126,7 +132,9 @@ export class CanvasGifToolbar {
 
 		// Stop canvas drag events on toolbar interaction
 		this.containerEl.addEventListener('mousedown', (e) => e.stopPropagation());
-		this.containerEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+		this.containerEl.addEventListener('pointerdown', (e) =>
+			e.stopPropagation()
+		);
 	}
 
 	public setMultiSelect(isMultiSelect: boolean): void {
@@ -163,7 +171,10 @@ export class CanvasGifToolbar {
 		}
 	}
 
-	public updatePosition(nodeEls: HTMLElement | HTMLElement[], containerEl: HTMLElement): void {
+	public updatePosition(
+		nodeEls: HTMLElement | HTMLElement[],
+		containerEl: HTMLElement
+	): void {
 		if (!this.containerEl) return;
 
 		const elements = Array.isArray(nodeEls) ? nodeEls : [nodeEls];
@@ -187,7 +198,10 @@ export class CanvasGifToolbar {
 
 			let elBottom = rect.bottom;
 			const tagBar = el.querySelector('.kambas-tag-bar');
-			if (tagBar && !document.body.classList.contains('kambas-tag-position-inside')) {
+			if (
+				tagBar &&
+				!document.body.classList.contains('kambas-tag-position-inside')
+			) {
 				const tagRect = tagBar.getBoundingClientRect();
 				if (tagRect.height > 0) {
 					elBottom = Math.max(elBottom, tagRect.bottom);
@@ -196,7 +210,12 @@ export class CanvasGifToolbar {
 			maxBottom = Math.max(maxBottom, elBottom);
 		}
 
-		if (minLeft === Infinity || maxRight === -Infinity || maxBottom === -Infinity) return;
+		if (
+			minLeft === Infinity ||
+			maxRight === -Infinity ||
+			maxBottom === -Infinity
+		)
+			return;
 
 		const leftPx = (minLeft + maxRight) / 2 - parentRect.left;
 		const topPx = maxBottom - parentRect.top + 8;

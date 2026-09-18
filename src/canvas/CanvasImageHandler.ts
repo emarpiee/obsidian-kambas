@@ -10,6 +10,13 @@ import {
 } from 'obsidian';
 
 import { getText } from '../i18n';
+import { CanvasGifHandler } from './CanvasGifHandler';
+import {
+	EMBEDDED_BLOB_MAP,
+	RAW_BASE64_REGISTRY,
+	getOrigSrcFromImg,
+	srcKey,
+} from './CanvasImageLOD';
 import {
 	CanvasFileData,
 	CanvasItemView,
@@ -22,20 +29,20 @@ import {
 	ConvertToEmbedModal,
 	VaultFileAction,
 } from '../modals/ConvertToEmbedModal';
+import { ImageImportProgressModal } from '../modals/ImageImportProgressModal';
 import {
 	ImageIngestionModal,
 	StorageChoice,
 } from '../modals/ImageIngestionModal';
-import { ImageImportProgressModal } from '../modals/ImageImportProgressModal';
 import { ImageSwapModal } from '../modals/ImageSwapModal';
 import {
 	MediaFilenameModal,
 	MediaFilenameResult,
 	NamingStrategyOption,
 } from '../modals/MediaFilenameModal';
+import { TagColorModal } from '../modals/TagColorModal';
 import { TagModal } from '../modals/TagModal';
 import { TagRenameModal } from '../modals/TagRenameModal';
-import { TagColorModal } from '../modals/TagColorModal';
 import {
 	arrayBufferToBase64DataUrl,
 	blobToBase64,
@@ -51,9 +58,6 @@ import {
 	NumberFormatStyle,
 	formatIncrementalNumber,
 } from '../utils/numberFormatters';
-
-import { CanvasGifHandler } from './CanvasGifHandler';
-import { EMBEDDED_BLOB_MAP, RAW_BASE64_REGISTRY, getOrigSrcFromImg, srcKey } from './CanvasImageLOD';
 
 export interface PendingImage {
 	filename: string;
@@ -94,11 +98,16 @@ export class CanvasImageHandler {
 	}
 
 	public registerEvents(): void {
-		this.plugin.registerDomEvent(window, 'mousemove', (evt: MouseEvent) => {
-			if (evt.clientX !== undefined && evt.clientY !== undefined) {
-				this.lastMousePos = { x: evt.clientX, y: evt.clientY };
-			}
-		}, true);
+		this.plugin.registerDomEvent(
+			window,
+			'mousemove',
+			(evt: MouseEvent) => {
+				if (evt.clientX !== undefined && evt.clientY !== undefined) {
+					this.lastMousePos = { x: evt.clientX, y: evt.clientY };
+				}
+			},
+			true
+		);
 		this.plugin.registerDomEvent(window, 'paste', this.handlePaste, true);
 		this.plugin.registerDomEvent(window, 'drop', this.handleDrop, true);
 		this.plugin.registerDomEvent(window, 'keydown', this.handleKeyDown, true);
@@ -113,7 +122,7 @@ export class CanvasImageHandler {
 		if (!dataUrl.startsWith('data:image/')) return dataUrl;
 		const lookupKey = key || srcKey(dataUrl);
 		if (this.blobUrlMap.has(lookupKey)) {
-			return this.blobUrlMap.get(lookupKey)!;
+			return this.blobUrlMap.get(lookupKey);
 		}
 		try {
 			const parts = dataUrl.split(',');
@@ -202,9 +211,7 @@ export class CanvasImageHandler {
 					for (let i = 0; i < mutation.addedNodes.length; i++) {
 						const added = mutation.addedNodes[i];
 						const el = (
-							added.nodeType === Node.ELEMENT_NODE
-								? added
-								: added.parentElement
+							added.nodeType === Node.ELEMENT_NODE ? added : added.parentElement
 						) as HTMLElement | null;
 						if (!el) continue;
 						if (
@@ -318,10 +325,7 @@ export class CanvasImageHandler {
 			}
 		});
 		return (
-			foundView ??
-			(activeLeaf?.getViewType() === 'canvas'
-				? (activeLeaf)
-				: null)
+			foundView ?? (activeLeaf?.getViewType() === 'canvas' ? activeLeaf : null)
 		);
 	}
 
@@ -526,7 +530,9 @@ export class CanvasImageHandler {
 			if (!rawNodeObj.unknownData) rawNodeObj.unknownData = {};
 			const unknownData = rawNodeObj.unknownData;
 			const nodeUrl = rawNodeObj.url || unknownData.url;
-			const isLinkDataImg = Boolean(nodeUrl && nodeUrl.startsWith('data:image/'));
+			const isLinkDataImg = Boolean(
+				nodeUrl && nodeUrl.startsWith('data:image/')
+			);
 
 			if (isLinkDataImg && nodeUrl) {
 				unknownData.type = 'link';
@@ -596,8 +602,7 @@ export class CanvasImageHandler {
 				}
 			}
 
-			const container =
-				nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
+			const container = nodeEl.querySelector('.canvas-node-content') ?? nodeEl;
 			const nodeContainer =
 				nodeEl.querySelector('.canvas-node-container') ?? nodeEl;
 			const hasEmbeddedImg = Boolean(
@@ -663,10 +668,7 @@ export class CanvasImageHandler {
 										cls: 'kambas-palette-swatch',
 									});
 									swatch.style.backgroundColor = hex;
-									swatch.setAttribute(
-										'aria-label',
-										`${hex} (Click to copy)`
-									);
+									swatch.setAttribute('aria-label', `${hex} (Click to copy)`);
 									swatch.addEventListener('click', (e) => {
 										e.stopPropagation();
 										e.preventDefault();
@@ -771,13 +773,15 @@ export class CanvasImageHandler {
 				).url;
 
 				const filePath =
-					typeof rawFile === 'string' ? rawFile : rawFile?.path ?? '';
+					typeof rawFile === 'string' ? rawFile : (rawFile?.path ?? '');
 				const fileExt =
 					typeof rawFile === 'object' && rawFile?.extension
 						? rawFile.extension.toLowerCase()
-						: filePath.split('.').pop()?.toLowerCase() ?? '';
+						: (filePath.split('.').pop()?.toLowerCase() ?? '');
 
-				const origSrc = targetImg ? getOrigSrcFromImg(targetImg) : (rawUrl ?? '');
+				const origSrc = targetImg
+					? getOrigSrcFromImg(targetImg)
+					: (rawUrl ?? '');
 				const imgSrc = targetImg?.src ?? rawUrl ?? '';
 				const isGif =
 					fileExt === 'gif' ||
@@ -810,8 +814,7 @@ export class CanvasImageHandler {
 					if (rawFile instanceof TFile) {
 						fileObj = rawFile;
 					} else if (filePath) {
-						const abstractFile =
-							this.app.vault.getAbstractFileByPath(filePath);
+						const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
 						if (abstractFile instanceof TFile) {
 							fileObj = abstractFile;
 						}
@@ -831,7 +834,11 @@ export class CanvasImageHandler {
 				}
 			});
 
-			this.gifHandler.syncToolbar(canvas, activeView.containerEl, selectedGifNodeIds);
+			this.gifHandler.syncToolbar(
+				canvas,
+				activeView.containerEl,
+				selectedGifNodeIds
+			);
 		} else {
 			this.gifHandler.detachAll();
 			canvas.nodes.forEach((canvasNode) => {
@@ -2014,14 +2021,57 @@ export class CanvasImageHandler {
 						width: canvasNodeData.width,
 						height: canvasNodeData.height,
 					};
-					const flipH = canvasNodeData.kambasFlipH ?? (nodeObj as { unknownData?: { kambasFlipH?: boolean } }).unknownData?.kambasFlipH;
-					const flipV = canvasNodeData.kambasFlipV ?? (nodeObj as { unknownData?: { kambasFlipV?: boolean } }).unknownData?.kambasFlipV;
-					const grayscale = canvasNodeData.kambasGrayscale ?? (nodeObj as { unknownData?: { kambasGrayscale?: boolean } }).unknownData?.kambasGrayscale;
-					const opacity = canvasNodeData.kambasOpacity ?? (nodeObj as { unknownData?: { kambasOpacity?: number } }).unknownData?.kambasOpacity;
-					const tags = canvasNodeData.kambasTags || (nodeObj as { unknownData?: { kambasTags?: string[] } }).unknownData?.kambasTags || (nodeObj as { kambasTags?: string[] }).kambasTags;
-					const gifPaused = (canvasNodeData as { kambasGifPaused?: boolean }).kambasGifPaused ?? (nodeObj as { kambasGifPaused?: boolean; unknownData?: { kambasGifPaused?: boolean } }).kambasGifPaused ?? (nodeObj as { unknownData?: { kambasGifPaused?: boolean } }).unknownData?.kambasGifPaused;
-					const gifFrame = (canvasNodeData as { kambasGifFrame?: number }).kambasGifFrame ?? (nodeObj as { kambasGifFrame?: number; unknownData?: { kambasGifFrame?: number } }).kambasGifFrame ?? (nodeObj as { unknownData?: { kambasGifFrame?: number } }).unknownData?.kambasGifFrame;
-					const gifSpeed = (canvasNodeData as { kambasGifSpeed?: number }).kambasGifSpeed ?? (nodeObj as { kambasGifSpeed?: number; unknownData?: { kambasGifSpeed?: number } }).kambasGifSpeed ?? (nodeObj as { unknownData?: { kambasGifSpeed?: number } }).unknownData?.kambasGifSpeed;
+					const flipH =
+						canvasNodeData.kambasFlipH ??
+						(nodeObj as { unknownData?: { kambasFlipH?: boolean } }).unknownData
+							?.kambasFlipH;
+					const flipV =
+						canvasNodeData.kambasFlipV ??
+						(nodeObj as { unknownData?: { kambasFlipV?: boolean } }).unknownData
+							?.kambasFlipV;
+					const grayscale =
+						canvasNodeData.kambasGrayscale ??
+						(nodeObj as { unknownData?: { kambasGrayscale?: boolean } })
+							.unknownData?.kambasGrayscale;
+					const opacity =
+						canvasNodeData.kambasOpacity ??
+						(nodeObj as { unknownData?: { kambasOpacity?: number } })
+							.unknownData?.kambasOpacity;
+					const tags =
+						canvasNodeData.kambasTags ||
+						(nodeObj as { unknownData?: { kambasTags?: string[] } }).unknownData
+							?.kambasTags ||
+						(nodeObj as { kambasTags?: string[] }).kambasTags;
+					const gifPaused =
+						(canvasNodeData as { kambasGifPaused?: boolean }).kambasGifPaused ??
+						(
+							nodeObj as {
+								kambasGifPaused?: boolean;
+								unknownData?: { kambasGifPaused?: boolean };
+							}
+						).kambasGifPaused ??
+						(nodeObj as { unknownData?: { kambasGifPaused?: boolean } })
+							.unknownData?.kambasGifPaused;
+					const gifFrame =
+						(canvasNodeData as { kambasGifFrame?: number }).kambasGifFrame ??
+						(
+							nodeObj as {
+								kambasGifFrame?: number;
+								unknownData?: { kambasGifFrame?: number };
+							}
+						).kambasGifFrame ??
+						(nodeObj as { unknownData?: { kambasGifFrame?: number } })
+							.unknownData?.kambasGifFrame;
+					const gifSpeed =
+						(canvasNodeData as { kambasGifSpeed?: number }).kambasGifSpeed ??
+						(
+							nodeObj as {
+								kambasGifSpeed?: number;
+								unknownData?: { kambasGifSpeed?: number };
+							}
+						).kambasGifSpeed ??
+						(nodeObj as { unknownData?: { kambasGifSpeed?: number } })
+							.unknownData?.kambasGifSpeed;
 
 					// 2. Remove old link node from canvas
 					const rawCanvas = canvas as unknown as {
@@ -2036,7 +2086,9 @@ export class CanvasImageHandler {
 					}
 
 					// 3. Create native Obsidian file node
-					const existingNodeIds = new Set(canvas.nodes ? Array.from(canvas.nodes.keys()) : []);
+					const existingNodeIds = new Set(
+						canvas.nodes ? Array.from(canvas.nodes.keys()) : []
+					);
 					const createdNode = canvas.createFileNode({
 						file: savedFile,
 						pos,
@@ -2601,7 +2653,11 @@ export class CanvasImageHandler {
 			const mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
 			let dataUrl = arrayBufferToBase64DataUrl(arrayBuffer, mimeType);
 
-			if (this.plugin.settings.autoOptimizeBase64OnIngest && ext !== 'gif' && ext !== 'svg') {
+			if (
+				this.plugin.settings.autoOptimizeBase64OnIngest &&
+				ext !== 'gif' &&
+				ext !== 'svg'
+			) {
 				try {
 					const res = await compressAndOptimizeBase64(dataUrl, {
 						maxDimension: this.plugin.settings.base64MaxDimension || 2048,
@@ -2620,17 +2676,50 @@ export class CanvasImageHandler {
 				y: canvasNodeData?.y ?? rawObj.y ?? rawObj.unknownData?.y ?? 0,
 			};
 			const size = {
-				width: canvasNodeData?.width ?? rawObj.width ?? rawObj.unknownData?.width ?? 400,
-				height: canvasNodeData?.height ?? rawObj.height ?? rawObj.unknownData?.height ?? 300,
+				width:
+					canvasNodeData?.width ??
+					rawObj.width ??
+					rawObj.unknownData?.width ??
+					400,
+				height:
+					canvasNodeData?.height ??
+					rawObj.height ??
+					rawObj.unknownData?.height ??
+					300,
 			};
-			const flipH = canvasNodeData?.kambasFlipH ?? rawObj.kambasFlipH ?? rawObj.unknownData?.kambasFlipH;
-			const flipV = canvasNodeData?.kambasFlipV ?? rawObj.kambasFlipV ?? rawObj.unknownData?.kambasFlipV;
-			const grayscale = canvasNodeData?.kambasGrayscale ?? rawObj.kambasGrayscale ?? rawObj.unknownData?.kambasGrayscale;
-			const opacity = canvasNodeData?.kambasOpacity ?? rawObj.kambasOpacity ?? rawObj.unknownData?.kambasOpacity;
-			const tags = canvasNodeData?.kambasTags || rawObj.kambasTags || rawObj.unknownData?.kambasTags || [];
-			const gifPaused = (canvasNodeData as { kambasGifPaused?: boolean })?.kambasGifPaused ?? (rawObj as { kambasGifPaused?: boolean }).kambasGifPaused ?? rawObj.unknownData?.kambasGifPaused;
-			const gifFrame = (canvasNodeData as { kambasGifFrame?: number })?.kambasGifFrame ?? (rawObj as { kambasGifFrame?: number }).kambasGifFrame ?? rawObj.unknownData?.kambasGifFrame;
-			const gifSpeed = (canvasNodeData as { kambasGifSpeed?: number })?.kambasGifSpeed ?? (rawObj as { kambasGifSpeed?: number }).kambasGifSpeed ?? rawObj.unknownData?.kambasGifSpeed;
+			const flipH =
+				canvasNodeData?.kambasFlipH ??
+				rawObj.kambasFlipH ??
+				rawObj.unknownData?.kambasFlipH;
+			const flipV =
+				canvasNodeData?.kambasFlipV ??
+				rawObj.kambasFlipV ??
+				rawObj.unknownData?.kambasFlipV;
+			const grayscale =
+				canvasNodeData?.kambasGrayscale ??
+				rawObj.kambasGrayscale ??
+				rawObj.unknownData?.kambasGrayscale;
+			const opacity =
+				canvasNodeData?.kambasOpacity ??
+				rawObj.kambasOpacity ??
+				rawObj.unknownData?.kambasOpacity;
+			const tags =
+				canvasNodeData?.kambasTags ||
+				rawObj.kambasTags ||
+				rawObj.unknownData?.kambasTags ||
+				[];
+			const gifPaused =
+				(canvasNodeData as { kambasGifPaused?: boolean })?.kambasGifPaused ??
+				(rawObj as { kambasGifPaused?: boolean }).kambasGifPaused ??
+				rawObj.unknownData?.kambasGifPaused;
+			const gifFrame =
+				(canvasNodeData as { kambasGifFrame?: number })?.kambasGifFrame ??
+				(rawObj as { kambasGifFrame?: number }).kambasGifFrame ??
+				rawObj.unknownData?.kambasGifFrame;
+			const gifSpeed =
+				(canvasNodeData as { kambasGifSpeed?: number })?.kambasGifSpeed ??
+				(rawObj as { kambasGifSpeed?: number }).kambasGifSpeed ??
+				rawObj.unknownData?.kambasGifSpeed;
 
 			// 2. Remove old native file node from canvas
 			const rawCanvas = canvas as unknown as {
@@ -2646,7 +2735,9 @@ export class CanvasImageHandler {
 
 			// 3. Create link node storing embedded base64 data URL
 			if (typeof canvas.createLinkNode === 'function') {
-				const existingNodeIds = new Set(canvas.nodes ? Array.from(canvas.nodes.keys()) : []);
+				const existingNodeIds = new Set(
+					canvas.nodes ? Array.from(canvas.nodes.keys()) : []
+				);
 				const createdNode = canvas.createLinkNode({
 					url: dataUrl,
 					pos,
@@ -2852,7 +2943,10 @@ export class CanvasImageHandler {
 			const targetImg = this.getNativeImageElement(nodeEl);
 			if (targetImg && targetImg.src) {
 				const srcLower = targetImg.src.toLowerCase();
-				if (srcLower.includes('.gif') || srcLower.startsWith('data:image/gif')) {
+				if (
+					srcLower.includes('.gif') ||
+					srcLower.startsWith('data:image/gif')
+				) {
 					targetImg.setCssProps({ display: 'none' });
 				}
 			}
@@ -2908,7 +3002,10 @@ export class CanvasImageHandler {
 				if (!activeView || activeView.getViewType() !== 'canvas') return;
 
 				// If panel is currently open and on 'color' tab, switch tab to 'tag'
-				if (this.tagFilterPanelEl?.isConnected && this.activeFilterTab !== 'tag') {
+				if (
+					this.tagFilterPanelEl?.isConnected &&
+					this.activeFilterTab !== 'tag'
+				) {
 					this.activeFilterTab = 'tag';
 					const tagTabEl = this.tagFilterPanelEl.querySelector(
 						'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)'
@@ -3355,7 +3452,11 @@ export class CanvasImageHandler {
 				containerRo.disconnect();
 				panelObserver.disconnect();
 				if (onOutsidePointerDown) {
-					document.removeEventListener('pointerdown', onOutsidePointerDown, true);
+					document.removeEventListener(
+						'pointerdown',
+						onOutsidePointerDown,
+						true
+					);
 				}
 			}
 		});
@@ -3907,7 +4008,7 @@ export class CanvasImageHandler {
 					extractMode === 'auto'
 						? (t.extractingOrNoColors ?? 'Extracting or no colors found...')
 						: (t.clickToExtractColors ??
-								'Click button above to extract image colors.'),
+							'Click button above to extract image colors.'),
 			});
 			if (
 				this.activeColorFilters.size > 0 ||
@@ -4310,13 +4411,11 @@ export class CanvasImageHandler {
 				clearTagRowHighlights();
 				return;
 			}
-			listEl
-				.querySelectorAll<HTMLElement>('[data-tag-name]')
-				.forEach((row) => {
-					const tn = row.getAttribute('data-tag-name') ?? '';
-					row.classList.toggle('is-related', nodeTags.has(tn));
-					row.classList.toggle('is-unrelated', !nodeTags.has(tn));
-				});
+			listEl.querySelectorAll<HTMLElement>('[data-tag-name]').forEach((row) => {
+				const tn = row.getAttribute('data-tag-name') ?? '';
+				row.classList.toggle('is-related', nodeTags.has(tn));
+				row.classList.toggle('is-unrelated', !nodeTags.has(tn));
+			});
 		};
 		const onCanvasTagMouseLeave = (): void => clearTagRowHighlights();
 
@@ -4326,12 +4425,13 @@ export class CanvasImageHandler {
 			canvasContainer.addEventListener('mouseleave', onCanvasTagMouseLeave);
 			this.tagHighlightCleanup = (): void => {
 				canvasContainer.removeEventListener('mouseover', onCanvasTagMouseOver);
-				canvasContainer.removeEventListener('mouseleave', onCanvasTagMouseLeave);
-				canvasContainer
-					.querySelectorAll('[data-kambas-tags]')
-					.forEach((el) => {
-						el.removeAttribute('data-kambas-tags');
-					});
+				canvasContainer.removeEventListener(
+					'mouseleave',
+					onCanvasTagMouseLeave
+				);
+				canvasContainer.querySelectorAll('[data-kambas-tags]').forEach((el) => {
+					el.removeAttribute('data-kambas-tags');
+				});
 			};
 		}
 
@@ -4441,7 +4541,8 @@ export class CanvasImageHandler {
 
 					// 1. Rename
 					menu.addItem((item) => {
-						item.setTitle(t.renameTag ?? 'Rename')
+						item
+							.setTitle(t.renameTag ?? 'Rename')
 							.setIcon('pencil')
 							.onClick(() => {
 								new TagRenameModal(this.app, tag, (newTag) => {
@@ -4452,7 +4553,8 @@ export class CanvasImageHandler {
 
 					// 2. Add color to tags
 					menu.addItem((item) => {
-						item.setTitle(t.setTagColor ?? 'Add color to tag')
+						item
+							.setTitle(t.setTagColor ?? 'Add color to tag')
 							.setIcon('palette')
 							.onClick(() => {
 								this.promptSetTagColor(activeView, tag);
@@ -4461,7 +4563,8 @@ export class CanvasImageHandler {
 
 					// 3. Trash / Delete
 					menu.addItem((item) => {
-						item.setTitle(t.deleteTag ?? 'Delete tag')
+						item
+							.setTitle(t.deleteTag ?? 'Delete tag')
 							.setIcon('trash-2')
 							.setWarning(true)
 							.onClick(() => {
@@ -4569,8 +4672,7 @@ export class CanvasImageHandler {
 	}
 
 	public promptSetTagColor(activeView: CanvasItemView, tag: string): void {
-		const currentColors =
-			this.plugin.settings.tagColors?.[tag.toLowerCase()];
+		const currentColors = this.plugin.settings.tagColors?.[tag.toLowerCase()];
 		new TagColorModal(this.app, tag, currentColors, (newColors) => {
 			if (!this.plugin.settings.tagColors) {
 				this.plugin.settings.tagColors = {};
@@ -5258,7 +5360,11 @@ export class CanvasImageHandler {
 		const validImages: PendingImage[] = [];
 
 		if (progressModal) {
-			progressModal.updateProgress(0, images[0]?.filename || '', 'Analyzing image dimensions...');
+			progressModal.updateProgress(
+				0,
+				images[0]?.filename || '',
+				'Analyzing image dimensions...'
+			);
 		}
 
 		for (let i = 0; i < images.length; i++) {
@@ -5333,7 +5439,10 @@ export class CanvasImageHandler {
 							});
 							if (res.dataUrl) dataUrl = res.dataUrl;
 						} catch (err) {
-							console.warn('Base64 optimization failed during image ingest:', err);
+							console.warn(
+								'Base64 optimization failed during image ingest:',
+								err
+							);
 						}
 					}
 				}
@@ -5626,7 +5735,12 @@ export class CanvasImageHandler {
 		const gap = 30;
 
 		const rows: Array<{
-			items: Array<{ index: number; width: number; height: number; relX: number }>;
+			items: Array<{
+				index: number;
+				width: number;
+				height: number;
+				relX: number;
+			}>;
 			rowWidth: number;
 			rowHeight: number;
 		}> = [];
@@ -5822,7 +5936,10 @@ export class CanvasImageHandler {
 							});
 							if (res.dataUrl) dataUrl = res.dataUrl;
 						} catch (err) {
-							console.warn('Base64 optimization failed during image replace:', err);
+							console.warn(
+								'Base64 optimization failed during image replace:',
+								err
+							);
 						}
 					}
 				}
