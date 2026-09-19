@@ -503,8 +503,13 @@ export class ProxyCache {
 			const u = new URL(src);
 			let p = decodeURIComponent(u.pathname);
 			if (/^\/[A-Za-z]:/.test(p)) p = p.slice(1);
-			const adapter = this.app.vault.adapter as unknown as { getBasePath?: () => string };
-			const base = (adapter && typeof adapter.getBasePath === 'function') ? adapter.getBasePath() : null;
+			const adapter = this.app.vault.adapter as unknown as {
+				getBasePath?: () => string;
+			};
+			const base =
+				adapter && typeof adapter.getBasePath === 'function'
+					? adapter.getBasePath()
+					: null;
 			if (!base) return null;
 			const nb = base.replace(/\\/g, '/');
 			if (p.toLowerCase().startsWith(nb.toLowerCase() + '/')) {
@@ -577,11 +582,7 @@ export class ProxyCache {
 					const frameCanvas = this._makeCanvas(w, h);
 					const ctx = frameCanvas.getContext('2d');
 					if (ctx) {
-						ctx.drawImage(
-							frame0VideoFrame,
-							0,
-							0
-						);
+						ctx.drawImage(frame0VideoFrame, 0, 0);
 					}
 					bmp = frameCanvas;
 					dec.close();
@@ -688,10 +689,10 @@ export class ProxyCache {
 		const q = getLodSettings(this.plugin).quality;
 		const encode = (type: string): Promise<Blob> => {
 			if ('convertToBlob' in canvas) {
-				return (canvas).convertToBlob({ type, quality: q });
+				return canvas.convertToBlob({ type, quality: q });
 			}
 			return new Promise((res, rej) => {
-				(canvas).toBlob(
+				canvas.toBlob(
 					(b) => (b ? res(b) : rej(new Error('toBlob failed'))),
 					type,
 					q
@@ -1209,7 +1210,9 @@ export class CanvasBinder {
 						normalizePath(node.file)
 					);
 					if (!(tf instanceof TFile)) continue;
-					void this.plugin.cache.request(this.plugin.app.vault.getResourcePath(tf));
+					void this.plugin.cache.request(
+						this.plugin.app.vault.getResourcePath(tf)
+					);
 				} else if (
 					node.type === 'link' &&
 					node.url &&

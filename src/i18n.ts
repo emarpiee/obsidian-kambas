@@ -289,6 +289,22 @@ export interface TranslationSchema {
 	gifToggleCommandName?: string;
 	gifControlsEnabledNotice?: string;
 	gifControlsDisabledNotice?: string;
+	showEmbeddedMediaLabelName?: string;
+	showEmbeddedMediaLabelDesc?: string;
+	preserveMediaFilenameName?: string;
+	preserveMediaFilenameDesc?: string;
+	setMediaLabel?: string;
+	setMediaLabelModalTitle?: string;
+	mediaLabelFieldLabel?: string;
+	mediaLabelFieldDesc?: string;
+	mediaLabelPlaceholder?: string;
+	clearLabelBtn?: string;
+	labelFilenameOptTitle?: string;
+	setMediaLabelCommand?: string;
+	toggleMediaLabelsCommand?: string;
+	labelsShownNotice?: string;
+	labelsHiddenNotice?: string;
+	noMediaSelectedNotice?: string;
 }
 
 const en: TranslationSchema = {
@@ -309,6 +325,25 @@ const en: TranslationSchema = {
 	gifToggleCommandName: 'Toggle GIF controls on/off',
 	gifControlsEnabledNotice: 'GIF controls enabled',
 	gifControlsDisabledNotice: 'GIF controls disabled',
+	showEmbeddedMediaLabelName: 'Show media labels',
+	showEmbeddedMediaLabelDesc:
+		'Display native canvas node labels above embedded media cards.',
+	preserveMediaFilenameName: 'Preserve media filename on ingest',
+	preserveMediaFilenameDesc:
+		'Automatically set native canvas node label to the original file name when dropping, pasting, or embedding media.',
+	setMediaLabel: 'Set media label...',
+	setMediaLabelModalTitle: 'Set media label',
+	mediaLabelFieldLabel: 'Media label / filename',
+	mediaLabelFieldDesc:
+		'Display label stored in native canvas node header. Use # for incremental counter (e.g. label-## for 01, 02 or label-### for 001, 002).',
+	mediaLabelPlaceholder: 'e.g. architecture-##.png',
+	clearLabelBtn: 'Remove label',
+	labelFilenameOptTitle: 'Media label / original filename',
+	setMediaLabelCommand: 'Set media label for selected node',
+	toggleMediaLabelsCommand: 'Toggle embedded media labels',
+	labelsShownNotice: 'Embedded media labels enabled',
+	labelsHiddenNotice: 'Embedded media labels disabled',
+	noMediaSelectedNotice: 'No media node selected',
 
 	settingsHeading: 'Display & canvas',
 	hideImageLabelName: 'Hide media label',
@@ -626,6 +661,24 @@ const zh: TranslationSchema = {
 	gifToggleCommandName: '切换 GIF 控制工具显示/隐藏',
 	gifControlsEnabledNotice: '已启用 GIF 控制工具',
 	gifControlsDisabledNotice: '已禁用 GIF 控制工具',
+	showEmbeddedMediaLabelName: '显示媒体标签',
+	showEmbeddedMediaLabelDesc: '在嵌入媒体卡片上方显示原生画布节点标签。',
+	preserveMediaFilenameName: '导入时保留媒体文件名',
+	preserveMediaFilenameDesc:
+		'在拖放、粘贴或嵌入媒体时，自动将原生画布节点标签设置为原始文件名。',
+	setMediaLabel: '设置媒体标签...',
+	setMediaLabelModalTitle: '设置媒体标签',
+	mediaLabelFieldLabel: '媒体标签 / 文件名',
+	mediaLabelFieldDesc:
+		'存储在原生画布节点标头中的显示标签。使用 # 添加递增编号（例如：label-## 表示 01, 02，label-### 表示 001, 002）。',
+	mediaLabelPlaceholder: '例如：architecture-##.png',
+	clearLabelBtn: '移除标签',
+	labelFilenameOptTitle: '媒体标签 / 原始文件名',
+	setMediaLabelCommand: '为所选节点设置媒体标签',
+	toggleMediaLabelsCommand: '切换嵌入媒体标签显示',
+	labelsShownNotice: '已启用嵌入媒体标签',
+	labelsHiddenNotice: '已禁用嵌入媒体标签',
+	noMediaSelectedNotice: '未选择媒体节点',
 	settingsHeading: '显示与画布',
 	hideImageLabelName: '隐藏媒体标签',
 	hideImageLabelDesc:
@@ -908,6 +961,24 @@ const zhTW: TranslationSchema = {
 	gifToggleCommandName: '切換 GIF 控制工具顯示/隱藏',
 	gifControlsEnabledNotice: '已啟用 GIF 控制工具',
 	gifControlsDisabledNotice: '已禁用 GIF 控制工具',
+	showEmbeddedMediaLabelName: '顯示媒體標籤',
+	showEmbeddedMediaLabelDesc: '在嵌入媒體卡片上方顯示原生畫布節點標籤。',
+	preserveMediaFilenameName: '匯入時保留媒體檔名',
+	preserveMediaFilenameDesc:
+		'在拖放、貼上或嵌入媒體時，自動將原生畫布節點標籤設定為原始檔名。',
+	setMediaLabel: '設定媒體標籤...',
+	setMediaLabelModalTitle: '設定媒體標籤',
+	mediaLabelFieldLabel: '媒體標籤 / 檔名',
+	mediaLabelFieldDesc:
+		'儲存在原生畫布節點標頭中的顯示標籤。使用 # 新增遞增編號（例如：label-## 表示 01, 02，label-### 表示 001, 002）。',
+	mediaLabelPlaceholder: '例如：architecture-##.png',
+	clearLabelBtn: '移除標籤',
+	labelFilenameOptTitle: '媒體標籤 / 原始檔名',
+	setMediaLabelCommand: '為所選節點設定媒體標籤',
+	toggleMediaLabelsCommand: '切換嵌入媒體標籤顯示',
+	labelsShownNotice: '已啟用嵌入媒體標籤',
+	labelsHiddenNotice: '已停用嵌入媒體標籤',
+	noMediaSelectedNotice: '未選擇媒體節點',
 	settingsHeading: '顯示與畫布',
 	hideImageLabelName: '隱藏媒體標籤',
 	hideImageLabelDesc:
@@ -1186,6 +1257,27 @@ const es: TranslationSchema = {
 	gifToggleCommandName: 'Activar/desactivar controles de GIF',
 	gifControlsEnabledNotice: 'Controles de GIF habilitados',
 	gifControlsDisabledNotice: 'Controles de GIF desactivados',
+	showEmbeddedMediaLabelName: 'Mostrar etiquetas de medios',
+	showEmbeddedMediaLabelDesc:
+		'Muestra las etiquetas nativas del lienzo sobre las tarjetas de medios incrustados.',
+	preserveMediaFilenameName:
+		'Conservar nombre del archivo de medios al importar',
+	preserveMediaFilenameDesc:
+		'Establece automáticamente la etiqueta del nodo con el nombre original del archivo al arrastrar, pegar o incrustar medios.',
+	setMediaLabel: 'Establecer etiqueta de medios...',
+	setMediaLabelModalTitle: 'Establecer etiqueta de medios',
+	mediaLabelFieldLabel: 'Etiqueta de medios / nombre de archivo',
+	mediaLabelFieldDesc:
+		'Etiqueta guardada en el encabezado del lienzo. Use # para contador incremental (ej. label-## para 01, 02 o label-### para 001, 002).',
+	mediaLabelPlaceholder: 'ej. arquitectura-##.png',
+	clearLabelBtn: 'Eliminar etiqueta',
+	labelFilenameOptTitle: 'Etiqueta de medios / nombre original',
+	setMediaLabelCommand:
+		'Establecer etiqueta de medios para el nodo seleccionado',
+	toggleMediaLabelsCommand: 'Alternar etiquetas de medios incrustados',
+	labelsShownNotice: 'Etiquetas de medios incrustados activadas',
+	labelsHiddenNotice: 'Etiquetas de medios incrustados desactivadas',
+	noMediaSelectedNotice: 'Ningún nodo de medios seleccionado',
 	settingsHeading: 'Visualización y lienzo',
 	hideImageLabelName: 'Ocultar etiqueta de medios',
 	hideImageLabelDesc:
@@ -1495,6 +1587,28 @@ const fr: TranslationSchema = {
 	gifToggleCommandName: 'Activer/désactiver les contrôles GIF',
 	gifControlsEnabledNotice: 'Contrôles GIF activés',
 	gifControlsDisabledNotice: 'Contrôles GIF désactivés',
+	showEmbeddedMediaLabelName: 'Afficher les étiquettes des médias',
+	showEmbeddedMediaLabelDesc:
+		'Affiche les étiquettes de nœud natives du canevas au-dessus des cartes de médias intégrés.',
+	preserveMediaFilenameName:
+		"Conserver le nom du fichier média à l'importation",
+	preserveMediaFilenameDesc:
+		"Définit automatiquement l'étiquette du nœud avec le nom de fichier d'origine lors du glisser-déposer, du collage ou de l'intégration de médias.",
+	setMediaLabel: 'Définir l\'étiquette du média...',
+	setMediaLabelModalTitle: 'Définir l\'étiquette du média',
+	mediaLabelFieldLabel: 'Étiquette du média / nom de fichier',
+	mediaLabelFieldDesc:
+		'Étiquette affichée enregistrée dans l\'en-tête du canevas. Utilisez # pour un compteur incrémentiel (ex. label-## pour 01, 02).',
+	mediaLabelPlaceholder: 'ex. architecture-##.png',
+	clearLabelBtn: 'Supprimer l\'étiquette',
+	labelFilenameOptTitle: 'Étiquette du média / nom de fichier d\'origine',
+	setMediaLabelCommand:
+		'Définir l\'étiquette du média pour le nœud sélectionné',
+	toggleMediaLabelsCommand:
+		'Activer/désactiver les étiquettes des médias intégrés',
+	labelsShownNotice: 'Étiquettes des médias intégrés activées',
+	labelsHiddenNotice: 'Étiquettes des médias intégrés désactivées',
+	noMediaSelectedNotice: 'Aucun nœud média sélectionné',
 	settingsHeading: 'Affichage et canevas',
 	hideImageLabelName: 'Masquer l’étiquette des médias',
 	hideImageLabelDesc:
@@ -1805,6 +1919,26 @@ const de: TranslationSchema = {
 	gifToggleCommandName: 'GIF-Steuerung ein-/ausschalten',
 	gifControlsEnabledNotice: 'GIF-Steuerung aktiviert',
 	gifControlsDisabledNotice: 'GIF-Steuerung deaktiviert',
+	showEmbeddedMediaLabelName: 'Medienbeschriftungen anzeigen',
+	showEmbeddedMediaLabelDesc:
+		'Zeigt native Canvas-Knotenbeschriftungen über eingebetteten Medienkarten an.',
+	preserveMediaFilenameName: 'Mediendateinamen beim Importieren beibehalten',
+	preserveMediaFilenameDesc:
+		'Setzt beim Ablegen, Einfügen oder Einbetten von Medien automatisch die Knotenbeschriftung auf den ursprünglichen Dateinamen.',
+	setMediaLabel: 'Medienbeschriftung festlegen...',
+	setMediaLabelModalTitle: 'Medienbeschriftung festlegen',
+	mediaLabelFieldLabel: 'Medienbeschriftung / Dateiname',
+	mediaLabelFieldDesc:
+		'Anzeigebeschriftung im Canvas-Knotenkopf. Verwenden Sie # für fortlaufende Nummern (z. B. label-## für 01, 02).',
+	mediaLabelPlaceholder: 'z. B. architektur-##.png',
+	clearLabelBtn: 'Beschriftung entfernen',
+	labelFilenameOptTitle: 'Medienbeschriftung / ursprünglicher Dateiname',
+	setMediaLabelCommand:
+		'Medienbeschriftung für ausgewählten Knoten festlegen',
+	toggleMediaLabelsCommand: 'Eingebettete Medienbeschriftungen umschalten',
+	labelsShownNotice: 'Eingebettete Medienbeschriftungen aktiviert',
+	labelsHiddenNotice: 'Eingebettete Medienbeschriftungen deaktiviert',
+	noMediaSelectedNotice: 'Kein Medienknoten ausgewählt',
 	settingsHeading: 'Anzeige & Canvas',
 	hideImageLabelName: 'Medienbeschriftung ausblenden',
 	hideImageLabelDesc:
@@ -2116,6 +2250,25 @@ const ja: TranslationSchema = {
 	gifToggleCommandName: 'GIF コントロールの有効/無効を切り替え',
 	gifControlsEnabledNotice: 'GIF コントロールが有効になりました',
 	gifControlsDisabledNotice: 'GIF コントロールが無効になりました',
+	showEmbeddedMediaLabelName: 'メディアラベルを表示',
+	showEmbeddedMediaLabelDesc:
+		'埋め込みメディアカードの上にネイティブキャンバスノードのラベルを表示します。',
+	preserveMediaFilenameName: '取り込み時に元のメディアファイル名を保持',
+	preserveMediaFilenameDesc:
+		'メディアのドロップ、貼り付け、埋め込み時に元のファイル名をネイティブキャンバスノードラベルとして自動設定します。',
+	setMediaLabel: 'メディアラベルを設定...',
+	setMediaLabelModalTitle: 'メディアラベルを設定',
+	mediaLabelFieldLabel: 'メディアラベル / ファイル名',
+	mediaLabelFieldDesc:
+		'キャンバスノードヘッダーに保存される表示ラベル。# を使用して連番を追加できます（例: label-## は 01, 02、label-### は 001, 002）。',
+	mediaLabelPlaceholder: '例: architecture-##.png',
+	clearLabelBtn: 'ラベルを削除',
+	labelFilenameOptTitle: 'メディアラベル / 元のファイル名',
+	setMediaLabelCommand: '選択したノードのメディアラベルを設定',
+	toggleMediaLabelsCommand: '埋め込みメディアラベル表示の切り替え',
+	labelsShownNotice: '埋め込みメディアラベルが有効になりました',
+	labelsHiddenNotice: '埋め込みメディアラベルが無効になりました',
+	noMediaSelectedNotice: 'メディアノードが選択されていません',
 	settingsHeading: '表示とキャンバス',
 	hideImageLabelName: 'メディアラベルを非表示',
 	hideImageLabelDesc:
@@ -2424,6 +2577,25 @@ const ko: TranslationSchema = {
 	gifToggleCommandName: 'GIF 제어 도구 켜기/끄기',
 	gifControlsEnabledNotice: 'GIF 제어 도구가 활성화되었습니다',
 	gifControlsDisabledNotice: 'GIF 제어 도구가 비활성화되었습니다',
+	showEmbeddedMediaLabelName: '미디어 레이블 표시',
+	showEmbeddedMediaLabelDesc:
+		'임베디드 미디어 카드 위에 네이티브 캔버스 노드 레이블을 표시합니다.',
+	preserveMediaFilenameName: '가져올 때 미디어 파일명 보존',
+	preserveMediaFilenameDesc:
+		'미디어를 끌어다 놓거나 붙여넣거나 임베드할 때 원본 파일명을 네이티브 캔버스 노드 레이블로 자동 설정합니다.',
+	setMediaLabel: '미디어 레이블 설정...',
+	setMediaLabelModalTitle: '미디어 레이블 설정',
+	mediaLabelFieldLabel: '미디어 레이블 / 파일명',
+	mediaLabelFieldDesc:
+		'캔버스 노드 헤더에 저장되는 표시 레이블입니다. #를 사용하여 증분 번호를 추가할 수 있습니다 (예: label-##는 01, 02).',
+	mediaLabelPlaceholder: '예: architecture-##.png',
+	clearLabelBtn: '레이블 제거',
+	labelFilenameOptTitle: '미디어 레이블 / 원본 파일명',
+	setMediaLabelCommand: '선택한 노드의 미디어 레이블 설정',
+	toggleMediaLabelsCommand: '임베디드 미디어 레이블 토글',
+	labelsShownNotice: '임베디드 미디어 레이블이 활성화되었습니다',
+	labelsHiddenNotice: '임베디드 미디어 레이블이 비활성화되었습니다',
+	noMediaSelectedNotice: '선택된 미디어 노드가 없습니다',
 	settingsHeading: '표시 및 캔버스',
 	hideImageLabelName: '미디어 레이블 숨기기',
 	hideImageLabelDesc:
@@ -2723,6 +2895,25 @@ const ru: TranslationSchema = {
 	gifToggleCommandName: 'Включить/выключить управление GIF',
 	gifControlsEnabledNotice: 'Элементы управления GIF включены',
 	gifControlsDisabledNotice: 'Элементы управления GIF отключены',
+	showEmbeddedMediaLabelName: 'Показывать метки медиа',
+	showEmbeddedMediaLabelDesc:
+		'Отображает встроенные метки узлов холста над карточками медиафайлов.',
+	preserveMediaFilenameName: 'Сохранять имя файла медиа при импорте',
+	preserveMediaFilenameDesc:
+		'Автоматически устанавливает имя исходного файла в качестве метки узла при перетаскивании, вставке или встраивании.',
+	setMediaLabel: 'Задать метку медиа...',
+	setMediaLabelModalTitle: 'Задать метку медиа',
+	mediaLabelFieldLabel: 'Метка медиа / имя файла',
+	mediaLabelFieldDesc:
+		'Метка в заголовке узла холста. Используйте # для нумерации (например: label-## для 01, 02 или label-### для 001, 002).',
+	mediaLabelPlaceholder: 'например: architecture-##.png',
+	clearLabelBtn: 'Удалить метку',
+	labelFilenameOptTitle: 'Метка медиа / исходное имя файла',
+	setMediaLabelCommand: 'Задать метку медиа для выбранного узла',
+	toggleMediaLabelsCommand: 'Переключить отображение меток медиа',
+	labelsShownNotice: 'Метки медиафайлов включены',
+	labelsHiddenNotice: 'Метки медиафайлов отключены',
+	noMediaSelectedNotice: 'Медиаузел не выбран',
 	settingsHeading: 'Отображение и холст',
 	hideImageLabelName: 'Скрыть метку медиа',
 	hideImageLabelDesc:
@@ -3025,6 +3216,26 @@ const pt: TranslationSchema = {
 	gifToggleCommandName: 'Alternar controles GIF',
 	gifControlsEnabledNotice: 'Controles GIF ativados',
 	gifControlsDisabledNotice: 'Controles GIF desativados',
+	showEmbeddedMediaLabelName: 'Mostrar rótulos de mídia',
+	showEmbeddedMediaLabelDesc:
+		'Exibe os rótulos nativos de nós da tela sobre os cartões de mídia incorporados.',
+	preserveMediaFilenameName:
+		'Preservar nome do arquivo de mídia na ingestão',
+	preserveMediaFilenameDesc:
+		'Define automaticamente o rótulo do nó com o nome original do arquivo ao arrastar, colar ou incorporar mídia.',
+	setMediaLabel: 'Definir rótulo de mídia...',
+	setMediaLabelModalTitle: 'Definir rótulo de mídia',
+	mediaLabelFieldLabel: 'Rótulo de mídia / nome do arquivo',
+	mediaLabelFieldDesc:
+		'Rótulo no cabeçalho do nó da tela. Use # para contador incremental (ex. label-## para 01, 02 ou label-### para 001, 002).',
+	mediaLabelPlaceholder: 'ex. arquitetura-##.png',
+	clearLabelBtn: 'Remover rótulo',
+	labelFilenameOptTitle: 'Rótulo de mídia / nome original do arquivo',
+	setMediaLabelCommand: 'Definir rótulo de mídia para o nó selecionado',
+	toggleMediaLabelsCommand: 'Alternar rótulos de mídia incorporada',
+	labelsShownNotice: 'Rótulos de mídia incorporada ativados',
+	labelsHiddenNotice: 'Rótulos de mídia incorporada desativados',
+	noMediaSelectedNotice: 'Nenhum nó de mídia selecionado',
 	settingsHeading: 'Exibição e tela',
 	hideImageLabelName: 'Ocultar rótulo de mídia',
 	hideImageLabelDesc:
@@ -3328,6 +3539,27 @@ const it: TranslationSchema = {
 	gifToggleCommandName: 'Attiva/disattiva controlli GIF',
 	gifControlsEnabledNotice: 'Controlli GIF abilitati',
 	gifControlsDisabledNotice: 'Controlli GIF disabilitati',
+	showEmbeddedMediaLabelName: 'Mostra etichette multimediali',
+	showEmbeddedMediaLabelDesc:
+		'Mostra le etichette dei nodi della tela sopra le schede dei media incorporati.',
+	preserveMediaFilenameName:
+		'Conserva nome file multimediale all\'importazione',
+	preserveMediaFilenameDesc:
+		'Imposta automaticamente l\'etichetta del nodo con il nome del file originale quando trascini, incolli o incorpori media.',
+	setMediaLabel: 'Imposta etichetta multimediale...',
+	setMediaLabelModalTitle: 'Imposta etichetta multimediale',
+	mediaLabelFieldLabel: 'Etichetta multimediale / nome file',
+	mediaLabelFieldDesc:
+		'Etichetta nell\'intestazione del nodo della tela. Usa # per il contatore incrementale (es. label-## per 01, 02).',
+	mediaLabelPlaceholder: 'es. architettura-##.png',
+	clearLabelBtn: 'Rimuovi etichetta',
+	labelFilenameOptTitle: 'Etichetta multimediale / nome file originale',
+	setMediaLabelCommand:
+		'Imposta etichetta multimediale per il nodo selezionato',
+	toggleMediaLabelsCommand: 'Attiva/disattiva etichette media incorporati',
+	labelsShownNotice: 'Etichette media incorporati attivate',
+	labelsHiddenNotice: 'Etichette media incorporati disattivate',
+	noMediaSelectedNotice: 'Nessun nodo multimediale selezionato',
 	settingsHeading: 'Visualizzazione e Tela',
 	hideImageLabelName: 'Nascondi etichetta media',
 	hideImageLabelDesc:
@@ -3635,6 +3867,26 @@ const ar: TranslationSchema = {
 	gifToggleCommandName: 'تبديل أدوات التحكم في GIF',
 	gifControlsEnabledNotice: 'تم تمكين أدوات التحكم في GIF',
 	gifControlsDisabledNotice: 'تم تعطيل أدوات التحكم في GIF',
+	showEmbeddedMediaLabelName: 'إظهار تسميات الوسائط',
+	showEmbeddedMediaLabelDesc:
+		'عرض تسميات العقد الأصلية للوحة فوق بطاقات الوسائط المضمنة.',
+	preserveMediaFilenameName:
+		'الحفاظ على اسم ملف الوسائط عند الاستيراد',
+	preserveMediaFilenameDesc:
+		'تعيين تسمية العقدة الأصلية تلقائيًا إلى اسم الملف الأصلي عند السحب أو اللصق أو التضمين.',
+	setMediaLabel: 'تعيين تسمية الوسائط...',
+	setMediaLabelModalTitle: 'تعيين تسمية الوسائط',
+	mediaLabelFieldLabel: 'تسمية الوسائط / اسم الملف',
+	mediaLabelFieldDesc:
+		'التسمية المخزنة في رأس عقدة اللوحة. استخدم # للترقيم التزايدي (مثال: label-## لـ 01, 02 أو label-### لـ 001, 002).',
+	mediaLabelPlaceholder: 'مثال: architecture-##.png',
+	clearLabelBtn: 'إزالة التسمية',
+	labelFilenameOptTitle: 'تسمية الوسائط / اسم الملف الأصلي',
+	setMediaLabelCommand: 'تعيين تسمية الوسائط للعقدة المحددة',
+	toggleMediaLabelsCommand: 'تبديل إظهار تسميات الوسائط المضمنة',
+	labelsShownNotice: 'تم تمكين تسميات الوسائط المضمنة',
+	labelsHiddenNotice: 'تم تعطيل تسميات الوسائط المضمنة',
+	noMediaSelectedNotice: 'لم يتم تحديد عقدة وسائط',
 	settingsHeading: 'العرض واللوحة',
 	hideImageLabelName: 'إخفاء تسمية الوسائط',
 	hideImageLabelDesc:
@@ -3843,6 +4095,25 @@ const he: TranslationSchema = {
 	gifToggleCommandName: 'הפעל/כבה בקרת GIF',
 	gifControlsEnabledNotice: 'בקרת GIF הופעלה',
 	gifControlsDisabledNotice: 'בקרת GIF הושבתה',
+	showEmbeddedMediaLabelName: 'הצג תוויות מדיה',
+	showEmbeddedMediaLabelDesc:
+		'מציג תוויות צומת קנבס מעל כרטיסי מדיה מוטמעים.',
+	preserveMediaFilenameName: 'שמור על שם קובץ המדיה בעת ייבוא',
+	preserveMediaFilenameDesc:
+		'מגדיר אוטומטית את תווית הצומת לשם הקובץ המקורי בעת גרירה, הדבקה או הטמעה.',
+	setMediaLabel: 'הגדר תווית מדיה...',
+	setMediaLabelModalTitle: 'הגדר תווית מדיה',
+	mediaLabelFieldLabel: 'תווית מדיה / שם קובץ',
+	mediaLabelFieldDesc:
+		'תווית בכותרת צומת הקנבס. השתמש ב-# עבור מונים (למשל: label-## עבור 01, 02 או label-### עבור 001, 002).',
+	mediaLabelPlaceholder: 'למשל: architecture-##.png',
+	clearLabelBtn: 'הסר תווית',
+	labelFilenameOptTitle: 'תווית מדיה / שם קובץ מקורי',
+	setMediaLabelCommand: 'הגדר תווית מדיה עבור הצומת הנבחר',
+	toggleMediaLabelsCommand: 'החלף מצב תוויות מדיה מוטמעות',
+	labelsShownNotice: 'תוויות מדיה מוטמעות הופעלו',
+	labelsHiddenNotice: 'תוויות מדיה מוטמעות הושבתו',
+	noMediaSelectedNotice: 'לא נבחר צומת מדיה',
 	settingsHeading: 'תצוגה וקנבס',
 	hideImageLabelName: 'הסתר תווית מדיה',
 	hideImageLabelDesc:

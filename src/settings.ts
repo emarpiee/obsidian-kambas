@@ -72,6 +72,8 @@ export const LOD_PRESETS: Record<
 
 export interface KambasSettings {
 	hideImageLabel: boolean;
+	showEmbeddedMediaLabel?: boolean; // Display native node labels on embedded media nodes
+	preserveMediaFilenameOnIngest?: boolean; // Save original filename as label on drop/paste/convert
 	enableGifTools?: boolean; // Enable GIF playback and extraction tool
 	freezeGifOnZoomOut?: boolean; // Pause GIF playback when canvas is zoomed out
 	gifZoomThreshold?: number; // Zoom scale threshold to pause GIF playback (0.1 - 1.0)
@@ -114,6 +116,8 @@ export interface KambasSettings {
 
 export const DEFAULT_SETTINGS: KambasSettings = {
 	hideImageLabel: true,
+	showEmbeddedMediaLabel: true,
+	preserveMediaFilenameOnIngest: true,
 	enableGifTools: true,
 	freezeGifOnZoomOut: true,
 	gifZoomThreshold: 0.4,
@@ -152,8 +156,6 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	debug: false,
 	tagColors: {},
 };
-
-
 
 export class KambasSettingTab extends PluginSettingTab {
 	private plugin: KambasPlugin;
@@ -195,6 +197,41 @@ export class KambasSettingTab extends PluginSettingTab {
 		// SECTION 1: 🎨 Display & Tags
 		// ==========================================
 		new Setting(containerEl).setName(t.settingsHeading).setHeading();
+
+		new Setting(containerEl)
+			.setName(t.showEmbeddedMediaLabelName ?? 'Show embedded media labels')
+			.setDesc(
+				t.showEmbeddedMediaLabelDesc ??
+					'Display native canvas node labels when custom names or original filenames are set on embedded media nodes.'
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.showEmbeddedMediaLabel ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.showEmbeddedMediaLabel = value;
+						await this.plugin.saveSettings();
+						this.plugin.applySettingsCss();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(
+				t.preserveMediaFilenameName ?? 'Preserve original filename on ingest'
+			)
+			.setDesc(
+				t.preserveMediaFilenameDesc ??
+					'Automatically save original filenames as canvas node labels when dragging, dropping, or converting media files.'
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(
+						this.plugin.settings.preserveMediaFilenameOnIngest ?? true
+					)
+					.onChange(async (value) => {
+						this.plugin.settings.preserveMediaFilenameOnIngest = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		new Setting(containerEl)
 			.setName(t.gifEnableSettingName || 'Enable GIF controls')
@@ -1089,8 +1126,8 @@ export class KambasSettingTab extends PluginSettingTab {
 		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey'
 	): string {
 		return targetKey === 'loupeHotkey'
-			? this.plugin.settings.loupeHotkey ?? 'q'
-			: this.plugin.settings.selectionZoomToFitHotkey ?? 'Space';
+			? (this.plugin.settings.loupeHotkey ?? 'q')
+			: (this.plugin.settings.selectionZoomToFitHotkey ?? 'Space');
 	}
 
 	private renderSingleKeyRecorderSetting(
@@ -1170,14 +1207,12 @@ export class KambasSettingTab extends PluginSettingTab {
 								render(true, combo);
 							} else {
 								cleanup();
-								void this.saveSingleHotkey(targetKey, combo).then(
-									(success) => {
-										render(
-											false,
-											success ? combo : this.getHotkeySetting(targetKey)
-										);
-									}
-								);
+								void this.saveSingleHotkey(targetKey, combo).then((success) => {
+									render(
+										false,
+										success ? combo : this.getHotkeySetting(targetKey)
+									);
+								});
 							}
 						};
 

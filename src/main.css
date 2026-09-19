@@ -45,11 +45,19 @@
 	scrollbar-width: none;
 }
 
-/* Unconditionally hide raw base64 URL data label header above link image cards */
-.canvas-node.kambas-has-embedded-img .canvas-node-label,
-body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-label,
-.canvas-node.is-link[data-url^="data:image/"] .canvas-node-label,
-.canvas-node.is-link[data-url^="data:image/"] .canvas-node-title {
+/* Embedded media node label indicator icon */
+.canvas-node.kambas-has-embedded-img.kambas-has-label .canvas-node-label::before {
+	content: '📎 ';
+	font-size: 0.9em;
+	opacity: 0.8;
+	margin-right: 2px;
+}
+
+/* Unconditionally hide raw base64 URL data labels, but display native label when a custom label is set */
+.canvas-node.kambas-has-embedded-img:not(.kambas-has-label) .canvas-node-label,
+.canvas-node.is-link[data-url^="data:image/"]:not(.kambas-has-label) .canvas-node-label,
+.canvas-node.is-link[data-url^="data:image/"]:not(.kambas-has-label) .canvas-node-title,
+body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-label {
 	display: none !important;
 }
 

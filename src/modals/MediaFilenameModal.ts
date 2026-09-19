@@ -7,7 +7,12 @@ import {
 	formatIncrementalNumber,
 } from '../utils/numberFormatters';
 
-export type NamingStrategyOption = 'default' | 'tag' | 'custom' | 'cancel';
+export type NamingStrategyOption =
+	| 'default'
+	| 'label'
+	| 'tag'
+	| 'custom'
+	| 'cancel';
 
 export interface MediaFilenameResult {
 	option: NamingStrategyOption;
@@ -18,6 +23,7 @@ export interface MediaFilenameResult {
 
 export class MediaFilenameModal extends Modal {
 	private defaultName: string;
+	private mediaLabel?: string;
 	private targetFolderPath: string;
 	private tags: string[];
 	private remainingCount: number;
@@ -37,7 +43,8 @@ export class MediaFilenameModal extends Modal {
 		remainingCount: number,
 		isCopy: boolean,
 		initialNumberFormat: NumberFormatStyle = 'padded_2',
-		onChoose: (result: MediaFilenameResult) => void
+		mediaLabel?: string,
+		onChoose?: (result: MediaFilenameResult) => void
 	) {
 		super(app);
 		this.defaultName = defaultName;
@@ -46,7 +53,11 @@ export class MediaFilenameModal extends Modal {
 		this.remainingCount = remainingCount;
 		this.isCopy = isCopy;
 		this.selectedNumberFormat = initialNumberFormat;
-		this.onChoose = onChoose;
+		this.mediaLabel = mediaLabel?.trim();
+		if (this.mediaLabel) {
+			this.selectedOption = 'label';
+		}
+		this.onChoose = onChoose || ((): void => {});
 	}
 
 	onOpen(): void {
@@ -84,15 +95,47 @@ export class MediaFilenameModal extends Modal {
 			cls: 'kambas-naming-options',
 		});
 
-		// Option 1: Default Name
+		// Option 1: Media Label / Original Filename (if present)
+		let optLabel: HTMLElement | null = null;
+		let labelRadio: HTMLInputElement | null = null;
+
+		if (this.mediaLabel) {
+			optLabel = optionsContainer.createDiv({
+				cls:
+					this.selectedOption === 'label'
+						? 'kambas-naming-option is-selected'
+						: 'kambas-naming-option',
+			});
+			labelRadio = optLabel.createEl('input', {
+				type: 'radio',
+				attr: { name: 'naming_opt', id: 'opt_label' },
+			});
+			labelRadio.checked = this.selectedOption === 'label';
+			const lblElement = optLabel.createEl('label', {
+				attr: { for: 'opt_label' },
+			});
+			lblElement.createDiv({
+				cls: 'kambas-opt-title',
+				text: t.labelFilenameOptTitle ?? 'Media Label / Original Filename',
+			});
+			lblElement.createDiv({
+				cls: 'kambas-opt-subtitle',
+				text: `e.g. ${this.mediaLabel}`,
+			});
+		}
+
+		// Option 2: Default Name
 		const optDefault = optionsContainer.createDiv({
-			cls: 'kambas-naming-option is-selected',
+			cls:
+				this.selectedOption === 'default'
+					? 'kambas-naming-option is-selected'
+					: 'kambas-naming-option',
 		});
 		const defaultRadio = optDefault.createEl('input', {
 			type: 'radio',
 			attr: { name: 'naming_opt', id: 'opt_default' },
 		});
-		defaultRadio.checked = true;
+		defaultRadio.checked = this.selectedOption === 'default';
 		const defaultLabel = optDefault.createEl('label', {
 			attr: { for: 'opt_default' },
 		});
@@ -105,7 +148,7 @@ export class MediaFilenameModal extends Modal {
 			text: `e.g. ${this.defaultName}`,
 		});
 
-		// Option 2: Tag Filename
+		// Option 3: Tag Filename
 		const optTag = optionsContainer.createDiv({ cls: 'kambas-naming-option' });
 		const tagRadio = optTag.createEl('input', {
 			type: 'radio',
@@ -118,7 +161,7 @@ export class MediaFilenameModal extends Modal {
 		});
 		const tagSubEl = tagLabel.createDiv({ cls: 'kambas-opt-subtitle' });
 
-		// Option 3: Custom Filename
+		// Option 4: Custom Filename
 		const optCustom = optionsContainer.createDiv({
 			cls: 'kambas-naming-option',
 		});
@@ -167,10 +210,12 @@ export class MediaFilenameModal extends Modal {
 		// Radio selection change listener
 		const updateSelection = (selected: NamingStrategyOption): void => {
 			this.selectedOption = selected;
+			if (labelRadio) labelRadio.checked = selected === 'label';
 			defaultRadio.checked = selected === 'default';
 			tagRadio.checked = selected === 'tag';
 			customRadio.checked = selected === 'custom';
 
+			if (optLabel) optLabel.toggleClass('is-selected', selected === 'label');
 			optDefault.toggleClass('is-selected', selected === 'default');
 			optTag.toggleClass('is-selected', selected === 'tag');
 			optCustom.toggleClass('is-selected', selected === 'custom');
@@ -179,6 +224,9 @@ export class MediaFilenameModal extends Modal {
 			if (selected === 'custom') customInput.focus();
 		};
 
+		if (optLabel) {
+			optLabel.addEventListener('click', () => updateSelection('label'));
+		}
 		optDefault.addEventListener('click', () => updateSelection('default'));
 		optTag.addEventListener('click', () => updateSelection('tag'));
 		optCustom.addEventListener('click', () => updateSelection('custom'));

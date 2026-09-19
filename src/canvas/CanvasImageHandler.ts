@@ -35,6 +35,7 @@ import {
 	StorageChoice,
 } from '../modals/ImageIngestionModal';
 import { ImageSwapModal } from '../modals/ImageSwapModal';
+import { CanvasMediaLabelModal } from '../modals/CanvasMediaLabelModal';
 import {
 	MediaFilenameModal,
 	MediaFilenameResult,
@@ -111,6 +112,20 @@ export class CanvasImageHandler {
 		this.plugin.registerDomEvent(window, 'paste', this.handlePaste, true);
 		this.plugin.registerDomEvent(window, 'drop', this.handleDrop, true);
 		this.plugin.registerDomEvent(window, 'keydown', this.handleKeyDown, true);
+		this.plugin.registerEvent(
+			this.app.vault.on('modify', (file) => {
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
+				if (
+					activeView &&
+					activeView.getViewType() === 'canvas' &&
+					activeView.file === file
+				) {
+					this.scanAndRestoreTransforms(activeView);
+				}
+			})
+		);
 		this.startEditGuard();
 	}
 
@@ -516,9 +531,11 @@ export class CanvasImageHandler {
 			const rawNodeObj = canvasNode as unknown as {
 				url?: string;
 				type?: string;
+				label?: string;
 				unknownData?: {
 					type?: string;
 					url?: string;
+					label?: string;
 					kambasFlipH?: boolean;
 					kambasFlipV?: boolean;
 					kambasGrayscale?: boolean;
@@ -613,6 +630,41 @@ export class CanvasImageHandler {
 			nodeEl.classList.toggle('kambas-has-embedded-img', hasEmbeddedImg);
 			nodeContainer.classList.toggle('kambas-has-embedded-img', hasEmbeddedImg);
 			container.classList.toggle('kambas-has-embedded-img', hasEmbeddedImg);
+
+			// Restore node label header state
+			const rawCanvas = activeView.canvas as unknown as {
+				data?: { nodes?: Array<{ id?: string; label?: string }> };
+			};
+			const canvasDataNode = rawCanvas?.data?.nodes?.find(
+				(n) => n.id === (canvasNode as unknown as { id?: string }).id
+			);
+			const nodeLabel = (
+				canvasDataNode
+					? (canvasDataNode.label || '')
+					: (rawNodeObj.label || unknownData.label || '')
+			).trim();
+
+			if (nodeLabel) {
+				rawNodeObj.label = nodeLabel;
+				if (!rawNodeObj.unknownData) rawNodeObj.unknownData = {};
+				rawNodeObj.unknownData.label = nodeLabel;
+			} else {
+				delete rawNodeObj.label;
+				if (rawNodeObj.unknownData) delete rawNodeObj.unknownData.label;
+			}
+
+			nodeEl.classList.toggle('kambas-has-label', Boolean(nodeLabel));
+			let labelEl = nodeEl.querySelector('.canvas-node-label');
+			if (nodeLabel) {
+				if (!labelEl) {
+					labelEl = nodeContainer.createDiv({ cls: 'canvas-node-label' });
+				}
+				if (labelEl.textContent !== nodeLabel) {
+					labelEl.textContent = nodeLabel;
+				}
+			} else if (labelEl) {
+				labelEl.remove();
+			}
 
 			// Apply stored transforms & opacity
 			if (unknownData) {
@@ -1811,7 +1863,12 @@ export class CanvasImageHandler {
 				file?: TFile | string;
 				url?: string;
 				nodeEl?: HTMLElement;
-				unknownData?: { type?: string; url?: string; file?: string };
+				unknownData?: {
+					type?: string;
+					url?: string;
+					file?: string;
+					label?: string;
+				};
 			};
 
 			const canvasNodeData = canvasFileData.nodes.find((n) => n.id === id);
@@ -1825,6 +1882,11 @@ export class CanvasImageHandler {
 				if (abstractFile instanceof TFile) {
 					const defaultName = abstractFile.name;
 					const tags = canvasNodeData.kambasTags || [];
+					const nodeLabel: string = (
+						canvasNodeData.label ||
+						rawNodeObj.unknownData?.label ||
+						''
+					).trim();
 
 					if (!applyStrategyToAll || !currentNamingStrategy) {
 						const result = await new Promise<MediaFilenameResult>((resolve) => {
@@ -1836,6 +1898,7 @@ export class CanvasImageHandler {
 								remainingCount,
 								false,
 								currentNumberFormat,
+								nodeLabel,
 								(res) => resolve(res)
 							);
 							modal.open();
@@ -1855,7 +1918,31 @@ export class CanvasImageHandler {
 					const ext = extIdx !== -1 ? abstractFile.name.substring(extIdx) : '';
 
 					let targetName = defaultName;
-					if (currentNamingStrategy === 'custom' && currentCustomName) {
+					if (currentNamingStrategy === 'label' && nodeLabel) {
+						const cleanLabel = nodeLabel.replace(/[/\\?%*:|"<>]/g, '-').trim();
+						let baseName = cleanLabel;
+						if (ext && !baseName.toLowerCase().endsWith(ext.toLowerCase())) {
+							baseName = `${baseName}${ext}`;
+						}
+						let counter = 1;
+						targetName = baseName;
+						let checkPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
+						while (this.app.vault.getAbstractFileByPath(checkPath)) {
+							counter++;
+							const nameNoExt =
+								ext && baseName.toLowerCase().endsWith(ext.toLowerCase())
+									? baseName.substring(0, baseName.length - ext.length)
+									: baseName;
+							targetName = `${nameNoExt}-${formatIncrementalNumber(counter, currentNumberFormat)}${ext}`;
+							checkPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
+						}
+					} else if (currentNamingStrategy === 'custom' && currentCustomName) {
 						const cleanCustom = currentCustomName.replace(
 							/[/\\?%*:|"<>]/g,
 							'-'
@@ -1932,6 +2019,11 @@ export class CanvasImageHandler {
 
 				const defaultName = `canvas_image_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
 				const tags = canvasNodeData.kambasTags || [];
+				const nodeLabel: string = (
+					canvasNodeData.label ||
+					rawNodeObj.unknownData?.label ||
+					''
+				).trim();
 
 				if (!applyStrategyToAll || !currentNamingStrategy) {
 					const result = await new Promise<MediaFilenameResult>((resolve) => {
@@ -1943,6 +2035,7 @@ export class CanvasImageHandler {
 							remainingCount,
 							false,
 							currentNumberFormat,
+							nodeLabel,
 							(res) => resolve(res)
 						);
 						modal.open();
@@ -1959,7 +2052,32 @@ export class CanvasImageHandler {
 				}
 
 				let targetFilename = defaultName;
-				if (currentNamingStrategy === 'custom' && currentCustomName) {
+				if (currentNamingStrategy === 'label' && nodeLabel) {
+					const cleanLabel = nodeLabel.replace(/[/\\?%*:|"<>]/g, '-').trim();
+					let baseName = cleanLabel;
+					if (ext && !baseName.toLowerCase().endsWith(`.${ext.toLowerCase()}`)) {
+						baseName = `${baseName}.${ext}`;
+					}
+					let counter = 1;
+					targetFilename = baseName;
+					let checkPath =
+						targetFolder.path === '/'
+							? targetFilename
+							: `${targetFolder.path}/${targetFilename}`;
+					while (this.app.vault.getAbstractFileByPath(checkPath)) {
+						counter++;
+						const nameNoExt = baseName
+							.toLowerCase()
+							.endsWith(`.${ext.toLowerCase()}`)
+							? baseName.substring(0, baseName.length - (ext.length + 1))
+							: baseName;
+						targetFilename = `${nameNoExt}-${formatIncrementalNumber(counter, currentNumberFormat)}.${ext}`;
+						checkPath =
+							targetFolder.path === '/'
+								? targetFilename
+								: `${targetFolder.path}/${targetFilename}`;
+					}
+				} else if (currentNamingStrategy === 'custom' && currentCustomName) {
 					const cleanCustom = currentCustomName.replace(/[/\\?%*:|"<>]/g, '-');
 					let counter = 1;
 					targetFilename = `${cleanCustom}-${formatIncrementalNumber(counter, currentNumberFormat)}.${ext}`;
@@ -2268,8 +2386,20 @@ export class CanvasImageHandler {
 		let applyCopyStrategyToAll = false;
 
 		for (let i = 0; i < selectedNodes.length; i++) {
-			const { id } = selectedNodes[i];
+			const { id, nodeObj } = selectedNodes[i];
 			const remainingCount = selectedNodes.length - i;
+
+			const rawNodeObj = nodeObj as {
+				file?: TFile | string;
+				url?: string;
+				nodeEl?: HTMLElement;
+				unknownData?: {
+					type?: string;
+					url?: string;
+					file?: string;
+					label?: string;
+				};
+			};
 
 			const canvasNodeData = canvasFileData.nodes.find((n) => n.id === id);
 			if (!canvasNodeData) continue;
@@ -2282,6 +2412,11 @@ export class CanvasImageHandler {
 				if (abstractFile instanceof TFile) {
 					const defaultName = abstractFile.name;
 					const tags = canvasNodeData.kambasTags || [];
+					const nodeLabel: string = (
+						canvasNodeData.label ||
+						rawNodeObj.unknownData?.label ||
+						''
+					).trim();
 
 					if (!applyCopyStrategyToAll || !currentCopyNamingStrategy) {
 						const result = await new Promise<MediaFilenameResult>((resolve) => {
@@ -2293,6 +2428,7 @@ export class CanvasImageHandler {
 								remainingCount,
 								true,
 								currentCopyNumberFormat,
+								nodeLabel,
 								(res) => resolve(res)
 							);
 							modal.open();
@@ -2318,7 +2454,30 @@ export class CanvasImageHandler {
 					let counter = 1;
 					let targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
 
-					if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
+					if (currentCopyNamingStrategy === 'label' && nodeLabel) {
+						const cleanLabel = nodeLabel.replace(/[/\\?%*:|"<>]/g, '-').trim();
+						let baseName = cleanLabel;
+						if (ext && !baseName.toLowerCase().endsWith(ext.toLowerCase())) {
+							baseName = `${baseName}${ext}`;
+						}
+						targetName = baseName;
+						let targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
+						while (this.app.vault.getAbstractFileByPath(targetPath)) {
+							counter++;
+							const nameNoExt =
+								ext && baseName.toLowerCase().endsWith(ext.toLowerCase())
+									? baseName.substring(0, baseName.length - ext.length)
+									: baseName;
+							targetName = `${nameNoExt}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}${ext}`;
+							targetPath =
+								targetFolder.path === '/'
+									? targetName
+									: `${targetFolder.path}/${targetName}`;
+						}
+					} else if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
 						const cleanCustom = currentCopyCustomName.replace(
 							/[/\\?%*:|"<>]/g,
 							'-'
@@ -2414,6 +2573,11 @@ export class CanvasImageHandler {
 
 				const defaultName = `canvas_image-01.${ext}`;
 				const tags = canvasNodeData.kambasTags || [];
+				const nodeLabel: string = (
+					canvasNodeData.label ||
+					rawNodeObj.unknownData?.label ||
+					''
+				).trim();
 
 				if (!applyCopyStrategyToAll || !currentCopyNamingStrategy) {
 					const result = await new Promise<MediaFilenameResult>((resolve) => {
@@ -2425,6 +2589,7 @@ export class CanvasImageHandler {
 							remainingCount,
 							true,
 							currentCopyNumberFormat,
+							nodeLabel,
 							(res) => resolve(res)
 						);
 						modal.open();
@@ -2444,7 +2609,31 @@ export class CanvasImageHandler {
 				let counter = 1;
 				let targetName = `${base}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
 
-				if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
+				if (currentCopyNamingStrategy === 'label' && nodeLabel) {
+					const cleanLabel = nodeLabel.replace(/[/\\?%*:|"<>]/g, '-').trim();
+					let baseName = cleanLabel;
+					if (ext && !baseName.toLowerCase().endsWith(`.${ext.toLowerCase()}`)) {
+						baseName = `${baseName}.${ext}`;
+					}
+					targetName = baseName;
+					let targetPath =
+						targetFolder.path === '/'
+							? targetName
+							: `${targetFolder.path}/${targetName}`;
+					while (this.app.vault.getAbstractFileByPath(targetPath)) {
+						counter++;
+						const nameNoExt = baseName
+							.toLowerCase()
+							.endsWith(`.${ext.toLowerCase()}`)
+							? baseName.substring(0, baseName.length - (ext.length + 1))
+							: baseName;
+						targetName = `${nameNoExt}-${formatIncrementalNumber(counter, currentCopyNumberFormat)}.${ext}`;
+						targetPath =
+							targetFolder.path === '/'
+								? targetName
+								: `${targetFolder.path}/${targetName}`;
+					}
+				} else if (currentCopyNamingStrategy === 'custom' && currentCopyCustomName) {
 					const cleanCustom = currentCopyCustomName.replace(
 						/[/\\?%*:|"<>]/g,
 						'-'
@@ -2769,6 +2958,7 @@ export class CanvasImageHandler {
 					const rawN = newCanvasNode as {
 						id?: string;
 						nodeEl?: HTMLElement;
+						label?: string;
 						kambasTags?: string[];
 						kambasGifPaused?: boolean;
 						kambasGifFrame?: number;
@@ -2776,6 +2966,7 @@ export class CanvasImageHandler {
 						unknownData?: {
 							type?: string;
 							url?: string;
+							label?: string;
 							kambasFlipH?: boolean;
 							kambasFlipV?: boolean;
 							kambasGrayscale?: boolean;
@@ -2789,6 +2980,13 @@ export class CanvasImageHandler {
 					if (!rawN.unknownData) rawN.unknownData = {};
 					rawN.unknownData.type = 'link';
 					rawN.unknownData.url = dataUrl;
+					if (
+						this.plugin.settings.preserveMediaFilenameOnIngest &&
+						filename
+					) {
+						rawN.label = filename;
+						rawN.unknownData.label = filename;
+					}
 					if (flipH) rawN.unknownData.kambasFlipH = flipH;
 					if (flipV) rawN.unknownData.kambasFlipV = flipV;
 					if (grayscale) rawN.unknownData.kambasGrayscale = grayscale;
@@ -3096,6 +3294,222 @@ export class CanvasImageHandler {
 	/**
 	 * Opens the TagModal for the selected node(s) and applies resulting tags.
 	 */
+	public openSetMediaLabelModal(
+		activeView: CanvasItemView,
+		targetNodeEl?: Element | null
+	): void {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		const targetNodes: Array<{ id: string; nodeObj: unknown }> = [];
+		canvas.nodes.forEach((nodeObj, id) => {
+			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
+			if (!nodeEl) return;
+			const isTarget = Boolean(
+				targetNodeEl &&
+					(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
+			);
+			const isSel = nodeEl.classList.contains('is-selected');
+			if (targetNodeEl ? isTarget : isSel) {
+				targetNodes.push({ id, nodeObj });
+			}
+		});
+
+		if (targetNodes.length === 0 && targetNodeEl) {
+			canvas.nodes.forEach((nodeObj, id) => {
+				const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
+				if (
+					nodeEl &&
+					(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
+				) {
+					targetNodes.push({ id, nodeObj });
+				}
+			});
+		}
+
+		if (targetNodes.length === 0) {
+			new Notice(getText().noMediaSelectedNotice ?? 'No media node selected');
+			return;
+		}
+
+		interface TypedNode {
+			id?: string;
+			label?: string;
+			unknownData?: { label?: string };
+			nodeEl?: HTMLElement;
+			renderHeader?: () => void;
+			updateHeader?: () => void;
+			render?: () => void;
+		}
+		interface TypedDataNode {
+			id?: string;
+			label?: string;
+		}
+		interface TypedCanvas {
+			data?: {
+				nodes?: TypedDataNode[];
+			};
+		}
+
+		const primaryEntry = targetNodes[0];
+		const primaryNode = primaryEntry.nodeObj as TypedNode;
+		const rawCanvas = canvas as TypedCanvas;
+		const primaryDataNode = rawCanvas.data?.nodes?.find(
+			(n) => n.id === primaryEntry.id
+		);
+
+		const currentLabel = (
+			primaryNode.label ||
+			primaryNode.unknownData?.label ||
+			primaryDataNode?.label ||
+			''
+		).trim();
+
+		new CanvasMediaLabelModal(
+			this.app,
+			currentLabel,
+			(newLabel: string): void => {
+				void (async (): Promise<void> => {
+					this.pushCanvasUndoHistory(canvas);
+					const template = newLabel.trim();
+					const nodeLabelsMap = new Map<string, string | undefined>();
+					const hasCounterPattern = /#+/.test(template);
+
+					for (let i = 0; i < targetNodes.length; i++) {
+						const { id, nodeObj } = targetNodes[i];
+						const rawNode = nodeObj as TypedNode;
+
+						let formattedLabel = template;
+						if (template && hasCounterPattern) {
+							formattedLabel = template.replace(/#+(\d+)?/g, (match: string, digits?: string) => {
+								const hashes = match.replace(/\d+$/, '');
+								const hashCount = hashes.length;
+
+								let startNum = 1;
+								if (digits) {
+									const parsed = parseInt(digits, 10);
+									if (!isNaN(parsed)) {
+										startNum = parsed;
+									}
+								}
+
+								const currentVal = startNum + i;
+								const valStr = String(currentVal);
+
+								let padLength = hashCount;
+								if (digits) {
+									if (digits.startsWith('0')) {
+										padLength = Math.max(hashCount, digits.length);
+									} else {
+										padLength = hashCount + digits.length;
+									}
+								}
+
+								return padLength > 1 ? valStr.padStart(padLength, '0') : valStr;
+							});
+						}
+
+						rawNode.id = id;
+						if (formattedLabel) {
+							rawNode.label = formattedLabel;
+							if (!rawNode.unknownData) rawNode.unknownData = {};
+							rawNode.unknownData.label = formattedLabel;
+						} else {
+							delete rawNode.label;
+							if (rawNode.unknownData) delete rawNode.unknownData.label;
+						}
+
+						nodeLabelsMap.set(id, formattedLabel || undefined);
+
+						if (rawCanvas.data?.nodes) {
+							const cdn = rawCanvas.data.nodes.find(
+								(n) => n.id === id
+							);
+							if (cdn) {
+								if (formattedLabel) {
+									cdn.label = formattedLabel;
+								} else {
+									delete cdn.label;
+								}
+							}
+						}
+
+						if (rawNode.nodeEl) {
+							rawNode.nodeEl.classList.toggle(
+								'kambas-has-label',
+								Boolean(formattedLabel)
+							);
+							let labelEl = rawNode.nodeEl.querySelector('.canvas-node-label');
+							if (formattedLabel) {
+							if (!labelEl) {
+								const containerEl =
+									rawNode.nodeEl.querySelector('.canvas-node-container') ??
+									rawNode.nodeEl;
+								labelEl = containerEl.createDiv({ cls: 'canvas-node-label' });
+							}
+							labelEl.textContent = formattedLabel;
+						} else if (labelEl) {
+							labelEl.remove();
+						}
+					}
+
+					if (typeof rawNode.renderHeader === 'function') {
+						rawNode.renderHeader();
+					} else if (typeof rawNode.updateHeader === 'function') {
+						rawNode.updateHeader();
+					} else if (typeof rawNode.render === 'function') {
+						rawNode.render();
+					}
+				}
+
+				const file = activeView.file;
+				if (file && nodeLabelsMap.size > 0) {
+					await this.persistNodeLabelsMap(file, nodeLabelsMap);
+					window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 100);
+				}
+
+				if (typeof canvas.requestSave === 'function') {
+					try {
+						canvas.requestSave();
+					} catch {
+						/* ignore */
+					}
+				}
+			})();
+		},
+		targetNodes.length
+	).open();
+	}
+
+	private async persistNodeLabelsMap(
+		file: TFile,
+		nodeLabelsMap: Map<string, string | undefined>
+	): Promise<void> {
+		const content = await this.app.vault.read(file);
+		let data: CanvasFileData;
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!data.nodes) return;
+		let modified = false;
+		data.nodes.forEach((node) => {
+			if (node.id && nodeLabelsMap.has(node.id)) {
+				const label = nodeLabelsMap.get(node.id);
+				if (label) {
+					node.label = label;
+				} else {
+					delete node.label;
+				}
+				modified = true;
+			}
+		});
+		if (modified) {
+			this.scheduleVaultModify(file, data);
+		}
+	}
+
 	public openTagModal(
 		activeView: CanvasItemView,
 		targetNodeEl?: Element | null
@@ -3171,6 +3585,7 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
+		this.pushCanvasUndoHistory(canvas);
 		const nodeTagsMap = new Map<string, string[] | undefined>();
 
 		const fullTags = tags.filter(
@@ -3227,6 +3642,53 @@ export class CanvasImageHandler {
 
 		if (this.tagFilterPanelEl?.isConnected) {
 			window.setTimeout(() => this.refreshTagFilterPanel(activeView), 150);
+		}
+	}
+
+	public pushCanvasUndoHistory(canvas: unknown): void {
+		if (!canvas) return;
+		try {
+			const rawCanvas = canvas as {
+				getData?: () => { nodes?: unknown[]; edges?: unknown[] };
+				pushHistory?: (data?: unknown) => void;
+				requestPush?: (data?: unknown) => void;
+				history?: { push?: (data?: unknown) => void };
+				data?: { nodes?: unknown[]; edges?: unknown[] };
+			};
+
+			let dataSnapshot: { nodes?: unknown[]; edges?: unknown[] } | null = null;
+			if (typeof rawCanvas.getData === 'function') {
+				try {
+					dataSnapshot = rawCanvas.getData();
+				} catch {
+					/* ignore */
+				}
+			}
+			if (!dataSnapshot && rawCanvas.data) {
+				dataSnapshot = rawCanvas.data;
+			}
+
+			if (!dataSnapshot || !Array.isArray(dataSnapshot.nodes)) {
+				return;
+			}
+
+			const snapshotCopy = JSON.parse(JSON.stringify(dataSnapshot)) as {
+				nodes?: unknown[];
+				edges?: unknown[];
+			};
+
+			if (
+				rawCanvas.history &&
+				typeof rawCanvas.history.push === 'function'
+			) {
+				rawCanvas.history.push(snapshotCopy);
+			} else if (typeof rawCanvas.pushHistory === 'function') {
+				rawCanvas.pushHistory(snapshotCopy);
+			} else if (typeof rawCanvas.requestPush === 'function') {
+				rawCanvas.requestPush(snapshotCopy);
+			}
+		} catch (err) {
+			console.warn('[Kambas] Failed to push canvas undo history:', err);
 		}
 	}
 
@@ -5448,7 +5910,7 @@ export class CanvasImageHandler {
 				}
 
 				if (dataUrl) {
-					nodesToInsert.push({
+					const nodeObj: CanvasNodeData = {
 						type: 'link',
 						url: dataUrl,
 						x: pos.x,
@@ -5457,7 +5919,14 @@ export class CanvasImageHandler {
 						height: dims.height,
 						originalWidth: dims.width,
 						originalHeight: dims.height,
-					});
+					};
+					if (
+						this.plugin.settings.preserveMediaFilenameOnIngest &&
+						item.filename
+					) {
+						nodeObj.label = item.filename;
+					}
+					nodesToInsert.push(nodeObj);
 				}
 			} else {
 				let buffer: ArrayBuffer | null = null;

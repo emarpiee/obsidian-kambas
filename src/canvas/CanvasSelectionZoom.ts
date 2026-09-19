@@ -1,8 +1,9 @@
 import { ItemView } from 'obsidian';
 
 import type KambasPlugin from '../main';
-import { matchHotkeyEvent } from '../utils/hotkeyUtils';
 import { CanvasElement, CanvasItemView } from './CanvasTypes';
+
+import { matchHotkeyEvent } from '../utils/hotkeyUtils';
 
 /** Extended canvas type exposing internal selection set. */
 type CanvasEx = CanvasElement & {

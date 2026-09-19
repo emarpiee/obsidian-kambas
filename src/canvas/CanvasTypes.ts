@@ -22,6 +22,7 @@ export interface CanvasNodeData {
 	kambasGifPaused?: boolean; // persistent paused state for GIF playback
 	kambasGifFrame?: number; // persistent frame index for paused GIF
 	kambasGifSpeed?: number; // persistent speed for GIF playback
+	label?: string;
 	originalWidth?: number;
 	originalHeight?: number;
 	isLocked?: boolean;

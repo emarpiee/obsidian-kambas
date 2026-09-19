@@ -1,4 +1,5 @@
 import type KambasPlugin from '../main';
+
 import { matchHotkeyEvent } from '../utils/hotkeyUtils';
 
 export class CanvasLoupeInspector {
@@ -132,9 +133,10 @@ export class CanvasLoupeInspector {
 			});
 
 			// Target .canvas-content which holds Obsidian's transformed canvas surface
-			const innerContent = (canvasEl.querySelector('.canvas-content') ||
+			const innerContent =
+				canvasEl.querySelector('.canvas-content') ||
 				canvasEl.querySelector('.canvas-nodes') ||
-				canvasEl);
+				canvasEl;
 
 			let innerWrapper = this.loupeEl.querySelector<HTMLElement>(
 				'.kambas-loupe-inner'

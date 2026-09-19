@@ -91,6 +91,35 @@ export default class KambasPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: 'set-media-label',
+			name:
+				getText().setMediaLabelCommand ?? 'Set media label for selected node',
+			checkCallback: (checking) => {
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
+				if (!activeView || activeView.getViewType() !== 'canvas') return false;
+				if (!checking) {
+					this.canvasImageHandler.openSetMediaLabelModal(activeView);
+				}
+				return true;
+			},
+		});
+
+		this.addCommand({
+			id: 'toggle-embedded-media-labels',
+			name:
+				getText().toggleMediaLabelsCommand ?? 'Toggle embedded media labels',
+			callback: async () => {
+				this.settings.showEmbeddedMediaLabel = !(
+					this.settings.showEmbeddedMediaLabel ?? true
+				);
+				await this.saveSettings();
+				this.applySettingsCss();
+			},
+		});
+
 		this.canvasImageHandler = new CanvasImageHandler(this.app, this);
 		this.canvasImageHandler.registerEvents();
 
@@ -331,6 +360,18 @@ export default class KambasPlugin extends Plugin {
 					.setIcon('tag')
 					.onClick(() => {
 						this.canvasImageHandler.openTagModal(activeView, targetNodeEl);
+					});
+			});
+
+			menu.addItem((item: import('obsidian').MenuItem) => {
+				item
+					.setTitle(t.setMediaLabel ?? 'Set media label...')
+					.setIcon('type')
+					.onClick(() => {
+						this.canvasImageHandler.openSetMediaLabelModal(
+							activeView,
+							targetNodeEl
+						);
 					});
 			});
 
@@ -759,7 +800,9 @@ export default class KambasPlugin extends Plugin {
 	}
 
 	patchExportCommands(): void {
-		const appWithCommands = this.app as unknown as { commands?: { commands?: Record<string, Record<string, unknown>> } };
+		const appWithCommands = this.app as unknown as {
+			commands?: { commands?: Record<string, Record<string, unknown>> };
+		};
 		const commands = appWithCommands.commands?.commands || {};
 		for (const id of Object.keys(commands)) {
 			if (!EXPORT_ACTION_RE.test(id) || !EXPORT_FORMAT_RE.test(id)) continue;
@@ -788,7 +831,10 @@ export default class KambasPlugin extends Plugin {
 			});
 		} else if (typeof cmd.checkCallback === 'function') {
 			const orig = cmd.checkCallback;
-			cmd.checkCallback = function (checking: boolean, ...args: unknown[]): unknown {
+			cmd.checkCallback = function (
+				checking: boolean,
+				...args: unknown[]
+			): unknown {
 				if (checking) return orig.call(this, true, ...args);
 				self.beforeExport(() => orig.call(this, false, ...args));
 				return true;
@@ -811,7 +857,9 @@ export default class KambasPlugin extends Plugin {
 	}
 
 	activeBinder(): CanvasBinder | null {
-		const leaf = (this.app.workspace as unknown as { activeLeaf?: WorkspaceLeaf }).activeLeaf;
+		const leaf = (
+			this.app.workspace as unknown as { activeLeaf?: WorkspaceLeaf }
+		).activeLeaf;
 		const direct = leaf ? this.binders.get(leaf) : null;
 		if (direct) return direct;
 		return this.binders.size === 1
@@ -945,7 +993,8 @@ export default class KambasPlugin extends Plugin {
 
 	applySettingsCss(): void {
 		const updateDoc = (doc: Document): void => {
-			doc.body.classList.add('kambas-hide-labels');
+			const showLabels = this.settings.showEmbeddedMediaLabel ?? true;
+			doc.body.classList.toggle('kambas-hide-labels', !showLabels);
 
 			if (this.settings.tagBadgePosition === 'inside') {
 				doc.body.classList.add('kambas-tag-position-inside');
