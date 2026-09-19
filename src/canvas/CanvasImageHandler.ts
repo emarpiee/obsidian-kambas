@@ -75,13 +75,15 @@ export class CanvasImageHandler {
 	private modifyTimer: number | null = null;
 	private lastMousePos: { x: number; y: number } | null = null;
 
-	// Filter panel state (Tag & Color tabs)
-	private activeFilterTab: 'tag' | 'color' = 'tag';
+	// Filter panel state (Tag, Color & Label tabs)
+	private activeFilterTab: 'tag' | 'color' | 'label' = 'tag';
 	private tagFilterPanelEl: HTMLElement | null = null;
 	private activeTagFilters: Set<string> = new Set();
 	private activeTagExcludes: Set<string> = new Set();
 	private activeColorFilters: Set<string> = new Set();
 	private activeColorExcludes: Set<string> = new Set();
+	private activeLabelFilters: Set<string> = new Set();
+	private activeLabelExcludes: Set<string> = new Set();
 	private activeTagFiltersFile: string | null = null;
 	private nodeColorCache: Map<string, string[] | null> = new Map();
 	private dimOpacity = 0.12;
@@ -523,6 +525,18 @@ export class CanvasImageHandler {
 		if (!canvas?.nodes) return;
 		this.updateZoomScale(activeView);
 
+		const rawCanvasData = (
+			activeView.canvas as unknown as {
+				data?: { nodes?: Array<{ id?: string; label?: string; file?: string; url?: string }> };
+			}
+		)?.data;
+		const dataNodesMap = new Map<string, { id?: string; label?: string; file?: string; url?: string }>();
+		if (rawCanvasData?.nodes) {
+			for (const n of rawCanvasData.nodes) {
+				if (n.id) dataNodesMap.set(n.id, n);
+			}
+		}
+
 		canvas.nodes.forEach((canvasNode) => {
 			const nodeEl = canvasNode.nodeEl;
 			if (!nodeEl) return;
@@ -632,35 +646,31 @@ export class CanvasImageHandler {
 			container.classList.toggle('kambas-has-embedded-img', hasEmbeddedImg);
 
 			// Restore node label header state
-			const rawCanvas = activeView.canvas as unknown as {
-				data?: { nodes?: Array<{ id?: string; label?: string }> };
-			};
-			const canvasDataNode = rawCanvas?.data?.nodes?.find(
-				(n) => n.id === (canvasNode as unknown as { id?: string }).id
-			);
-			const nodeLabel = (
-				canvasDataNode
-					? (canvasDataNode.label || '')
-					: (rawNodeObj.label || unknownData.label || '')
+			const nodeId = (canvasNode as unknown as { id?: string }).id;
+			const canvasDataNode = nodeId ? dataNodesMap.get(nodeId) : undefined;
+			const explicitLabel = (
+				canvasDataNode?.label ||
+				rawNodeObj.label ||
+				unknownData.label ||
+				''
 			).trim();
 
-			if (nodeLabel) {
-				rawNodeObj.label = nodeLabel;
+			if (explicitLabel) {
+				rawNodeObj.label = explicitLabel;
 				if (!rawNodeObj.unknownData) rawNodeObj.unknownData = {};
-				rawNodeObj.unknownData.label = nodeLabel;
-			} else {
-				delete rawNodeObj.label;
-				if (rawNodeObj.unknownData) delete rawNodeObj.unknownData.label;
+				rawNodeObj.unknownData.label = explicitLabel;
 			}
 
-			nodeEl.classList.toggle('kambas-has-label', Boolean(nodeLabel));
+			const displayLabel = this.getNodeLabel(rawNodeObj, canvasDataNode);
+
+			nodeEl.classList.toggle('kambas-has-label', Boolean(displayLabel));
 			let labelEl = nodeEl.querySelector('.canvas-node-label');
-			if (nodeLabel) {
+			if (displayLabel) {
 				if (!labelEl) {
 					labelEl = nodeContainer.createDiv({ cls: 'canvas-node-label' });
 				}
-				if (labelEl.textContent !== nodeLabel) {
-					labelEl.textContent = nodeLabel;
+				if (labelEl.textContent !== displayLabel) {
+					labelEl.textContent = displayLabel;
 				}
 			} else if (labelEl) {
 				labelEl.remove();
@@ -958,7 +968,11 @@ export class CanvasImageHandler {
 				}
 				this.removeSelectionGuard();
 				this.activeTagFilters.clear();
+				this.activeTagExcludes.clear();
 				this.activeColorFilters.clear();
+				this.activeColorExcludes.clear();
+				this.activeLabelFilters.clear();
+				this.activeLabelExcludes.clear();
 				this.nodeColorCache.clear();
 				this.activeTagFiltersFile = filterFile.path;
 				this.restoreFilterState(filterFile, activeView);
@@ -969,7 +983,11 @@ export class CanvasImageHandler {
 				}
 			} else if (
 				this.activeTagFilters.size > 0 ||
-				this.activeColorFilters.size > 0
+				this.activeTagExcludes.size > 0 ||
+				this.activeColorFilters.size > 0 ||
+				this.activeColorExcludes.size > 0 ||
+				this.activeLabelFilters.size > 0 ||
+				this.activeLabelExcludes.size > 0
 			) {
 				// Same file, active filters — re-apply (e.g. after badge re-render)
 				this.applyTagFilters(activeView);
@@ -3327,8 +3345,34 @@ export class CanvasImageHandler {
 			});
 		}
 
-		if (targetNodes.length === 0) {
-			new Notice(getText().noMediaSelectedNotice ?? 'No media node selected');
+		const embeddedTargetNodes = targetNodes.filter((item) => {
+			const nodeObj = item.nodeObj as {
+				type?: string;
+				url?: string;
+				file?: unknown;
+				nodeEl?: HTMLElement;
+				unknownData?: { type?: string; url?: string };
+			};
+			const cdn = (
+				canvas as {
+					data?: {
+						nodes?: Array<{
+							id?: string;
+							type?: string;
+							url?: string;
+							file?: unknown;
+						}>;
+					};
+				}
+			).data?.nodes?.find((n) => n.id === item.id);
+			return this.isEmbeddedMediaNode(nodeObj, cdn, nodeObj.nodeEl);
+		});
+
+		if (embeddedTargetNodes.length === 0) {
+			new Notice(
+				getText().noMediaSelectedNotice ??
+					'Custom labels can only be applied to embedded media.'
+			);
 			return;
 		}
 
@@ -3375,8 +3419,8 @@ export class CanvasImageHandler {
 					const nodeLabelsMap = new Map<string, string | undefined>();
 					const hasCounterPattern = /#+/.test(template);
 
-					for (let i = 0; i < targetNodes.length; i++) {
-						const { id, nodeObj } = targetNodes[i];
+					for (let i = 0; i < embeddedTargetNodes.length; i++) {
+						const { id, nodeObj } = embeddedTargetNodes[i];
 						const rawNode = nodeObj as TypedNode;
 
 						let formattedLabel = template;
@@ -3764,6 +3808,8 @@ export class CanvasImageHandler {
 			this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
 		const hasColorActive =
 			this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+		const hasLabelActive =
+			this.activeLabelFilters.size > 0 || this.activeLabelExcludes.size > 0;
 
 		const tagTab = tabsWrap.createDiv({
 			cls:
@@ -3793,11 +3839,26 @@ export class CanvasImageHandler {
 			});
 		}
 
+		const labelTab = tabsWrap.createDiv({
+			cls:
+				'kambas-tag-panel-tab' +
+				(this.activeFilterTab === 'label' ? ' is-active' : '') +
+				(hasLabelActive ? ' has-filter' : ''),
+		});
+		labelTab.createSpan({ text: t.labelFilterTab ?? 'Labels' });
+		if (hasLabelActive) {
+			labelTab.createSpan({
+				cls: 'kambas-tab-filter-dot',
+				attr: { 'aria-label': 'Active label filter' },
+			});
+		}
+
 		tagTab.addEventListener('click', () => {
 			if (this.activeFilterTab === 'tag') return;
 			this.activeFilterTab = 'tag';
 			tagTab.addClass('is-active');
 			colorTab.removeClass('is-active');
+			labelTab.removeClass('is-active');
 			this.refreshTagFilterPanel(activeView);
 		});
 
@@ -3806,6 +3867,16 @@ export class CanvasImageHandler {
 			this.activeFilterTab = 'color';
 			colorTab.addClass('is-active');
 			tagTab.removeClass('is-active');
+			labelTab.removeClass('is-active');
+			this.refreshTagFilterPanel(activeView);
+		});
+
+		labelTab.addEventListener('click', () => {
+			if (this.activeFilterTab === 'label') return;
+			this.activeFilterTab = 'label';
+			labelTab.addClass('is-active');
+			tagTab.removeClass('is-active');
+			colorTab.removeClass('is-active');
 			this.refreshTagFilterPanel(activeView);
 		});
 
@@ -4118,6 +4189,8 @@ export class CanvasImageHandler {
 			this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
 		const hasColorActive =
 			this.activeColorFilters.size > 0 || this.activeColorExcludes.size > 0;
+		const hasLabelActive =
+			this.activeLabelFilters.size > 0 || this.activeLabelExcludes.size > 0;
 
 		const tagTabEl = this.tagFilterPanelEl.querySelector(
 			'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(1)'
@@ -4147,6 +4220,22 @@ export class CanvasImageHandler {
 					attr: { 'aria-label': 'Active color filter' },
 				});
 			} else if (!hasColorActive && dot) {
+				dot.remove();
+			}
+		}
+
+		const labelTabEl = this.tagFilterPanelEl.querySelector(
+			'.kambas-tag-panel-tabs .kambas-tag-panel-tab:nth-child(3)'
+		);
+		if (labelTabEl) {
+			labelTabEl.classList.toggle('has-filter', hasLabelActive);
+			let dot = labelTabEl.querySelector('.kambas-tab-filter-dot');
+			if (hasLabelActive && !dot) {
+				labelTabEl.createSpan({
+					cls: 'kambas-tab-filter-dot',
+					attr: { 'aria-label': 'Active label filter' },
+				});
+			} else if (!hasLabelActive && dot) {
 				dot.remove();
 			}
 		}
@@ -4192,6 +4281,8 @@ export class CanvasImageHandler {
 	): void {
 		if (this.activeFilterTab === 'color') {
 			this.renderColorFilterList(body, activeView);
+		} else if (this.activeFilterTab === 'label') {
+			this.renderLabelFilterList(body, activeView);
 		} else {
 			this.renderTagFilterList(body, activeView);
 		}
@@ -5067,6 +5158,323 @@ export class CanvasImageHandler {
 		searchInput.addEventListener('input', () => renderList(searchInput.value));
 	}
 
+	private isEmbeddedMediaNode(
+		rawNode: {
+			type?: string;
+			url?: string;
+			file?: unknown;
+			unknownData?: { type?: string; url?: string };
+		},
+		canvasDataNode?: { type?: string; url?: string; file?: unknown },
+		nodeEl?: HTMLElement
+	): boolean {
+		// Vault file nodes (type === 'file' or has file property) are NEVER embedded media
+		const isFile =
+			canvasDataNode?.type === 'file' ||
+			rawNode.type === 'file' ||
+			Boolean(canvasDataNode?.file) ||
+			Boolean(rawNode.file);
+		if (isFile) return false;
+
+		const isLink =
+			canvasDataNode?.type === 'link' ||
+			rawNode.type === 'link' ||
+			rawNode.unknownData?.type === 'link';
+		const hasUrl = Boolean(
+			canvasDataNode?.url || rawNode.url || rawNode.unknownData?.url
+		);
+
+		const hasEmbeddedImg = nodeEl
+			? Boolean(
+					nodeEl.classList.contains('kambas-has-embedded-img') ||
+					nodeEl.querySelector('img.kambas-embedded-img') ||
+					nodeEl.querySelector('.canvas-node-content img')
+			  )
+			: false;
+
+		return isLink || hasUrl || hasEmbeddedImg;
+	}
+
+	private getNodeLabel(
+		rawNode: {
+			id?: string;
+			type?: string;
+			label?: string;
+			file?: unknown;
+			url?: string;
+			unknownData?: { label?: string; type?: string; url?: string };
+		},
+		canvasDataNode?: { id?: string; type?: string; label?: string; file?: string; url?: string }
+	): string {
+		const explicitLabel = (
+			canvasDataNode?.label ||
+			rawNode.label ||
+			rawNode.unknownData?.label ||
+			''
+		).trim();
+		if (explicitLabel) return explicitLabel;
+
+		const rawFile = rawNode.file;
+		const filePath =
+			canvasDataNode?.file ||
+			(typeof rawFile === 'string'
+				? rawFile
+				: (rawFile as { path?: string; name?: string; basename?: string } | null)?.basename ||
+					(rawFile as { path?: string; name?: string; basename?: string } | null)?.name ||
+					(rawFile as { path?: string; name?: string; basename?: string } | null)?.path);
+		if (filePath && typeof filePath === 'string') {
+			if (filePath.startsWith('data:') || filePath.includes('base64,')) {
+				return '';
+			}
+			const parts = filePath.split('/');
+			const filename = parts[parts.length - 1] || filePath;
+			return filename.trim();
+		}
+
+		const url = (
+			canvasDataNode?.url ||
+			rawNode.url ||
+			rawNode.unknownData?.url ||
+			''
+		).trim();
+		if (url) {
+			if (
+				url.startsWith('data:') ||
+				url.includes('base64,') ||
+				url.length > 200
+			) {
+				return '';
+			}
+			const parts = url.split('/');
+			const filename = parts[parts.length - 1] || url;
+			return filename.trim();
+		}
+
+		return '';
+	}
+
+	private renderLabelFilterList(
+		body: HTMLElement,
+		activeView: CanvasItemView
+	): void {
+		body.empty();
+		const t = getText();
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
+
+		const rawCanvasData = (
+			canvas as unknown as {
+				data?: { nodes?: Array<{ id?: string; label?: string; file?: string; url?: string }> };
+			}
+		)?.data;
+		const dataNodesMap = new Map<string, { id?: string; label?: string; file?: string; url?: string }>();
+		if (rawCanvasData?.nodes) {
+			for (const n of rawCanvasData.nodes) {
+				if (n.id) dataNodesMap.set(n.id, n);
+			}
+		}
+
+		const hasAnyFilter =
+			this.activeTagFilters.size > 0 ||
+			this.activeTagExcludes.size > 0 ||
+			this.activeColorFilters.size > 0 ||
+			this.activeColorExcludes.size > 0 ||
+			this.activeLabelFilters.size > 0 ||
+			this.activeLabelExcludes.size > 0;
+
+		const labelMap = new Map<string, number>();
+		const visibleLabelCounts = new Map<string, number>();
+		const labelToNodes = new Map<string, HTMLElement[]>();
+
+		canvas.nodes.forEach((node) => {
+			const rawNode = node as unknown as {
+				id?: string;
+				label?: string;
+				file?: string | { path?: string; name?: string; basename?: string };
+				url?: string;
+				unknownData?: { label?: string };
+			};
+			const nodeEl = node.nodeEl;
+			if (!nodeEl || !rawNode.id) return;
+
+			const canvasDataNode = dataNodesMap.get(rawNode.id);
+			const nodeLabel = this.getNodeLabel(rawNode, canvasDataNode);
+
+			if (!nodeLabel) return;
+
+			const isVisible =
+				hasAnyFilter && !nodeEl.classList.contains('kambas-tag-hidden');
+
+			labelMap.set(nodeLabel, (labelMap.get(nodeLabel) ?? 0) + 1);
+			if (isVisible) {
+				visibleLabelCounts.set(
+					nodeLabel,
+					(visibleLabelCounts.get(nodeLabel) ?? 0) + 1
+				);
+			}
+
+			let bucket = labelToNodes.get(nodeLabel);
+			if (!bucket) {
+				bucket = [];
+				labelToNodes.set(nodeLabel, bucket);
+			}
+			bucket.push(nodeEl);
+		});
+
+		if (labelMap.size === 0) {
+			const emptyDiv = body.createDiv({
+				cls: 'kambas-tag-panel-empty',
+				text: t.noLabelsFound ?? 'No labels found on canvas.',
+			});
+			if (
+				this.activeLabelFilters.size > 0 ||
+				this.activeLabelExcludes.size > 0
+			) {
+				const resetBtn = emptyDiv.createEl('button', {
+					cls: 'mod-warning',
+					text: t.labelClearFilter ?? 'Clear label filter',
+				});
+				resetBtn.setCssProps({ marginTop: '10px' });
+				resetBtn.addEventListener('click', () => {
+					this.activeLabelFilters.clear();
+					this.activeLabelExcludes.clear();
+					this.applyTagFilters(activeView, true);
+					this.refreshTagFilterPanel(activeView);
+				});
+			}
+			return;
+		}
+
+		// ── Controls / Search Wrap ────────────────────────────────────────────
+		const controlsWrap = body.createDiv({ cls: 'kambas-color-controls' });
+		const searchWrap = controlsWrap.createDiv({
+			cls: 'kambas-tag-search-wrap',
+		});
+		const searchIcon = searchWrap.createSpan({ cls: 'kambas-tag-search-icon' });
+		setIcon(searchIcon, 'search');
+		const searchInput = searchWrap.createEl('input', {
+			cls: 'kambas-tag-search',
+			attr: {
+				type: 'text',
+				placeholder: t.searchLabelsPlaceholder ?? 'Search labels…',
+			},
+		});
+
+		const hasLabelActivity =
+			this.activeLabelFilters.size > 0 || this.activeLabelExcludes.size > 0;
+		const clearInSearch = searchWrap.createEl('button', {
+			cls: 'kambas-tag-search-clear' + (hasLabelActivity ? '' : ' is-hidden'),
+			attr: { 'aria-label': t.labelClearFilter ?? 'Clear label filter' },
+		});
+		setIcon(clearInSearch, 'x');
+		clearInSearch.addEventListener('click', () => {
+			this.activeLabelFilters.clear();
+			this.activeLabelExcludes.clear();
+			this.applyTagFilters(activeView, true);
+			this.refreshTagFilterPanel(activeView);
+		});
+
+		// ── Scrollable Label List ─────────────────────────────────────────────
+		const listEl = body.createDiv({ cls: 'kambas-tag-panel-list' });
+
+		// Sort labels alphabetically (case-insensitive)
+		const sortedLabels = Array.from(labelMap.keys()).sort((a, b) =>
+			a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true })
+		);
+
+		const renderLabelList = (query: string): void => {
+			listEl.empty();
+			const cleanQuery = query.trim().toLowerCase();
+
+			for (const labelName of sortedLabels) {
+				if (cleanQuery && !labelName.toLowerCase().includes(cleanQuery)) {
+					continue;
+				}
+				const count = labelMap.get(labelName) ?? 0;
+				const visibleCount = visibleLabelCounts.get(labelName) ?? 0;
+				const isIncluded = this.activeLabelFilters.has(labelName);
+				const isExcluded = this.activeLabelExcludes.has(labelName);
+				const isRelated = hasAnyFilter && visibleCount > 0;
+
+				const rowCls =
+					'kambas-tag-panel-item' +
+					(isIncluded ? ' is-active' : '') +
+					(isExcluded ? ' is-excluded' : '') +
+					(isRelated ? ' is-related' : '') +
+					(!isRelated && hasAnyFilter ? ' is-not-in-view' : '');
+				const row = listEl.createDiv({ cls: rowCls });
+				row.setAttribute('data-label-name', labelName);
+
+				const checkEl = row.createSpan({ cls: 'kambas-tag-panel-check' });
+				setIcon(
+					checkEl,
+					isIncluded ? 'check-square' : isExcluded ? 'x-square' : 'square'
+				);
+
+				row.createSpan({
+					cls: 'kambas-tag-panel-pill kambas-label-panel-pill',
+					text: labelName,
+					attr: { title: labelName },
+				});
+
+				const countsWrap = row.createDiv({ cls: 'kambas-tag-panel-counts' });
+
+				if (isRelated) {
+					countsWrap.createSpan({
+						cls: 'kambas-tag-panel-count kambas-in-view-count',
+						text: t.inViewCount
+							? t.inViewCount(visibleCount)
+							: `${visibleCount} in view`,
+					});
+				}
+
+				const countText = t.labelNodesCount
+					? t.labelNodesCount(count)
+					: `${count} ${count === 1 ? 'item' : 'items'}`;
+				countsWrap.createSpan({
+					cls: 'kambas-tag-panel-count',
+					text: countText,
+				});
+
+				// Hover effect
+				row.addEventListener('mouseenter', () => {
+					const nodes = labelToNodes.get(labelName) ?? [];
+					nodes.forEach((el) => el.classList.add('kambas-color-highlight'));
+				});
+				row.addEventListener('mouseleave', () => {
+					const nodes = labelToNodes.get(labelName) ?? [];
+					nodes.forEach((el) => el.classList.remove('kambas-color-highlight'));
+				});
+
+				// 3-state cycle: neutral → include → exclude → neutral
+				row.addEventListener('click', () => {
+					if (this.activeLabelFilters.has(labelName)) {
+						this.activeLabelFilters.delete(labelName);
+						this.activeLabelExcludes.add(labelName);
+					} else if (this.activeLabelExcludes.has(labelName)) {
+						this.activeLabelExcludes.delete(labelName);
+					} else {
+						this.activeLabelFilters.add(labelName);
+					}
+					this.applyTagFilters(activeView, true);
+					this.refreshTagFilterPanel(activeView);
+				});
+			}
+
+			if (sortedLabels.length === 0 || listEl.children.length === 0) {
+				listEl.createDiv({
+					cls: 'kambas-tag-panel-empty',
+					text: t.noLabelsFound ?? 'No labels match.',
+				});
+			}
+		};
+
+		renderLabelList('');
+		searchInput.addEventListener('input', () =>
+			renderLabelList(searchInput.value)
+		);
+	}
+
 	public async deleteTagFromCanvas(
 		activeView: CanvasItemView,
 		tagToDelete: string
@@ -5267,7 +5675,9 @@ export class CanvasImageHandler {
 			this.activeTagFilters.size > 0 ||
 			this.activeTagExcludes.size > 0 ||
 			this.activeColorFilters.size > 0 ||
-			this.activeColorExcludes.size > 0;
+			this.activeColorExcludes.size > 0 ||
+			this.activeLabelFilters.size > 0 ||
+			this.activeLabelExcludes.size > 0;
 		const panelOpen = this.tagFilterPanelEl?.isConnected ?? false;
 		this.tagToolbarBtn.classList.toggle(
 			'is-active',
@@ -5285,13 +5695,22 @@ export class CanvasImageHandler {
 			this.activeTagFiltersFile = file.path;
 			const key = `kambas-filters:${file.path}`;
 			const hasAny =
-				this.activeTagFilters.size > 0 || this.activeTagExcludes.size > 0;
+				this.activeTagFilters.size > 0 ||
+				this.activeTagExcludes.size > 0 ||
+				this.activeColorFilters.size > 0 ||
+				this.activeColorExcludes.size > 0 ||
+				this.activeLabelFilters.size > 0 ||
+				this.activeLabelExcludes.size > 0;
 			if (hasAny) {
 				this.app.saveLocalStorage(
 					key,
 					JSON.stringify({
 						include: [...this.activeTagFilters],
 						exclude: [...this.activeTagExcludes],
+						colorInclude: [...this.activeColorFilters],
+						colorExclude: [...this.activeColorExcludes],
+						labelInclude: [...this.activeLabelFilters],
+						labelExclude: [...this.activeLabelExcludes],
 					})
 				);
 			} else {
@@ -5310,41 +5729,37 @@ export class CanvasImageHandler {
 			if (!raw) {
 				this.activeTagFilters.clear();
 				this.activeTagExcludes.clear();
+				this.activeColorFilters.clear();
+				this.activeColorExcludes.clear();
+				this.activeLabelFilters.clear();
+				this.activeLabelExcludes.clear();
 				this.applyTagFilters(activeView);
 				return;
 			}
-			// Support both old plain-array format and new { include, exclude } format
 			const parsed = JSON.parse(raw) as
 				| string[]
-				| { include?: string[]; exclude?: string[] };
+				| {
+						include?: string[];
+						exclude?: string[];
+						colorInclude?: string[];
+						colorExclude?: string[];
+						labelInclude?: string[];
+						labelExclude?: string[];
+				  };
 			if (Array.isArray(parsed)) {
-				// Legacy format: treat as plain include list
 				this.activeTagFilters = new Set(parsed);
 				this.activeTagExcludes.clear();
+				this.activeColorFilters.clear();
+				this.activeColorExcludes.clear();
+				this.activeLabelFilters.clear();
+				this.activeLabelExcludes.clear();
 			} else {
 				this.activeTagFilters = new Set(parsed.include ?? []);
 				this.activeTagExcludes = new Set(parsed.exclude ?? []);
-			}
-
-			// Prune filter entries that no longer exist on ANY node
-			const canvas = activeView.canvas;
-			if (canvas?.nodes) {
-				const liveTags = new Set<string>();
-				canvas.nodes.forEach((node) => {
-					const uData = (
-						node as unknown as { unknownData?: { kambasTags?: string[] } }
-					).unknownData;
-					for (const tag of uData?.kambasTags ?? []) {
-						if (tag.trim()) liveTags.add(tag);
-					}
-				});
-				for (const activeTag of this.activeTagFilters) {
-					if (!liveTags.has(activeTag)) this.activeTagFilters.delete(activeTag);
-				}
-				for (const excludeTag of this.activeTagExcludes) {
-					if (!liveTags.has(excludeTag))
-						this.activeTagExcludes.delete(excludeTag);
-				}
+				this.activeColorFilters = new Set(parsed.colorInclude ?? []);
+				this.activeColorExcludes = new Set(parsed.colorExclude ?? []);
+				this.activeLabelFilters = new Set(parsed.labelInclude ?? []);
+				this.activeLabelExcludes = new Set(parsed.labelExclude ?? []);
 			}
 
 			this.applyTagFilters(activeView);
@@ -5503,27 +5918,46 @@ export class CanvasImageHandler {
 		const hasTagExcludes = this.activeTagExcludes.size > 0;
 		const hasColorIncludes = this.activeColorFilters.size > 0;
 		const hasColorExcludes = this.activeColorExcludes.size > 0;
+		const hasLabelIncludes = this.activeLabelFilters.size > 0;
+		const hasLabelExcludes = this.activeLabelExcludes.size > 0;
 
-		if (
-			!hasTagIncludes &&
-			!hasTagExcludes &&
-			!hasColorIncludes &&
-			!hasColorExcludes
-		) {
+		const hasAnyFilter =
+			hasTagIncludes ||
+			hasTagExcludes ||
+			hasColorIncludes ||
+			hasColorExcludes ||
+			hasLabelIncludes ||
+			hasLabelExcludes;
+
+		if (!hasAnyFilter) {
 			canvas.nodes.forEach((node) =>
 				node.nodeEl?.classList.remove('kambas-tag-hidden')
 			);
 			this.removeSelectionGuard();
-			// Zoom to fit all nodes once when explicitly clearing/unselecting filters
 			if (allowZoom) {
 				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 			}
 			this.scanAndRestoreTransforms(activeView);
 		} else {
+			const rawCanvasData = (
+				canvas as unknown as {
+					data?: { nodes?: Array<{ id?: string; label?: string; file?: string; url?: string }> };
+				}
+			)?.data;
+			const dataNodesMap = new Map<string, { id?: string; label?: string; file?: string; url?: string }>();
+			if (rawCanvasData?.nodes) {
+				for (const n of rawCanvasData.nodes) {
+					if (n.id) dataNodesMap.set(n.id, n);
+				}
+			}
+
 			canvas.nodes.forEach((node) => {
 				const rawNode = node as unknown as {
 					id: string;
-					unknownData?: { kambasTags?: string[] };
+					label?: string;
+					file?: string | { path?: string; name?: string; basename?: string };
+					url?: string;
+					unknownData?: { kambasTags?: string[]; label?: string };
 				};
 				const nodeTags = rawNode.unknownData?.kambasTags ?? [];
 
@@ -5559,27 +5993,40 @@ export class CanvasImageHandler {
 					!hasColorIncludes ||
 					nodeColors.some((c) => this.activeColorFilters.has(c));
 
-				// ── Exclude checks: hide if node has ANY excluded tag or color ──
+				const canvasDataNode = dataNodesMap.get(rawNode.id);
+				const nodeLabel = this.getNodeLabel(rawNode, canvasDataNode);
+
+				const labelIncludeOk =
+					!hasLabelIncludes ||
+					(Boolean(nodeLabel) && this.activeLabelFilters.has(nodeLabel));
+
+				// ── Exclude checks: hide if node has ANY excluded tag, color, or label ──
 				const tagExcluded =
 					hasTagExcludes &&
 					nodeTags.some((tag) => this.activeTagExcludes.has(tag));
 				const colorExcluded =
 					hasColorExcludes &&
 					nodeColors.some((c) => this.activeColorExcludes.has(c));
+				const labelExcluded =
+					hasLabelExcludes &&
+					Boolean(nodeLabel) &&
+					this.activeLabelExcludes.has(nodeLabel);
 
 				// Visible = passes all includes AND passes all excludes
 				const matches =
-					tagIncludeOk && colorIncludeOk && !tagExcluded && !colorExcluded;
+					tagIncludeOk &&
+					colorIncludeOk &&
+					labelIncludeOk &&
+					!tagExcluded &&
+					!colorExcluded &&
+					!labelExcluded;
 				node.nodeEl?.classList.toggle('kambas-tag-hidden', !matches);
 			});
-			// Guard prevents rubber-band selection from picking up hidden nodes
 			this.installSelectionGuard(activeView);
-			// Zoom canvas to fit visible nodes ONCE when user explicitly toggles a filter
 			if (allowZoom) {
 				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 			}
 		}
-		// Persist filter state so it survives panel close / canvas reopen
 		const file = activeView.file;
 		if (file) this.saveFilterState(file);
 		this.updateToolbarButtonState();
@@ -5687,6 +6134,8 @@ export class CanvasImageHandler {
 			this.activeTagExcludes.clear();
 			this.activeColorFilters.clear();
 			this.activeColorExcludes.clear();
+			this.activeLabelFilters.clear();
+			this.activeLabelExcludes.clear();
 			this.applyTagFilters(activeView, true);
 			this.refreshTagFilterPanel(activeView);
 		});

@@ -158,6 +158,12 @@ export interface TranslationSchema {
 	colorNoImages: string;
 	colorClearFilter: string;
 	colorNodesCount: (count: number) => string;
+	// Label filter
+	labelFilterTab: string;
+	searchLabelsPlaceholder: string;
+	labelClearFilter: string;
+	labelNodesCount: (count: number) => string;
+	noLabelsFound: string;
 	colorSettingHeader: string;
 	colorSettingName: string;
 	colorSettingDesc: string;
@@ -482,7 +488,7 @@ const en: TranslationSchema = {
 	tagNodes: 'Add / Edit Tags…',
 	tagModalTitle: 'Tags',
 	tagPlaceholder: '#tag, press Enter to add',
-	tagFilterPanel: 'Filter by tag',
+	tagFilterPanel: 'Canvas filter',
 	tagClearFilter: 'Clear filter',
 	tagNodesCount: (count: number) => `${count} item${count === 1 ? '' : 's'}`,
 	tagPublishToVault: 'Sync tags to vault',
@@ -510,6 +516,12 @@ const en: TranslationSchema = {
 	colorNoImages: 'No images with detected colors on this canvas.',
 	colorClearFilter: 'Clear color filter',
 	colorNodesCount: (count: number) => `${count} image${count === 1 ? '' : 's'}`,
+	// Label filter
+	labelFilterTab: 'Labels',
+	searchLabelsPlaceholder: 'Search labels…',
+	labelClearFilter: 'Clear label filter',
+	labelNodesCount: (count: number) => `${count} item${count === 1 ? '' : 's'}`,
+	noLabelsFound: 'No labels found on canvas.',
 	colorSettingHeader: 'Color Extraction',
 	colorSettingName: 'Auto Color Extraction',
 	colorSettingDesc:
@@ -788,7 +800,7 @@ const zh: TranslationSchema = {
 	tagNodes: '添加 / 编辑标签…',
 	tagModalTitle: '标签',
 	tagPlaceholder: '输入 #标签 后按回车添加',
-	tagFilterPanel: '按标签筛选',
+	tagFilterPanel: '画布筛选',
 	tagClearFilter: '清除筛选',
 	tagNodesCount: (count: number) => `${count} 个元素`,
 	tagPublishToVault: '同步标签至笔记宝库',
@@ -815,6 +827,12 @@ const zh: TranslationSchema = {
 	colorNoImages: '当前画布中没有检测到含颜色的图片。',
 	colorClearFilter: '清除颜色筛选',
 	colorNodesCount: (count: number) => `${count} 个元素`,
+	// Label filter
+	labelFilterTab: '标签',
+	searchLabelsPlaceholder: '搜索标签…',
+	labelClearFilter: '清除标签筛选',
+	labelNodesCount: (count: number) => `${count} 个`,
+	noLabelsFound: '画布上未找到标签。',
 	colorSettingHeader: '颜色提取',
 	colorSettingName: '自动提取颜色',
 	colorSettingDesc:
@@ -1115,6 +1133,12 @@ const zhTW: TranslationSchema = {
 	colorNoImages: '目前畫布中沒有偵測到含顏色的圖片。',
 	colorClearFilter: '清除顏色篩選',
 	colorNodesCount: (count: number) => `${count} 個元素`,
+	// Label filter
+	labelFilterTab: '標籤',
+	searchLabelsPlaceholder: '搜尋標籤…',
+	labelClearFilter: '清除標籤篩選',
+	labelNodesCount: (count: number) => `${count} 個`,
+	noLabelsFound: '畫布上未找到標籤。',
 	colorSettingHeader: '顏色擷取',
 	colorSettingName: '自動擷取顏色',
 	colorSettingDesc:
@@ -1431,6 +1455,13 @@ const es: TranslationSchema = {
 	colorClearFilter: 'Borrar filtro de color',
 	colorNodesCount: (count: number) =>
 		`${count} elemento${count === 1 ? '' : 's'}`,
+	// Label filter
+	labelFilterTab: 'Etiquetas',
+	searchLabelsPlaceholder: 'Buscar etiquetas…',
+	labelClearFilter: 'Limpiar filtro de etiquetas',
+	labelNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 's'}`,
+	noLabelsFound: 'No se encontraron etiquetas en el canvas.',
 	colorSettingHeader: 'Extracción de color',
 	colorSettingName: 'Extracción automática de color',
 	colorSettingDesc:
@@ -1762,6 +1793,13 @@ const fr: TranslationSchema = {
 	colorClearFilter: 'Effacer le filtre de couleur',
 	colorNodesCount: (count: number) =>
 		`${count} élément${count === 1 ? '' : 's'}`,
+	// Label filter
+	labelFilterTab: 'Étiquettes',
+	searchLabelsPlaceholder: 'Rechercher des étiquettes…',
+	labelClearFilter: 'Effacer le filtre d’étiquettes',
+	labelNodesCount: (count: number) =>
+		`${count} élément${count === 1 ? '' : 's'}`,
+	noLabelsFound: 'Aucune étiquette trouvée sur le canvas.',
 	colorSettingHeader: 'Extraction de couleur',
 	colorSettingName: 'Extraction automatique des couleurs',
 	colorSettingDesc:
@@ -2093,6 +2131,13 @@ const de: TranslationSchema = {
 	colorClearFilter: 'Farbfilter zurücksetzen',
 	colorNodesCount: (count: number) =>
 		`${count} Element${count === 1 ? '' : 'e'}`,
+	// Label filter
+	labelFilterTab: 'Labels',
+	searchLabelsPlaceholder: 'Labels suchen…',
+	labelClearFilter: 'Label-Filter zurücksetzen',
+	labelNodesCount: (count: number) =>
+		`${count} Element${count === 1 ? '' : 'e'}`,
+	noLabelsFound: 'Keine Labels auf dem Canvas gefunden.',
 	colorSettingHeader: 'Farbenextraktion',
 	colorSettingName: 'Automatische Farbenextraktion',
 	colorSettingDesc:
@@ -2419,6 +2464,12 @@ const ja: TranslationSchema = {
 	colorNoImages: 'キャンバス内に色が検出された画像はありません。',
 	colorClearFilter: 'カラーフィルターを解除',
 	colorNodesCount: (count: number) => `${count} 個の要素`,
+	// Label filter
+	labelFilterTab: 'ラベル',
+	searchLabelsPlaceholder: 'ラベルを検索…',
+	labelClearFilter: 'ラベルフィルターをクリア',
+	labelNodesCount: (count: number) => `${count} 件`,
+	noLabelsFound: 'キャンバスにラベルが見つかりません。',
 	colorSettingHeader: '色抽出',
 	colorSettingName: '自動色抽出',
 	colorSettingDesc:
@@ -2744,6 +2795,12 @@ const ko: TranslationSchema = {
 	colorNoImages: '이 캔버스에 감지된 색상이 포함된 이미지가 없습니다.',
 	colorClearFilter: '색상 필터 해제',
 	colorNodesCount: (count: number) => `${count}개 요소`,
+	// Label filter
+	labelFilterTab: '라벨',
+	searchLabelsPlaceholder: '라벨 검색…',
+	labelClearFilter: '라벨 필터 지우기',
+	labelNodesCount: (count: number) => `${count}개`,
+	noLabelsFound: '캔버스에서 라벨을 찾을 수 없습니다.',
 	colorSettingHeader: '색상 추출',
 	colorSettingName: '자동 색상 추출',
 	colorSettingDesc:
@@ -3064,6 +3121,12 @@ const ru: TranslationSchema = {
 		'На этом холсте не найдено изображений с распознанными цветами.',
 	colorClearFilter: 'Сбросить фильтр цвета',
 	colorNodesCount: (count: number) => `${count} элем.`,
+	// Label filter
+	labelFilterTab: 'Метки',
+	searchLabelsPlaceholder: 'Поиск меток…',
+	labelClearFilter: 'Очистить фильтр меток',
+	labelNodesCount: (count: number) => `${count} элем.`,
+	noLabelsFound: 'Метки на канвасе не найдены.',
 	colorSettingHeader: 'Извлечение цвета',
 	colorSettingName: 'Автоматическое извлечение цвета',
 	colorSettingDesc:
@@ -3390,6 +3453,13 @@ const pt: TranslationSchema = {
 	colorClearFilter: 'Limpar filtro de cor',
 	colorNodesCount: (count: number) =>
 		`${count} elemento${count === 1 ? '' : 's'}`,
+	// Label filter
+	labelFilterTab: 'Rótulos',
+	searchLabelsPlaceholder: 'Pesquisar rótulos…',
+	labelClearFilter: 'Limpar filtro de rótulos',
+	labelNodesCount: (count: number) =>
+		`${count} item${count === 1 ? '' : 's'}`,
+	noLabelsFound: 'Nenhum rótulo encontrado no canvas.',
 	colorSettingHeader: 'Extração de cor',
 	colorSettingName: 'Extração automática de cor',
 	colorSettingDesc:
@@ -3714,6 +3784,13 @@ const it: TranslationSchema = {
 	colorClearFilter: 'Rimuovi filtro colore',
 	colorNodesCount: (count: number) =>
 		`${count} elemento${count === 1 ? '' : 'i'}`,
+	// Label filter
+	labelFilterTab: 'Etichette',
+	searchLabelsPlaceholder: 'Cerca etichette…',
+	labelClearFilter: 'Cancella filtro etichette',
+	labelNodesCount: (count: number) =>
+		`${count} elemento${count === 1 ? '' : 'i'}`,
+	noLabelsFound: 'Nessuna etichetta trovata nel canvas.',
 	colorSettingHeader: 'Estrazione colore',
 	colorSettingName: 'Estrazione automatica colore',
 	colorSettingDesc:
@@ -4032,6 +4109,12 @@ const ar: TranslationSchema = {
 	colorNoImages: 'لا توجد صور تحتوي على ألوان مكتشفة في هذه اللوحة.',
 	colorClearFilter: 'مسح تصفية الألوان',
 	colorNodesCount: (count: number) => `${count} عنصر`,
+	// Label filter
+	labelFilterTab: 'التسميات',
+	searchLabelsPlaceholder: 'البحث عن التسميات…',
+	labelClearFilter: 'مسح تصفية التسميات',
+	labelNodesCount: (count: number) => `${count} عنصر`,
+	noLabelsFound: 'لم يتم العثور على تسميات في اللوحة.',
 	colorSettingHeader: 'استخراج الألوان',
 	colorSettingName: 'استخراج الألوان التلقائي',
 	colorSettingDesc:
@@ -4257,6 +4340,12 @@ const he: TranslationSchema = {
 	colorNoImages: 'לא נמצאו תמונות עם צבעים מזוהים בקנבס זה.',
 	colorClearFilter: 'נקה מסנן צבע',
 	colorNodesCount: (count: number) => `${count} רכיבים`,
+	// Label filter
+	labelFilterTab: 'תוויות',
+	searchLabelsPlaceholder: 'חיפוש תוויות…',
+	labelClearFilter: 'ניקוי מסנן תוויות',
+	labelNodesCount: (count: number) => `${count} פריטים`,
+	noLabelsFound: 'לא נמצאו תוויות בקנבס.',
 	colorSettingHeader: 'חילוץ צבעים',
 	colorSettingName: 'חילוץ צבעים אוטומטי',
 	colorSettingDesc:

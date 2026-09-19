@@ -223,6 +223,7 @@ export default class KambasPlugin extends Plugin {
 
 			let hasAnyImage = false;
 			let hasAnyMedia = false;
+			let hasAnyEmbeddedMedia = false;
 			let hasNativeImage = false;
 			let selectedImageCount = 0;
 			let isFlippedH = false;
@@ -308,6 +309,12 @@ export default class KambasPlugin extends Plugin {
 						].includes(ext)
 					);
 
+					const isEmbedded = Boolean(
+						(rawNodeObj.type === 'link' || unknownData?.type === 'link' || nodeUrl) &&
+						!extractedPath
+					) || Boolean(el?.querySelector('.kambas-embedded-img'));
+					if (isEmbedded) hasAnyEmbeddedMedia = true;
+
 					if (isEmbeddedLink || isVaultImageFile) {
 						hasAnyMedia = true;
 					}
@@ -349,6 +356,11 @@ export default class KambasPlugin extends Plugin {
 				);
 				if (hasAnyImage) hasAnyMedia = true;
 			}
+			if (!hasAnyEmbeddedMedia && targetNodeEl) {
+				hasAnyEmbeddedMedia = Boolean(
+					targetNodeEl.querySelector('.kambas-embedded-img')
+				);
+			}
 
 			const t = getText();
 			menu.addSeparator();
@@ -363,17 +375,19 @@ export default class KambasPlugin extends Plugin {
 					});
 			});
 
-			menu.addItem((item: import('obsidian').MenuItem) => {
-				item
-					.setTitle(t.setMediaLabel ?? 'Set media label...')
-					.setIcon('type')
-					.onClick(() => {
-						this.canvasImageHandler.openSetMediaLabelModal(
-							activeView,
-							targetNodeEl
-						);
-					});
-			});
+			if (hasAnyEmbeddedMedia) {
+				menu.addItem((item: import('obsidian').MenuItem) => {
+					item
+						.setTitle(t.setMediaLabel ?? 'Set media label...')
+						.setIcon('type')
+						.onClick(() => {
+							this.canvasImageHandler.openSetMediaLabelModal(
+								activeView,
+								targetNodeEl
+							);
+						});
+				});
+			}
 
 			// ── Group 2: Image Filters & Transformations ─────────────────────────────
 			if (hasAnyImage) {

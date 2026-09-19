@@ -935,29 +935,30 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	background: rgba(255, 255, 255, 0.2);
 }
 
-/* ── Excluded state (red) ─────────────────────────────────────────────────── */
+/* ── Excluded state (vibrant error background with white text) ────────────── */
 .kambas-tag-panel-item.is-excluded {
-	background: var(--background-modifier-error-hover, rgba(255, 80, 80, 0.12));
+	background: var(--text-error, #dc2626);
+	color: var(--text-on-accent, #ffffff);
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-pill,
-.kambas-tag-panel-item.is-excluded .kambas-tag-panel-check {
-	color: var(--text-error);
+.kambas-tag-panel-item.is-excluded .kambas-tag-panel-check,
+.kambas-tag-panel-item.is-excluded .kambas-tag-panel-count {
+	color: var(--text-on-accent, #ffffff);
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-count {
-	background: var(--background-modifier-error);
-	color: var(--text-error);
+	background: rgba(255, 255, 255, 0.25);
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-delete {
-	color: var(--text-error);
-	opacity: 0.6;
+	color: var(--text-on-accent, #ffffff);
+	opacity: 0.8;
 }
 
 .kambas-tag-panel-item.is-excluded .kambas-tag-panel-delete:hover {
-	color: var(--text-error);
-	background: var(--background-modifier-error-hover);
+	color: var(--text-on-accent, #ffffff);
+	background: rgba(255, 255, 255, 0.2);
 	opacity: 1;
 }
 
@@ -981,7 +982,9 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 140px;
+	max-width: calc(100% - 75px);
+	flex: 0 1 auto;
+	min-width: 0;
 	border-radius: var(--radius-l, 12px);
 	transition: background-color 0.12s ease, color 0.12s ease;
 }
