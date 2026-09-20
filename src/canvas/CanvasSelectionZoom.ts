@@ -169,7 +169,7 @@ export class CanvasSelectionZoom {
 		return result;
 	}
 
-	/** Zooms to fit the given canvas node objects using zoomToBbox for accuracy. */
+	/** Zooms to fit the given canvas node objects using Obsidian's smooth native zoomToSelection animation. */
 	private zoomToNodes(
 		canvas: CanvasEx,
 		nodes: Array<{
@@ -182,6 +182,26 @@ export class CanvasSelectionZoom {
 	): void {
 		if (nodes.length === 0) return;
 
+		// Ensure canvas.selection contains the target nodes so zoomToSelection animates smoothly
+		if (!canvas.selection) {
+			canvas.selection = new Set();
+		}
+		if (canvas.selection.size === 0) {
+			nodes.forEach((n) => canvas.selection?.add(n));
+		}
+
+		// 1. Prefer canvas.zoomToSelection() — Obsidian's native smooth camera animation for selected nodes
+		if (typeof canvas.zoomToSelection === 'function') {
+			try {
+				canvas.zoomToSelection();
+				this.triggerLODSync();
+				return;
+			} catch {
+				/* fall through */
+			}
+		}
+
+		// 2. Fallback to zoomToBbox if zoomToSelection is unavailable
 		if (typeof canvas.zoomToBbox === 'function') {
 			let minX = Infinity,
 				minY = Infinity,
@@ -204,16 +224,7 @@ export class CanvasSelectionZoom {
 			}
 		}
 
-		// Fallback chain
-		if (typeof canvas.zoomToSelection === 'function') {
-			try {
-				canvas.zoomToSelection();
-				this.triggerLODSync();
-				return;
-			} catch {
-				/* fall through */
-			}
-		}
+		// 3. Fallback to zoomToFit
 		if (typeof canvas.zoomToFit === 'function') {
 			canvas.zoomToFit();
 			this.triggerLODSync();
