@@ -92,22 +92,6 @@ export default class KambasPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: 'set-media-label',
-			name:
-				getText().setMediaLabelCommand ?? 'Set media label for selected node',
-			checkCallback: (checking) => {
-				const activeView = this.app.workspace.getActiveViewOfType(
-					ItemView
-				) as unknown as CanvasItemView | null;
-				if (!activeView || activeView.getViewType() !== 'canvas') return false;
-				if (!checking) {
-					this.canvasImageHandler.openSetMediaLabelModal(activeView);
-				}
-				return true;
-			},
-		});
-
-		this.addCommand({
 			id: 'toggle-embedded-media-labels',
 			name:
 				getText().toggleMediaLabelsCommand ?? 'Toggle embedded media labels',

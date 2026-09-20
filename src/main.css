@@ -46,12 +46,18 @@
 }
 
 /* Embedded media node label indicator icon */
-.canvas-node.kambas-has-embedded-img.kambas-has-label .canvas-node-label::before,
-.canvas-node.kambas-has-embedded-img.kambas-has-label .canvas-node-title::before {
-	content: '📎 ';
-	font-size: 0.9em;
-	opacity: 0.8;
-	margin-right: 2px;
+.canvas-node.kambas-has-embedded-img .kambas-label-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	vertical-align: -0.15em;
+	margin-right: 4px;
+	opacity: 0.85;
+}
+
+.canvas-node.kambas-has-embedded-img .kambas-label-icon svg {
+	width: 1em;
+	height: 1em;
 }
 
 /* Ensure label/title/header sit above embedded absolute image overlays */

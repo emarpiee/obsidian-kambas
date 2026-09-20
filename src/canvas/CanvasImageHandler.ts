@@ -5389,6 +5389,21 @@ export class CanvasImageHandler {
 		return '';
 	}
 
+	private renderLabelWithIcon(
+		el: HTMLElement,
+		labelText: string,
+		isEmbeddedImg: boolean
+	): void {
+		el.empty();
+		if (isEmbeddedImg) {
+			const iconEl = el.createSpan({ cls: 'kambas-label-icon' });
+			setIcon(iconEl, 'cpu');
+			el.appendText(' ' + labelText);
+		} else {
+			el.textContent = labelText;
+		}
+	}
+
 	private updateNodeLabelDOM(nodeEl: HTMLElement, labelText: string): void {
 		// Group nodes in Obsidian Canvas natively render their own group label (.canvas-group-label).
 		// Do not inject custom Kambas node headers/labels on group nodes to avoid duplicate labels.
@@ -5405,6 +5420,10 @@ export class CanvasImageHandler {
 		const hasLabel = cleanLabel.length > 0;
 		nodeEl.classList.toggle('kambas-has-label', hasLabel);
 
+		const isEmbeddedImg =
+			nodeEl.classList.contains('kambas-has-embedded-img') ||
+			Boolean(nodeEl.querySelector('img.kambas-embedded-img'));
+
 		// Find all native and custom header/title/label elements
 		const titleEls = Array.from(
 			nodeEl.querySelectorAll<HTMLElement>(
@@ -5415,9 +5434,7 @@ export class CanvasImageHandler {
 		if (hasLabel) {
 			if (titleEls.length > 0) {
 				titleEls.forEach((el) => {
-					if (el.textContent !== cleanLabel) {
-						el.textContent = cleanLabel;
-					}
+					this.renderLabelWithIcon(el, cleanLabel, isEmbeddedImg);
 					el.style.removeProperty('display');
 				});
 			} else {
@@ -5437,7 +5454,7 @@ export class CanvasImageHandler {
 						cls: 'canvas-node-label canvas-node-title',
 					});
 				}
-				labelEl.textContent = cleanLabel;
+				this.renderLabelWithIcon(labelEl, cleanLabel, isEmbeddedImg);
 				labelEl.style.removeProperty('display');
 			}
 		} else {
@@ -5448,7 +5465,7 @@ export class CanvasImageHandler {
 				) {
 					el.remove();
 				} else {
-					el.textContent = '';
+					el.empty();
 				}
 			});
 		}
