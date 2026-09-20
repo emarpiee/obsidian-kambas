@@ -5390,6 +5390,17 @@ export class CanvasImageHandler {
 	}
 
 	private updateNodeLabelDOM(nodeEl: HTMLElement, labelText: string): void {
+		// Group nodes in Obsidian Canvas natively render their own group label (.canvas-group-label).
+		// Do not inject custom Kambas node headers/labels on group nodes to avoid duplicate labels.
+		if (
+			nodeEl.classList.contains('is-group') ||
+			nodeEl.classList.contains('canvas-node-group')
+		) {
+			const customHeader = nodeEl.querySelector('.canvas-node-header');
+			if (customHeader) customHeader.remove();
+			return;
+		}
+
 		const cleanLabel = (labelText || '').trim();
 		const hasLabel = cleanLabel.length > 0;
 		nodeEl.classList.toggle('kambas-has-label', hasLabel);
