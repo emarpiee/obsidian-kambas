@@ -46,18 +46,29 @@
 }
 
 /* Embedded media node label indicator icon */
-.canvas-node.kambas-has-embedded-img.kambas-has-label .canvas-node-label::before {
+.canvas-node.kambas-has-embedded-img.kambas-has-label .canvas-node-label::before,
+.canvas-node.kambas-has-embedded-img.kambas-has-label .canvas-node-title::before {
 	content: '📎 ';
 	font-size: 0.9em;
 	opacity: 0.8;
 	margin-right: 2px;
 }
 
+/* Ensure label/title/header sit above embedded absolute image overlays */
+.canvas-node.kambas-has-embedded-img .canvas-node-header,
+.canvas-node.kambas-has-embedded-img .canvas-node-label,
+.canvas-node.kambas-has-embedded-img .canvas-node-title {
+	position: relative;
+	z-index: 5;
+}
+
 /* Unconditionally hide raw base64 URL data labels, but display native label when a custom label is set */
 .canvas-node.kambas-has-embedded-img:not(.kambas-has-label) .canvas-node-label,
+.canvas-node.kambas-has-embedded-img:not(.kambas-has-label) .canvas-node-title,
 .canvas-node.is-link[data-url^="data:image/"]:not(.kambas-has-label) .canvas-node-label,
 .canvas-node.is-link[data-url^="data:image/"]:not(.kambas-has-label) .canvas-node-title,
-body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-label {
+body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-label,
+body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-title {
 	display: none !important;
 }
 

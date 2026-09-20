@@ -94,6 +94,7 @@ export class CanvasImageHandler {
 	private colorHighlightCleanup: (() => void) | null = null;
 	private tagHighlightCleanup: (() => void) | null = null;
 	private lazyExtractDebounceTimer: number | null = null;
+	private suppressModifyScan = false; // suppress vault.modify scan while we write labels
 
 	constructor(app: App, plugin: import('../main').default) {
 		this.app = app;
@@ -125,7 +126,9 @@ export class CanvasImageHandler {
 					activeView.getViewType() === 'canvas' &&
 					activeView.file === file
 				) {
-					this.scanAndRestoreTransforms(activeView);
+					if (!this.suppressModifyScan) {
+						this.scanAndRestoreTransforms(activeView);
+					}
 				}
 			})
 		);
@@ -665,19 +668,7 @@ export class CanvasImageHandler {
 			}
 
 			const displayLabel = this.getNodeLabel(rawNodeObj, canvasDataNode);
-
-			nodeEl.classList.toggle('kambas-has-label', Boolean(displayLabel));
-			let labelEl = nodeEl.querySelector('.canvas-node-label');
-			if (displayLabel) {
-				if (!labelEl) {
-					labelEl = nodeContainer.createDiv({ cls: 'canvas-node-label' });
-				}
-				if (labelEl.textContent !== displayLabel) {
-					labelEl.textContent = displayLabel;
-				}
-			} else if (labelEl) {
-				labelEl.remove();
-			}
+			this.updateNodeLabelDOM(nodeEl, displayLabel);
 
 			// Apply stored transforms & opacity
 			if (unknownData) {
@@ -3466,42 +3457,22 @@ export class CanvasImageHandler {
 			});
 		}
 
-		const embeddedTargetNodes = targetNodes.filter((item) => {
-			const nodeObj = item.nodeObj as {
-				type?: string;
-				url?: string;
-				file?: unknown;
-				nodeEl?: HTMLElement;
-				unknownData?: { type?: string; url?: string };
-			};
-			const cdn = (
-				canvas as {
-					data?: {
-						nodes?: Array<{
-							id?: string;
-							type?: string;
-							url?: string;
-							file?: unknown;
-						}>;
-					};
-				}
-			).data?.nodes?.find((n) => n.id === item.id);
-			return this.isEmbeddedMediaNode(nodeObj, cdn, nodeObj.nodeEl);
-		});
-
-		if (embeddedTargetNodes.length === 0) {
+		if (targetNodes.length === 0) {
 			new Notice(
 				getText().noMediaSelectedNotice ??
-					'Custom labels can only be applied to embedded media.'
+					'No canvas node selected.'
 			);
 			return;
 		}
+
+		const targetNodesToProcess = targetNodes;
 
 		interface TypedNode {
 			id?: string;
 			label?: string;
 			unknownData?: { label?: string };
 			nodeEl?: HTMLElement;
+			setData?: (d: Record<string, unknown>) => void;
 			renderHeader?: () => void;
 			updateHeader?: () => void;
 			render?: () => void;
@@ -3516,7 +3487,7 @@ export class CanvasImageHandler {
 			};
 		}
 
-		const primaryEntry = targetNodes[0];
+		const primaryEntry = targetNodesToProcess[0];
 		const primaryNode = primaryEntry.nodeObj as TypedNode;
 		const rawCanvas = canvas as TypedCanvas;
 		const primaryDataNode = rawCanvas.data?.nodes?.find(
@@ -3540,8 +3511,8 @@ export class CanvasImageHandler {
 					const nodeLabelsMap = new Map<string, string | undefined>();
 					const hasCounterPattern = /#+/.test(template);
 
-					for (let i = 0; i < embeddedTargetNodes.length; i++) {
-						const { id, nodeObj } = embeddedTargetNodes[i];
+					for (let i = 0; i < targetNodesToProcess.length; i++) {
+						const { id, nodeObj } = targetNodesToProcess[i];
 						const rawNode = nodeObj as TypedNode;
 
 						let formattedLabel = template;
@@ -3599,25 +3570,47 @@ export class CanvasImageHandler {
 							}
 						}
 
+						try {
+							if (typeof rawNode.setData === 'function') {
+								rawNode.setData({ label: formattedLabel || undefined });
+							}
+							if (typeof rawNode.renderHeader === 'function') {
+								rawNode.renderHeader();
+							} else if (typeof rawNode.updateHeader === 'function') {
+								rawNode.updateHeader();
+							} else if (typeof rawNode.render === 'function') {
+								rawNode.render();
+							}
+						} catch {
+							/* ignore */
+						}
+
+						// Synchronously update DOM so label shows immediately without needing canvas reload
+						if (rawNode.nodeEl) {
+							const cdn = rawCanvas.data?.nodes?.find((n) => n.id === id);
+							const display = this.getNodeLabel(rawNode, cdn);
+							this.updateNodeLabelDOM(rawNode.nodeEl, display);
+						}
+
 					}
 
+				// 1. Write labels directly to vault file (reliable persistence)
 				const file = activeView.file;
 				if (file && nodeLabelsMap.size > 0) {
-					// Update DOM immediately for all labelled nodes
-					this.scanAndRestoreTransforms(activeView);
-					await this.persistNodeLabelsMap(file, nodeLabelsMap);
+					await this.persistNodeLabelsImmediately(file, nodeLabelsMap);
 				}
-
+				// 2. Also call requestSave so Obsidian's in-memory state stays in sync
 				if (typeof canvas.requestSave === 'function') {
-					try {
-						canvas.requestSave();
-					} catch {
-						/* ignore */
-					}
+					try { canvas.requestSave(); } catch { /* ignore */ }
 				}
+				// 3. Immediately rescan DOM and schedule delayed rescans
+				this.scanAndRestoreTransforms(activeView);
+				window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 50);
+				window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 150);
+				window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 400);
 			})();
 		},
-		targetNodes.length
+		targetNodesToProcess.length
 	).open();
 	}
 
@@ -3647,6 +3640,43 @@ export class CanvasImageHandler {
 		});
 		if (modified) {
 			this.scheduleVaultModify(file, data);
+		}
+	}
+
+	/** Write node labels directly to vault without debounce, for immediate display. */
+	private async persistNodeLabelsImmediately(
+		file: TFile,
+		nodeLabelsMap: Map<string, string | undefined>
+	): Promise<void> {
+		const content = await this.app.vault.read(file);
+		let data: CanvasFileData;
+		try {
+			data = JSON.parse(content) as CanvasFileData;
+		} catch {
+			return;
+		}
+		if (!data.nodes) return;
+		let modified = false;
+		data.nodes.forEach((node) => {
+			if (node.id && nodeLabelsMap.has(node.id)) {
+				const label = nodeLabelsMap.get(node.id);
+				if (label) {
+					node.label = label;
+				} else {
+					delete node.label;
+				}
+				modified = true;
+			}
+		});
+		if (modified) {
+			// Suppress automatic vault.modify scan so we do not run scanAndRestoreTransforms
+			// before Obsidian has re-rendered canvas from the new file content.
+			this.suppressModifyScan = true;
+			try {
+				await this.app.vault.modify(file, JSON.stringify(data, null, 2));
+			} finally {
+				this.suppressModifyScan = false;
+			}
 		}
 	}
 
@@ -5369,6 +5399,60 @@ export class CanvasImageHandler {
 		}
 
 		return '';
+	}
+
+	private updateNodeLabelDOM(nodeEl: HTMLElement, labelText: string): void {
+		const cleanLabel = (labelText || '').trim();
+		const hasLabel = cleanLabel.length > 0;
+		nodeEl.classList.toggle('kambas-has-label', hasLabel);
+
+		// Find all native and custom header/title/label elements
+		const titleEls = Array.from(
+			nodeEl.querySelectorAll<HTMLElement>(
+				'.canvas-node-label, .canvas-node-title, .canvas-node-header .canvas-node-title, .canvas-node-header .canvas-node-label'
+			)
+		);
+
+		if (hasLabel) {
+			if (titleEls.length > 0) {
+				titleEls.forEach((el) => {
+					if (el.textContent !== cleanLabel) {
+						el.textContent = cleanLabel;
+					}
+					el.style.removeProperty('display');
+				});
+			} else {
+				// No existing label/title element in DOM (e.g. for embedded link image nodes)
+				const nodeContainer =
+					nodeEl.querySelector<HTMLElement>('.canvas-node-container') ?? nodeEl;
+				let headerEl = nodeEl.querySelector<HTMLElement>('.canvas-node-header');
+				if (!headerEl) {
+					headerEl = nodeContainer.createDiv({ cls: 'canvas-node-header' });
+					nodeContainer.prepend(headerEl);
+				}
+				let labelEl = headerEl.querySelector<HTMLElement>(
+					'.canvas-node-label, .canvas-node-title'
+				);
+				if (!labelEl) {
+					labelEl = headerEl.createDiv({
+						cls: 'canvas-node-label canvas-node-title',
+					});
+				}
+				labelEl.textContent = cleanLabel;
+				labelEl.style.removeProperty('display');
+			}
+		} else {
+			titleEls.forEach((el) => {
+				if (
+					el.parentElement?.classList.contains('canvas-node-container') &&
+					!el.parentElement?.classList.contains('canvas-node-header')
+				) {
+					el.remove();
+				} else {
+					el.textContent = '';
+				}
+			});
+		}
 	}
 
 	private renderLabelFilterList(
