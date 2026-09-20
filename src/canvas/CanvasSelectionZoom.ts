@@ -96,6 +96,26 @@ export class CanvasSelectionZoom {
 		evt.preventDefault();
 		evt.stopPropagation();
 
+		// Add smooth transition class during zoom to fit transition
+		const win = activeView.containerEl?.ownerDocument?.defaultView || window;
+		const wrapperEl =
+			(canvas as unknown as { wrapperEl?: HTMLElement }).wrapperEl ??
+			activeView.containerEl.querySelector('.canvas-wrapper');
+		const canvasEl =
+			(canvas as unknown as { containerEl?: HTMLElement }).containerEl ??
+			activeView.containerEl.querySelector('.canvas');
+		const viewEl = activeView.containerEl;
+
+		if (wrapperEl) wrapperEl.classList.add('kambas-smooth-zoom');
+		if (canvasEl) canvasEl.classList.add('kambas-smooth-zoom');
+		if (viewEl) viewEl.classList.add('kambas-smooth-zoom');
+
+		win.setTimeout(() => {
+			if (wrapperEl) wrapperEl.classList.remove('kambas-smooth-zoom');
+			if (canvasEl) canvasEl.classList.remove('kambas-smooth-zoom');
+			if (viewEl) viewEl.classList.remove('kambas-smooth-zoom');
+		}, 350);
+
 		// Determine if same selection as last zoom-in
 		const isSameSelection =
 			(this.focusedZoomNodeEl !== null ||
@@ -169,7 +189,7 @@ export class CanvasSelectionZoom {
 		return result;
 	}
 
-	/** Zooms to fit the given canvas node objects using Obsidian's smooth native zoomToSelection animation. */
+	/** Zooms to fit the given canvas node objects using zoomToBbox for accuracy. */
 	private zoomToNodes(
 		canvas: CanvasEx,
 		nodes: Array<{
@@ -182,26 +202,6 @@ export class CanvasSelectionZoom {
 	): void {
 		if (nodes.length === 0) return;
 
-		// Ensure canvas.selection contains the target nodes so zoomToSelection animates smoothly
-		if (!canvas.selection) {
-			canvas.selection = new Set();
-		}
-		if (canvas.selection.size === 0) {
-			nodes.forEach((n) => canvas.selection?.add(n));
-		}
-
-		// 1. Prefer canvas.zoomToSelection() — Obsidian's native smooth camera animation for selected nodes
-		if (typeof canvas.zoomToSelection === 'function') {
-			try {
-				canvas.zoomToSelection();
-				this.triggerLODSync();
-				return;
-			} catch {
-				/* fall through */
-			}
-		}
-
-		// 2. Fallback to zoomToBbox if zoomToSelection is unavailable
 		if (typeof canvas.zoomToBbox === 'function') {
 			let minX = Infinity,
 				minY = Infinity,
@@ -224,7 +224,16 @@ export class CanvasSelectionZoom {
 			}
 		}
 
-		// 3. Fallback to zoomToFit
+		// Fallback chain
+		if (typeof canvas.zoomToSelection === 'function') {
+			try {
+				canvas.zoomToSelection();
+				this.triggerLODSync();
+				return;
+			} catch {
+				/* fall through */
+			}
+		}
 		if (typeof canvas.zoomToFit === 'function') {
 			canvas.zoomToFit();
 			this.triggerLODSync();

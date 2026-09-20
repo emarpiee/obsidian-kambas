@@ -36,6 +36,14 @@
 	transition: opacity 0.15s ease;
 }
 
+/* Smooth zoom transition for Space key & selection zoom to fit */
+.canvas-wrapper.kambas-smooth-zoom .canvas-content,
+.canvas-wrapper.kambas-smooth-zoom .canvas,
+.canvas.kambas-smooth-zoom .canvas-content,
+.canvas-view.kambas-smooth-zoom .canvas-content {
+	transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
 
 
 /* Remove scrollbar-gutter and scrollbar widths on all nested elements */
