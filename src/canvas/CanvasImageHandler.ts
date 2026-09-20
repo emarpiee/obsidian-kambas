@@ -59,6 +59,7 @@ import {
 	NumberFormatStyle,
 	formatIncrementalNumber,
 } from '../utils/numberFormatters';
+import { matchHotkeyEvent } from '../utils/hotkeyUtils';
 
 export interface PendingImage {
 	filename: string;
@@ -265,7 +266,9 @@ export class CanvasImageHandler {
 						!target.classList.contains('kambas-has-embedded-img') &&
 						!target.classList.contains('kambas-node-grayscale') &&
 						!target.classList.contains('kambas-img-flip-h') &&
-						!target.classList.contains('kambas-img-flip-v')
+						!target.classList.contains('kambas-img-flip-v') &&
+						!target.classList.contains('kambas-has-label') &&
+						!target.classList.contains('kambas-has-tag')
 					) {
 						const canvasView = this.getActiveCanvasView();
 						if (canvasView) {
@@ -1350,7 +1353,8 @@ export class CanvasImageHandler {
 				tag === 'input' ||
 				tag === 'textarea' ||
 				target.isContentEditable ||
-				target.closest('.cm-editor')
+				target.closest('.cm-editor') ||
+				target.closest('.modal')
 			)
 				return;
 		}
@@ -1358,13 +1362,117 @@ export class CanvasImageHandler {
 		const activeView = this.app.workspace.getActiveViewOfType(
 			ItemView
 		) as unknown as CanvasItemView | null;
-		if (!activeView || activeView.getViewType() !== 'canvas') return;
+		const settings = this.plugin.settings;
 
-		const lowerKey = evt.key.toLowerCase();
-		if (lowerKey === 'h' || lowerKey === 'v' || lowerKey === 'g') {
-			void this.toggleSelectedImageTransform(activeView, lowerKey);
+		if (evt.key === 'Escape' && this.tagFilterPanelEl?.isConnected) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			this.closeTagFilterPanel(activeView);
+			return;
+		}
+
+		if (matchHotkeyEvent(evt, settings.grayscaleHotkey ?? 'G')) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			void this.toggleSelectedImageTransform(activeView, 'g');
+			return;
+		}
+
+		if (matchHotkeyEvent(evt, settings.flipHorizontalHotkey ?? 'H')) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			void this.toggleSelectedImageTransform(activeView, 'h');
+			return;
+		}
+
+		if (matchHotkeyEvent(evt, settings.flipVerticalHotkey ?? 'V')) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			void this.toggleSelectedImageTransform(activeView, 'v');
+			return;
+		}
+
+		if (matchHotkeyEvent(evt, settings.paletteHotkey ?? 'P')) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			void this.toggleSelectedImagePalette(activeView);
+			return;
+		}
+
+		if (matchHotkeyEvent(evt, settings.addTagHotkey ?? 'T')) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			this.openTagModal(activeView);
+			return;
+		}
+
+		if (matchHotkeyEvent(evt, settings.filterPanelHotkey ?? 'F')) {
+			evt.preventDefault();
+			evt.stopPropagation();
+			this.openTagFilterPanel(activeView);
+			return;
 		}
 	};
+
+	/**
+	 * Returns true if the given canvas node is selected or matches targetNodeEl.
+	 */
+	public isNodeSelected(
+		canvas: unknown,
+		node: unknown,
+		targetNodeEl?: Element | null
+	): boolean {
+		if (!node) return false;
+		const rawNode = node as { nodeEl?: HTMLElement | null };
+		const nodeEl = rawNode.nodeEl;
+		if (!nodeEl) return false;
+
+		if (
+			targetNodeEl &&
+			(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
+		) {
+			return true;
+		}
+
+		const canvasObj = canvas as { selection?: Set<unknown> };
+		if (canvasObj?.selection && canvasObj.selection.has(node)) {
+			return true;
+		}
+
+		return (
+			nodeEl.classList.contains('is-selected') ||
+			nodeEl.classList.contains('is-focused')
+		);
+	}
+
+	/**
+	 * Returns true if the canvas node is an image or media node.
+	 */
+	public isImageNode(
+		node: unknown,
+		nodeEl?: HTMLElement | null
+	): boolean {
+		if (!node) return false;
+		const rawNodeObj = node as {
+			file?: import('obsidian').TFile;
+			unknownData?: { url?: string; file?: string };
+		};
+		const isVaultImg =
+			rawNodeObj.file instanceof TFile &&
+			IMAGE_EXTENSIONS.has((rawNodeObj.file.extension ?? '').toLowerCase());
+		const isDataImg = Boolean(
+			rawNodeObj.unknownData?.url?.startsWith('data:image/')
+		);
+		const hasDomImg =
+			!isVaultImg &&
+			!isDataImg &&
+			Boolean(
+				nodeEl &&
+					(nodeEl.querySelector('.kambas-embedded-img') ||
+						this.getNativeImageElement(nodeEl))
+			);
+		return isVaultImg || isDataImg || hasDomImg;
+	}
 
 	// ──────────────────────────────────────────────────────────────────────────
 	// Transform logic
@@ -1384,51 +1492,14 @@ export class CanvasImageHandler {
 		const selectedNodeEls: HTMLElement[] = [];
 		const selectedNodeIds: string[] = [];
 
-		const canvasObj = canvas as unknown as { selection?: Set<unknown> };
-		const hasSelectionObject = Boolean(canvasObj.selection);
 
 		canvas.nodes.forEach((node, id) => {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode =
-				targetNodeEl &&
-				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
-			const isNodeInSelection = Boolean(
-				canvasObj.selection && canvasObj.selection.has(node)
-			);
-			const isExplicitlySelected = hasSelectionObject
-				? isNodeInSelection
-				: nodeEl.classList.contains('is-selected') ||
-					nodeEl.classList.contains('is-focused');
+			if (!this.isNodeSelected(canvas, node, targetNodeEl)) return;
 
-			if (!(isExplicitlySelected || isTargetNode)) return;
-
-			// Detect image/media nodes via the live canvas node object properties so
-			// off-screen (virtualized) nodes are not silently skipped when their <img>
-			// hasn't been rendered into the DOM yet.
-			//   • Vault file nodes:   rawNode.file is a TFile instance
-			//   • Embedded b64 nodes: rawNode.unknownData.url starts with 'data:image/'
-			const rawNodeObj = node as unknown as {
-				file?: import('obsidian').TFile;
-				unknownData?: { url?: string; file?: string };
-			};
-			const isVaultImg =
-				rawNodeObj.file instanceof TFile &&
-				IMAGE_EXTENSIONS.has((rawNodeObj.file.extension ?? '').toLowerCase());
-			const isDataImg = Boolean(
-				rawNodeObj.unknownData?.url?.startsWith('data:image/')
-			);
-			// Also fall back to DOM check for any node already rendered (e.g. kambas-embedded-img)
-			const hasDomImg =
-				!isVaultImg &&
-				!isDataImg &&
-				Boolean(
-					nodeEl.querySelector('.kambas-embedded-img') ||
-					this.getNativeImageElement(nodeEl)
-				);
-
-			if (isVaultImg || isDataImg || hasDomImg) {
+			if (this.isImageNode(node, nodeEl)) {
 				selectedNodeEls.push(nodeEl);
 				selectedNodeIds.push(id);
 			}
@@ -1566,15 +1637,9 @@ export class CanvasImageHandler {
 			const nodeEl = node.nodeEl;
 			if (!nodeEl) return;
 
-			const isTargetNode =
-				targetNodeEl &&
-				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl));
-			const isExplicitlySelected = nodeEl.classList.contains('is-selected');
-			const hasImg =
-				nodeEl.querySelector('.kambas-embedded-img') ||
-				this.getNativeImageElement(nodeEl);
+			if (!this.isNodeSelected(canvas, node, targetNodeEl)) return;
 
-			if ((isExplicitlySelected || isTargetNode) && hasImg) {
+			if (this.isImageNode(node, nodeEl)) {
 				selectedNodeEls.push(nodeEl);
 				selectedNodeIds.push(id);
 			}
@@ -3319,19 +3384,75 @@ export class CanvasImageHandler {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
+		const canvasObj = canvas as { selection?: Set<unknown> };
+		const selectionSet = canvasObj?.selection;
 		const targetNodes: Array<{ id: string; nodeObj: unknown }> = [];
+		const addedIds = new Set<string>();
+
+		const getNodePos = (nodeObj: unknown): { x: number; y: number } => {
+			const raw = nodeObj as {
+				x?: number;
+				y?: number;
+				nodeEl?: HTMLElement;
+			};
+			let x = typeof raw.x === 'number' ? raw.x : 0;
+			let y = typeof raw.y === 'number' ? raw.y : 0;
+			if (raw.nodeEl) {
+				const rect = raw.nodeEl.getBoundingClientRect();
+				if (!raw.x && !raw.y) {
+					x = rect.left;
+					y = rect.top;
+				}
+			}
+			return { x, y };
+		};
+
+		// 1. If canvas.selection set exists and has nodes, preserve user selection insertion order
+		if (selectionSet && selectionSet.size > 0) {
+			selectionSet.forEach((nodeObj) => {
+				const rawNode = nodeObj as { id?: string; nodeEl?: HTMLElement };
+				let foundId = rawNode.id;
+				if (!foundId && canvas.nodes) {
+					canvas.nodes.forEach((val, key) => {
+						if (val === nodeObj) foundId = key;
+					});
+				}
+				if (foundId && !addedIds.has(foundId) && rawNode.nodeEl) {
+					const isTarget = Boolean(
+						targetNodeEl &&
+							(rawNode.nodeEl === targetNodeEl ||
+								rawNode.nodeEl.contains(targetNodeEl))
+					);
+					const isSel = this.isNodeSelected(canvas, nodeObj, targetNodeEl);
+					if (targetNodeEl ? isTarget : isSel) {
+						targetNodes.push({ id: foundId, nodeObj });
+						addedIds.add(foundId);
+					}
+				}
+			});
+		}
+
+		// 2. Add any remaining selected nodes from canvas.nodes that weren't in selectionSet
+		const remainingNodes: Array<{ id: string; nodeObj: unknown }> = [];
 		canvas.nodes.forEach((nodeObj, id) => {
-			const nodeEl = (nodeObj as { nodeEl?: HTMLElement }).nodeEl;
-			if (!nodeEl) return;
-			const isTarget = Boolean(
-				targetNodeEl &&
-					(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
-			);
-			const isSel = nodeEl.classList.contains('is-selected');
-			if (targetNodeEl ? isTarget : isSel) {
-				targetNodes.push({ id, nodeObj });
+			if (addedIds.has(id)) return;
+			if (this.isNodeSelected(canvas, nodeObj, targetNodeEl)) {
+				remainingNodes.push({ id, nodeObj });
+				addedIds.add(id);
 			}
 		});
+
+		// Sort remaining nodes spatially: top-to-bottom (Y), then left-to-right (X)
+		remainingNodes.sort((a, b) => {
+			const posA = getNodePos(a.nodeObj);
+			const posB = getNodePos(b.nodeObj);
+			if (Math.abs(posA.y - posB.y) > 10) {
+				return posA.y - posB.y;
+			}
+			return posA.x - posB.x;
+		});
+
+		targetNodes.push(...remainingNodes);
 
 		if (targetNodes.length === 0 && targetNodeEl) {
 			canvas.nodes.forEach((nodeObj, id) => {
@@ -3478,38 +3599,13 @@ export class CanvasImageHandler {
 							}
 						}
 
-						if (rawNode.nodeEl) {
-							rawNode.nodeEl.classList.toggle(
-								'kambas-has-label',
-								Boolean(formattedLabel)
-							);
-							let labelEl = rawNode.nodeEl.querySelector('.canvas-node-label');
-							if (formattedLabel) {
-							if (!labelEl) {
-								const containerEl =
-									rawNode.nodeEl.querySelector('.canvas-node-container') ??
-									rawNode.nodeEl;
-								labelEl = containerEl.createDiv({ cls: 'canvas-node-label' });
-							}
-							labelEl.textContent = formattedLabel;
-						} else if (labelEl) {
-							labelEl.remove();
-						}
 					}
-
-					if (typeof rawNode.renderHeader === 'function') {
-						rawNode.renderHeader();
-					} else if (typeof rawNode.updateHeader === 'function') {
-						rawNode.updateHeader();
-					} else if (typeof rawNode.render === 'function') {
-						rawNode.render();
-					}
-				}
 
 				const file = activeView.file;
 				if (file && nodeLabelsMap.size > 0) {
+					// Update DOM immediately for all labelled nodes
+					this.scanAndRestoreTransforms(activeView);
 					await this.persistNodeLabelsMap(file, nodeLabelsMap);
-					window.setTimeout(() => this.scanAndRestoreTransforms(activeView), 100);
 				}
 
 				if (typeof canvas.requestSave === 'function') {
@@ -3566,15 +3662,7 @@ export class CanvasImageHandler {
 		let selectedCount = 0;
 
 		canvas.nodes.forEach((node) => {
-			const nodeEl = node.nodeEl;
-			if (!nodeEl) return;
-			const isTarget = Boolean(
-				targetNodeEl &&
-				(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl))
-			);
-			const isSel = nodeEl.classList.contains('is-selected');
-
-			if (targetNodeEl ? isTarget : isSel) {
+			if (this.isNodeSelected(canvas, node, targetNodeEl)) {
 				selectedCount++;
 				const uData = (
 					node as unknown as { unknownData?: { kambasTags?: string[] } }
@@ -3588,6 +3676,10 @@ export class CanvasImageHandler {
 				}
 			}
 		});
+
+		// Do not open tag modal if no nodes are selected
+		if (selectedCount === 0) return;
+
 		const initialTags = Array.from(initialTagSet);
 
 		const { canvasTags, suggestions } =
@@ -3607,7 +3699,7 @@ export class CanvasImageHandler {
 				);
 			},
 			{
-				selectedCount: selectedCount || 1,
+				selectedCount,
 				presetTags:
 					canvasTags.length > 0 ? canvasTags : suggestions.slice(0, 10),
 				tagCounts,
@@ -3638,13 +3730,7 @@ export class CanvasImageHandler {
 		const removedTags = initialTags.filter((t) => !tags.includes(t));
 
 		canvas.nodes.forEach((node, id) => {
-			const nodeEl = node.nodeEl;
-			if (!nodeEl) return;
-			const isSel =
-				nodeEl.classList.contains('is-selected') ||
-				(targetNodeEl &&
-					(nodeEl === targetNodeEl || nodeEl.contains(targetNodeEl)));
-			if (isSel) {
+			if (this.isNodeSelected(canvas, node, targetNodeEl)) {
 				const rawNode = node as unknown as {
 					unknownData?: { kambasTags?: string[] };
 				};
@@ -3663,7 +3749,8 @@ export class CanvasImageHandler {
 				nodeTagsMap.set(id, updated.length > 0 ? updated : undefined);
 
 				// Immediately render badges
-				if (nodeEl.instanceOf(HTMLElement))
+				const nodeEl = node.nodeEl;
+				if (nodeEl && nodeEl.instanceOf(HTMLElement))
 					this.renderTagBadges(nodeEl, updated);
 			}
 		});
@@ -3860,6 +3947,9 @@ export class CanvasImageHandler {
 			colorTab.removeClass('is-active');
 			labelTab.removeClass('is-active');
 			this.refreshTagFilterPanel(activeView);
+			window.setTimeout(() => {
+				panel.querySelector<HTMLInputElement>('input.kambas-tag-search')?.focus();
+			}, 50);
 		});
 
 		colorTab.addEventListener('click', () => {
@@ -3869,6 +3959,9 @@ export class CanvasImageHandler {
 			tagTab.removeClass('is-active');
 			labelTab.removeClass('is-active');
 			this.refreshTagFilterPanel(activeView);
+			window.setTimeout(() => {
+				panel.querySelector<HTMLInputElement>('input.kambas-tag-search')?.focus();
+			}, 50);
 		});
 
 		labelTab.addEventListener('click', () => {
@@ -3878,6 +3971,9 @@ export class CanvasImageHandler {
 			tagTab.removeClass('is-active');
 			colorTab.removeClass('is-active');
 			this.refreshTagFilterPanel(activeView);
+			window.setTimeout(() => {
+				panel.querySelector<HTMLInputElement>('input.kambas-tag-search')?.focus();
+			}, 50);
 		});
 
 		const headerActions = header.createDiv({ cls: 'kambas-tag-panel-actions' });
@@ -3994,6 +4090,14 @@ export class CanvasImageHandler {
 			}
 		});
 		panelObserver.observe(document.body, { childList: true, subtree: true });
+
+		// ── Auto-focus search input on panel open ────────────────────────────
+		window.setTimeout(() => {
+			const searchInput = panel.querySelector<HTMLInputElement>(
+				'input.kambas-tag-search'
+			);
+			searchInput?.focus();
+		}, 50);
 	}
 
 	private clampPanelPosition(panel: HTMLElement, container: HTMLElement): void {
@@ -4471,6 +4575,13 @@ export class CanvasImageHandler {
 				placeholder: t.searchColorsPlaceholder ?? 'Search colors…',
 			},
 		});
+		searchInput.addEventListener('keydown', (evt: KeyboardEvent) => {
+			if (evt.key === 'Escape') {
+				evt.preventDefault();
+				evt.stopPropagation();
+				searchInput.blur();
+			}
+		});
 
 		// Clear 'x' button inside search bar (transferred from standalone button)
 		const hasColorActivity =
@@ -4890,6 +5001,13 @@ export class CanvasImageHandler {
 				type: 'text',
 				placeholder: t.searchTagsPlaceholder ?? 'Search tags…',
 			},
+		});
+		searchInput.addEventListener('keydown', (evt: KeyboardEvent) => {
+			if (evt.key === 'Escape') {
+				evt.preventDefault();
+				evt.stopPropagation();
+				searchInput.blur();
+			}
 		});
 		// Clear × lives inside the search bar — always in the DOM, no layout shift
 		const hasTagActivity =
@@ -5358,6 +5476,13 @@ export class CanvasImageHandler {
 				type: 'text',
 				placeholder: t.searchLabelsPlaceholder ?? 'Search labels…',
 			},
+		});
+		searchInput.addEventListener('keydown', (evt: KeyboardEvent) => {
+			if (evt.key === 'Escape') {
+				evt.preventDefault();
+				evt.stopPropagation();
+				searchInput.blur();
+			}
 		});
 
 		const hasLabelActivity =

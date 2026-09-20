@@ -156,6 +156,9 @@ export class TagModal extends Modal {
 	}
 
 	onClose(): void {
+		if (this.input && this.input.value.trim()) {
+			this.commitInputValue();
+		}
 		this.contentEl.empty();
 	}
 

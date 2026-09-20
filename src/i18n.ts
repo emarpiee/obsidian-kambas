@@ -234,6 +234,22 @@ export interface TranslationSchema {
 	selectionZoomHotkeyName?: string;
 	selectionZoomHotkeyDesc?: string;
 
+	// Media & Canvas Action Hotkeys
+	imageHotkeysHeading?: string;
+	grayscaleHotkeyName?: string;
+	grayscaleHotkeyDesc?: string;
+	flipHorizontalHotkeyName?: string;
+	flipHorizontalHotkeyDesc?: string;
+	flipVerticalHotkeyName?: string;
+	flipVerticalHotkeyDesc?: string;
+	paletteHotkeyName?: string;
+	paletteHotkeyDesc?: string;
+	addTagHotkeyName?: string;
+	addTagHotkeyDesc?: string;
+	filterPanelHotkeyName?: string;
+	filterPanelHotkeyDesc?: string;
+
+
 	// Filter panel strings
 	dimOpacityLabel?: string;
 	resetOpacityTooltip?: string;
@@ -606,6 +622,27 @@ const en: TranslationSchema = {
 	selectionZoomHotkeyDesc:
 		'Press this hotkey when elements are selected to zoom to fit them. Press again to zoom back out (Default: Space).',
 
+	imageHotkeysHeading: 'Media & Canvas Action Hotkeys',
+	grayscaleHotkeyName: 'Toggle grayscale hotkey',
+	grayscaleHotkeyDesc:
+		'Hotkey to toggle grayscale effect on selected media nodes (Default: G).',
+	flipHorizontalHotkeyName: 'Flip horizontal hotkey',
+	flipHorizontalHotkeyDesc:
+		'Hotkey to flip selected media nodes horizontally (Default: H).',
+	flipVerticalHotkeyName: 'Flip vertical hotkey',
+	flipVerticalHotkeyDesc:
+		'Hotkey to flip selected media nodes vertically (Default: V).',
+	paletteHotkeyName: 'Color palette hotkey',
+	paletteHotkeyDesc:
+		'Hotkey to toggle color palette swatches on selected image nodes (Default: P).',
+	addTagHotkeyName: 'Add tag hotkey',
+	addTagHotkeyDesc:
+		'Hotkey to open tag manager for selected canvas nodes (Default: T).',
+	filterPanelHotkeyName: 'Filter panel hotkey',
+	filterPanelHotkeyDesc:
+		'Hotkey to toggle tag & color filter panel (Default: F).',
+
+
 	dimOpacityLabel: 'Dim opacity',
 	resetOpacityTooltip: 'Reset opacity to default',
 	searchColorsPlaceholder: 'Search colors…',
@@ -908,10 +945,30 @@ const zh: TranslationSchema = {
 	loupeSmoothingDesc:
 		'在平移图片时平滑鼠标抖动（越低越平滑且灵敏度越低，越高跟踪越快。默认：0.50）。',
 
-	// Selection Zoom
 	selectionZoomHotkeyName: '缩放适应选中项热键',
 	selectionZoomHotkeyDesc:
 		'选中元素时按下此热键可缩放适应它们。再次按下可缩放回原位（默认：空格）。',
+
+	imageHotkeysHeading: '媒体与画布快捷键',
+	grayscaleHotkeyName: '切换黑白/灰度热键',
+	grayscaleHotkeyDesc:
+		'为选中的媒体节点切换灰度滤镜效果（默认：G）。',
+	flipHorizontalHotkeyName: '水平翻转热键',
+	flipHorizontalHotkeyDesc:
+		'水平镜像翻转选中的媒体节点（默认：H）。',
+	flipVerticalHotkeyName: '垂直翻转热键',
+	flipVerticalHotkeyDesc:
+		'垂直镜像翻转选中的媒体节点（默认：V）。',
+	paletteHotkeyName: '调色板/色板热键',
+	paletteHotkeyDesc:
+		'为选中的图片节点开启/关闭调色板提取（默认：P）。',
+	addTagHotkeyName: '添加/编辑标签热键',
+	addTagHotkeyDesc:
+		'打开选中画布节点的标签管理弹窗（默认：T）。',
+	filterPanelHotkeyName: '筛选面板热键',
+	filterPanelHotkeyDesc:
+		'打开或关闭标签与颜色筛选侧边面板（默认：F）。',
+
 
 	// Filter panel strings
 	dimOpacityLabel: '遮罩不透明度',
@@ -1215,6 +1272,27 @@ const zhTW: TranslationSchema = {
 	selectionZoomHotkeyName: '縮放適應選取項熱鍵',
 	selectionZoomHotkeyDesc:
 		'選取元素時按下此熱鍵可縮放適應它們。再次按下可縮放回原位（預設：空白鍵）。',
+
+	imageHotkeysHeading: '媒體與畫布快捷鍵',
+	grayscaleHotkeyName: '切換黑白/灰階熱鍵',
+	grayscaleHotkeyDesc:
+		'為選取的媒體節點切換灰階濾鏡效果（預設：G）。',
+	flipHorizontalHotkeyName: '水平翻轉熱鍵',
+	flipHorizontalHotkeyDesc:
+		'水平鏡像翻轉選取的媒體節點（預設：H）。',
+	flipVerticalHotkeyName: '垂直翻轉熱鍵',
+	flipVerticalHotkeyDesc:
+		'垂直鏡像翻轉選取的媒體節點（預設：V）。',
+	paletteHotkeyName: '調色板/色板熱鍵',
+	paletteHotkeyDesc:
+		'為選取的圖片節點開啟/關閉調色板提取（預設：P）。',
+	addTagHotkeyName: '新增/編輯標籤熱鍵',
+	addTagHotkeyDesc:
+		'開啟選取畫布節點的標籤管理彈窗（預設：T）。',
+	filterPanelHotkeyName: '篩選面板熱鍵',
+	filterPanelHotkeyDesc:
+		'開啟或關閉標籤與顏色篩選側邊面板（預設：F）。',
+
 
 	dimOpacityLabel: '遮罩不透明度',
 	resetOpacityTooltip: '恢復預設不透明度',
@@ -1548,6 +1626,27 @@ const es: TranslationSchema = {
 	selectionZoomHotkeyName: 'Atajo para ajustar zoom a la selección',
 	selectionZoomHotkeyDesc:
 		'Presione este atajo cuando haya elementos seleccionados para ajustar el zoom a ellos (Predeterminado: Espacio).',
+
+	imageHotkeysHeading: 'Atajos para multimedia y lienzo',
+	grayscaleHotkeyName: 'Atajo para alternar escala de grises',
+	grayscaleHotkeyDesc:
+		'Alterna el efecto de escala de grises en los nodos seleccionados (Predeterminado: G).',
+	flipHorizontalHotkeyName: 'Atajo para voltear horizontalmente',
+	flipHorizontalHotkeyDesc:
+		'Voltea los nodos multimedia seleccionados horizontalmente (Predeterminado: H).',
+	flipVerticalHotkeyName: 'Atajo para voltear verticalmente',
+	flipVerticalHotkeyDesc:
+		'Voltea los nodos multimedia seleccionados verticalmente (Predeterminado: V).',
+	paletteHotkeyName: 'Atajo para paleta de colores',
+	paletteHotkeyDesc:
+		'Muestra u oculta la paleta de colores en imágenes seleccionadas (Predeterminado: P).',
+	addTagHotkeyName: 'Atajo para añadir etiqueta',
+	addTagHotkeyDesc:
+		'Abre el gestor de etiquetas para los nodos seleccionados (Predeterminado: T).',
+	filterPanelHotkeyName: 'Atajo para el panel de filtros',
+	filterPanelHotkeyDesc:
+		'Abre o cierra el panel lateral de filtros por etiquetas y colores (Predeterminado: F).',
+
 
 	dimOpacityLabel: 'Opacidad del atenuado',
 	resetOpacityTooltip: 'Restablecer opacidad predeterminada',
@@ -1887,6 +1986,27 @@ const fr: TranslationSchema = {
 	selectionZoomHotkeyDesc:
 		'Appuyez sur ce raccourci lorsque des éléments sont sélectionnés pour faire un zoom ajusté (Par défaut : Espace).',
 
+	imageHotkeysHeading: 'Raccourcis média et canevas',
+	grayscaleHotkeyName: 'Raccourci bascule niveau de gris',
+	grayscaleHotkeyDesc:
+		'Bascule l\'effet niveau de gris sur les nœuds média sélectionnés (Défaut : G).',
+	flipHorizontalHotkeyName: 'Raccourci retournement horizontal',
+	flipHorizontalHotkeyDesc:
+		'Retourne horizontalement les nœuds média sélectionnés (Défaut : H).',
+	flipVerticalHotkeyName: 'Raccourci retournement vertical',
+	flipVerticalHotkeyDesc:
+		'Retourne verticalement les nœuds média sélectionnés (Défaut : V).',
+	paletteHotkeyName: 'Raccourci palette de couleurs',
+	paletteHotkeyDesc:
+		'Affiche ou masque la palette de couleurs sur les images sélectionnées (Défaut : P).',
+	addTagHotkeyName: 'Raccourci ajouter des étiquettes',
+	addTagHotkeyDesc:
+		'Ouvre le gestionnaire d\'étiquettes pour les nœuds sélectionnés (Défaut : T).',
+	filterPanelHotkeyName: 'Raccourci panneau de filtres',
+	filterPanelHotkeyDesc:
+		'Ouvre ou ferme le panneau de filtres par étiquette et couleur (Défaut : F).',
+
+
 	dimOpacityLabel: "Opacité d'atténuation",
 	resetOpacityTooltip: "Réinitialiser l'opacité par défaut",
 	searchColorsPlaceholder: 'Rechercher des couleurs…',
@@ -2225,6 +2345,27 @@ const de: TranslationSchema = {
 	selectionZoomHotkeyDesc:
 		'Drücken Sie diesen Hot-Key bei ausgewählten Elementen, um sie einzupassen (Standard: Leertaste).',
 
+	imageHotkeysHeading: 'Medien- & Canvas-Tastenkürzel',
+	grayscaleHotkeyName: 'Tastenkürzel für Graustufen',
+	grayscaleHotkeyDesc:
+		'Schaltet den Graustufeneffekt für ausgewählte Medienknoten um (Standard: G).',
+	flipHorizontalHotkeyName: 'Tastenkürzel für horizontales Spiegeln',
+	flipHorizontalHotkeyDesc:
+		'Spiegelt ausgewählte Medienknoten horizontal (Standard: H).',
+	flipVerticalHotkeyName: 'Tastenkürzel für vertikales Spiegeln',
+	flipVerticalHotkeyDesc:
+		'Spiegelt ausgewählte Medienknoten vertikal (Standard: V).',
+	paletteHotkeyName: 'Tastenkürzel für Farbpalette',
+	paletteHotkeyDesc:
+		'Blendet die Farbpalette bei ausgewählten Bildknoten ein/aus (Standard: P).',
+	addTagHotkeyName: 'Tastenkürzel für Tags hinzufügen',
+	addTagHotkeyDesc:
+		'Öffnet die Tag-Verwaltung für ausgewählte Knoten (Standard: T).',
+	filterPanelHotkeyName: 'Tastenkürzel für Filter-Panel',
+	filterPanelHotkeyDesc:
+		'Öffnet oder schließt das Tag- & Farbfilter-Panel (Standard: F).',
+
+
 	dimOpacityLabel: 'Abdunkelungs-Deckkraft',
 	resetOpacityTooltip: 'Deckkraft auf Standard zurücksetzen',
 	searchColorsPlaceholder: 'Farben suchen…',
@@ -2553,10 +2694,30 @@ const ja: TranslationSchema = {
 	loupeSmoothingDesc:
 		'画像上をパン移動する際のマウスのブレを滑らかにします（低い値 = より滑らか & 低感度、高い値 = 高速追従。デフォルト: 0.50）。',
 
-	// Selection Zoom
 	selectionZoomHotkeyName: '選択要素へのズームフィットホットキー',
 	selectionZoomHotkeyDesc:
 		'要素が選択されている時にこのホットキーを押すと全体にフィットするようズームします。再度押すと元に戻ります（デフォルト: Space）。',
+
+	imageHotkeysHeading: 'メディア＆キャンバス ショートカット',
+	grayscaleHotkeyName: 'グレースケール切替ショートカット',
+	grayscaleHotkeyDesc:
+		'選択したメディアノードの白黒/グレースケール表示を切り替えます（デフォルト：G）。',
+	flipHorizontalHotkeyName: '左右反転ショートカット',
+	flipHorizontalHotkeyDesc:
+		'選択したメディアノードを左右（水平）反転します（デフォルト：H）。',
+	flipVerticalHotkeyName: '上下反転ショートカット',
+	flipVerticalHotkeyDesc:
+		'選択したメディアノードを上下（垂直）反転します（デフォルト：V）。',
+	paletteHotkeyName: 'カラーパレットショートカット',
+	paletteHotkeyDesc:
+		'選択した画像ノードのカラーパレット抽出表示を切り替えます（デフォルト：P）。',
+	addTagHotkeyName: 'タグ追加・編集ショートカット',
+	addTagHotkeyDesc:
+		'選択したキャンバスノードのタグ編集モーダルを開きます（デフォルト：T）。',
+	filterPanelHotkeyName: 'フィルターパネルショートカット',
+	filterPanelHotkeyDesc:
+		'タグ＆カラーフィルターサイドパネルを開閉します（デフォルト：F）。',
+
 
 	// Filter panel strings
 	dimOpacityLabel: '減衰不透明度',
@@ -2885,6 +3046,27 @@ const ko: TranslationSchema = {
 	selectionZoomHotkeyDesc:
 		'요소가 선택되었을 때 이 단축키를 누르면 전체 화면에 맞게 확대됩니다 (기본값: 스페이스바).',
 
+	imageHotkeysHeading: '미디어 및 캔버스 단축키',
+	grayscaleHotkeyName: '흑백/그레이스케일 전환 단축키',
+	grayscaleHotkeyDesc:
+		'선택한 미디어 노드의 흑백 렌더링 효과를 전환합니다 (기본값: G).',
+	flipHorizontalHotkeyName: '좌우 반전 단축키',
+	flipHorizontalHotkeyDesc:
+		'선택한 미디어 노드를 수평으로 반전합니다 (기본값: H).',
+	flipVerticalHotkeyName: '상하 반전 단축키',
+	flipVerticalHotkeyDesc:
+		'선택한 미디어 노드를 수직으로 반전합니다 (기본값: V).',
+	paletteHotkeyName: '컬러 팔레트 단축키',
+	paletteHotkeyDesc:
+		'선택한 이미지 노드의 색상 팔레트 표시를 전환합니다 (기본값: P).',
+	addTagHotkeyName: '태그 추가/편집 단축키',
+	addTagHotkeyDesc:
+		'선택한 캔버스 노드의 태그 관리 창을 엽니다 (기본값: T).',
+	filterPanelHotkeyName: '필터 패널 단축키',
+	filterPanelHotkeyDesc:
+		'태그 및 색상 필터 패널을 엽니다/닫습니다 (기본값: F).',
+
+
 	dimOpacityLabel: '어둡게 불투명도',
 	resetOpacityTooltip: '불투명도 기본값으로 복원',
 	searchColorsPlaceholder: '색상 검색…',
@@ -3210,6 +3392,27 @@ const ru: TranslationSchema = {
 	selectionZoomHotkeyName: 'Горячая клавиша масштабирования к выделенному',
 	selectionZoomHotkeyDesc:
 		'Нажмите эту клавишу при выделении элементов, чтобы приблизить их (По умолчанию: Пробел).',
+
+	imageHotkeysHeading: 'Горячие клавиши медиа и холста',
+	grayscaleHotkeyName: 'Горячая клавиша оттенков серого',
+	grayscaleHotkeyDesc:
+		'Переключает эффект оттенков серого для выбранных медиа-узлов (По умолчанию: G).',
+	flipHorizontalHotkeyName: 'Горячая клавиша отражения по горизонтали',
+	flipHorizontalHotkeyDesc:
+		'Отражает выбранные медиа-узлы по горизонтали (По умолчанию: H).',
+	flipVerticalHotkeyName: 'Горячая клавиша отражения по вертикали',
+	flipVerticalHotkeyDesc:
+		'Отражает выбранные медиа-узлы по вертикали (По умолчанию: V).',
+	paletteHotkeyName: 'Горячая клавиша цветовой палитры',
+	paletteHotkeyDesc:
+		'Включает/выключает отображение палитры цветов на изображениях (По умолчанию: P).',
+	addTagHotkeyName: 'Горячая клавиша добавления тега',
+	addTagHotkeyDesc:
+		'Открывает окно управления тегами для выбранных узлов (По умолчанию: T).',
+	filterPanelHotkeyName: 'Горячая клавиша панели фильтра',
+	filterPanelHotkeyDesc:
+		'Переключает панель фильтрации по тегам и цветам (По умолчанию: F).',
+
 
 	dimOpacityLabel: 'Прозрачность затемнения',
 	resetOpacityTooltip: 'Сбросить прозрачность по умолчанию',
@@ -3546,6 +3749,27 @@ const pt: TranslationSchema = {
 	selectionZoomHotkeyDesc:
 		'Pressione esta tecla com elementos selecionados para dar zoom e ajustá-los à tela (Padrão: Espaço).',
 
+	imageHotkeysHeading: 'Atalhos de mídia e tela',
+	grayscaleHotkeyName: 'Atalho para escala de cinza',
+	grayscaleHotkeyDesc:
+		'Alterna o efeito de escala de cinza nos nós de mídia selecionados (Padrão: G).',
+	flipHorizontalHotkeyName: 'Atalho para espelhar horizontalmente',
+	flipHorizontalHotkeyDesc:
+		'Espelha os nós de mídia selecionados horizontalmente (Padrão: H).',
+	flipVerticalHotkeyName: 'Atalho para espelhar verticalmente',
+	flipVerticalHotkeyDesc:
+		'Espelha os nós de mídia selecionados verticalmente (Padrão: V).',
+	paletteHotkeyName: 'Atalho para paleta de cores',
+	paletteHotkeyDesc:
+		'Alterna a paleta de cores das imagens selecionadas (Padrão: P).',
+	addTagHotkeyName: 'Atalho para adicionar tag',
+	addTagHotkeyDesc:
+		'Abre o gerenciador de tags para os nós selecionados (Padrão: T).',
+	filterPanelHotkeyName: 'Atalho para o painel de filtros',
+	filterPanelHotkeyDesc:
+		'Abre ou fecha o painel de filtros por tags e cores (Padrão: F).',
+
+
 	dimOpacityLabel: 'Opacidade do escurecimento',
 	resetOpacityTooltip: 'Restaurar opacidade padrão',
 	searchColorsPlaceholder: 'Pesquisar cores…',
@@ -3876,6 +4100,27 @@ const it: TranslationSchema = {
 	selectionZoomHotkeyName: 'Scorciatoia zoom adatta alla selezione',
 	selectionZoomHotkeyDesc:
 		'Premi questa scorciatoia quando ci sono elementi selezionati per me adattarli allo schermo (Predefinito: Spazio).',
+
+	imageHotkeysHeading: 'Scorciatoie per elementi multimediali e canvas',
+	grayscaleHotkeyName: 'Scorciatoia scala di grigi',
+	grayscaleHotkeyDesc:
+		'Attiva/disattiva l\'effetto scala di grigi sui nodi multimediali selezionati (Predefinito: G).',
+	flipHorizontalHotkeyName: 'Scorciatoia capovolgi orizzontalmente',
+	flipHorizontalHotkeyDesc:
+		'Capovolge orizzontalmente i nodi multimediali selezionati (Predefinito: H).',
+	flipVerticalHotkeyName: 'Scorciatoia capovolgi verticalmente',
+	flipVerticalHotkeyDesc:
+		'Capovolge verticalmente i nodi multimediali selezionati (Predefinito: V).',
+	paletteHotkeyName: 'Scorciatoia tavolozza colori',
+	paletteHotkeyDesc:
+		'Mostra o nasconde la tavolozza dei colori sulle immagini selezionate (Predefinito: P).',
+	addTagHotkeyName: 'Scorciatoia aggiungi tag',
+	addTagHotkeyDesc:
+		'Apre la gestione dei tag per i nodi selezionati (Predefinito: T).',
+	filterPanelHotkeyName: 'Scorciatoia pannello filtri',
+	filterPanelHotkeyDesc:
+		'Apre o chiude il pannello di filtraggio tag e colori (Predefinito: F).',
+
 
 	dimOpacityLabel: 'Opacità oscuramento',
 	resetOpacityTooltip: 'Ripristina opacità predefinita',

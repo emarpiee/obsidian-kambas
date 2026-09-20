@@ -96,6 +96,12 @@ export interface KambasSettings {
 	loupeShape: 'circle' | 'square' | 'rounded'; // Loupe lens shape
 	loupeSmoothing: number; // Mouse tracking interpolation factor (0.05 - 1.0, lower = smoother/less sensitive)
 	selectionZoomToFitHotkey: string; // Hotkey to zoom to fit selected elements
+	grayscaleHotkey?: string; // Hotkey for Grayscale toggle
+	flipHorizontalHotkey?: string; // Hotkey for Flip Horizontal toggle
+	flipVerticalHotkey?: string; // Hotkey for Flip Vertical toggle
+	paletteHotkey?: string; // Hotkey for Color Palette toggle
+	addTagHotkey?: string; // Hotkey for Add/Edit Tag modal
+	filterPanelHotkey?: string; // Hotkey for Tag & Color Filter Panel toggle
 	keyboardPan: CanvasKeyboardPanSettings;
 	tagColors?: Record<string, { text?: string; bg?: string }>;
 	// LOD Settings
@@ -140,6 +146,12 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	loupeShape: 'circle',
 	loupeSmoothing: 0.25,
 	selectionZoomToFitHotkey: 'Space',
+	grayscaleHotkey: 'G',
+	flipHorizontalHotkey: 'H',
+	flipVerticalHotkey: 'V',
+	paletteHotkey: 'P',
+	addTagHotkey: 'T',
+	filterPanelHotkey: 'F',
 	keyboardPan: DEFAULT_KEYBOARD_PAN_SETTINGS,
 	enableLod: true,
 	lodPreset: 'balanced',
@@ -157,14 +169,21 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	tagColors: {},
 };
 
+export type SingleHotkeyKey =
+	| 'loupeHotkey'
+	| 'selectionZoomToFitHotkey'
+	| 'grayscaleHotkey'
+	| 'flipHorizontalHotkey'
+	| 'flipVerticalHotkey'
+	| 'paletteHotkey'
+	| 'addTagHotkey'
+	| 'filterPanelHotkey';
+
 export class KambasSettingTab extends PluginSettingTab {
 	private plugin: KambasPlugin;
 	private keySettingsListener: ((evt: KeyboardEvent) => void) | null = null;
 	private activeDirection: Direction | null = null;
-	private activeSingleKeyTarget:
-		| 'loupeHotkey'
-		| 'selectionZoomToFitHotkey'
-		| null = null;
+	private activeSingleKeyTarget: SingleHotkeyKey | null = null;
 	private keys: Partial<CanvasKeyboardPanSettings['keys']> = {};
 
 	constructor(app: App, plugin: KambasPlugin) {
@@ -468,6 +487,10 @@ export class KambasSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl)
+			.setName(t.imageHotkeysHeading ?? 'Media & Canvas Action Hotkeys')
+			.setHeading();
+
 		this.renderSingleKeyRecorderSetting(
 			containerEl,
 			t.selectionZoomHotkeyName,
@@ -475,6 +498,66 @@ export class KambasSettingTab extends PluginSettingTab {
 			this.plugin.settings.selectionZoomToFitHotkey ?? 'Space',
 			'Space',
 			'selectionZoomToFitHotkey'
+		);
+
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.grayscaleHotkeyName ?? 'Toggle grayscale hotkey',
+			t.grayscaleHotkeyDesc ??
+				'Hotkey to toggle grayscale effect on selected media nodes (Default: G).',
+			this.plugin.settings.grayscaleHotkey ?? 'G',
+			'G',
+			'grayscaleHotkey'
+		);
+
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.flipHorizontalHotkeyName ?? 'Flip horizontal hotkey',
+			t.flipHorizontalHotkeyDesc ??
+				'Hotkey to flip selected media nodes horizontally (Default: H).',
+			this.plugin.settings.flipHorizontalHotkey ?? 'H',
+			'H',
+			'flipHorizontalHotkey'
+		);
+
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.flipVerticalHotkeyName ?? 'Flip vertical hotkey',
+			t.flipVerticalHotkeyDesc ??
+				'Hotkey to flip selected media nodes vertically (Default: V).',
+			this.plugin.settings.flipVerticalHotkey ?? 'V',
+			'V',
+			'flipVerticalHotkey'
+		);
+
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.paletteHotkeyName ?? 'Color palette hotkey',
+			t.paletteHotkeyDesc ??
+				'Hotkey to toggle color palette swatches on selected image nodes (Default: P).',
+			this.plugin.settings.paletteHotkey ?? 'P',
+			'P',
+			'paletteHotkey'
+		);
+
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.addTagHotkeyName ?? 'Add tag hotkey',
+			t.addTagHotkeyDesc ??
+				'Hotkey to open tag manager for selected canvas nodes (Default: T).',
+			this.plugin.settings.addTagHotkey ?? 'T',
+			'T',
+			'addTagHotkey'
+		);
+
+		this.renderSingleKeyRecorderSetting(
+			containerEl,
+			t.filterPanelHotkeyName ?? 'Filter panel hotkey',
+			t.filterPanelHotkeyDesc ??
+				'Hotkey to toggle tag & color filter panel (Default: F).',
+			this.plugin.settings.filterPanelHotkey ?? 'F',
+			'F',
+			'filterPanelHotkey'
 		);
 
 		// ==========================================
@@ -1045,6 +1128,12 @@ export class KambasSettingTab extends PluginSettingTab {
 			loupeHotkey: this.plugin.settings.loupeHotkey ?? 'q',
 			selectionZoomToFitHotkey:
 				this.plugin.settings.selectionZoomToFitHotkey ?? 'Space',
+			grayscaleHotkey: this.plugin.settings.grayscaleHotkey ?? 'G',
+			flipHorizontalHotkey: this.plugin.settings.flipHorizontalHotkey ?? 'H',
+			flipVerticalHotkey: this.plugin.settings.flipVerticalHotkey ?? 'V',
+			paletteHotkey: this.plugin.settings.paletteHotkey ?? 'P',
+			addTagHotkey: this.plugin.settings.addTagHotkey ?? 'T',
+			filterPanelHotkey: this.plugin.settings.filterPanelHotkey ?? 'F',
 		};
 	}
 
@@ -1056,7 +1145,7 @@ export class KambasSettingTab extends PluginSettingTab {
 	}
 
 	private async saveSingleHotkey(
-		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey',
+		targetKey: SingleHotkeyKey,
 		newKey: string
 	): Promise<boolean> {
 		const formattedKey = newKey === ' ' ? 'Space' : newKey;
@@ -1070,11 +1159,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			return false;
 		}
 
-		if (targetKey === 'loupeHotkey') {
-			this.plugin.settings.loupeHotkey = formattedKey;
-		} else {
-			this.plugin.settings.selectionZoomToFitHotkey = formattedKey;
-		}
+		this.plugin.settings[targetKey] = formattedKey;
 
 		await this.plugin.saveSettings();
 		this.cleanupKeyListener();
@@ -1122,12 +1207,12 @@ export class KambasSettingTab extends PluginSettingTab {
 		this.display();
 	}
 
-	private getHotkeySetting(
-		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey'
-	): string {
-		return targetKey === 'loupeHotkey'
-			? (this.plugin.settings.loupeHotkey ?? 'q')
-			: (this.plugin.settings.selectionZoomToFitHotkey ?? 'Space');
+	private getHotkeySetting(targetKey: SingleHotkeyKey): string {
+		return (
+			this.plugin.settings[targetKey] ??
+			(DEFAULT_SETTINGS[targetKey] as string) ??
+			''
+		);
 	}
 
 	private renderSingleKeyRecorderSetting(
@@ -1136,7 +1221,7 @@ export class KambasSettingTab extends PluginSettingTab {
 		desc: string,
 		currentKey: string,
 		defaultKey: string,
-		targetKey: 'loupeHotkey' | 'selectionZoomToFitHotkey'
+		targetKey: SingleHotkeyKey
 	): void {
 		const wrapper = containerEl.createDiv();
 
@@ -1151,7 +1236,35 @@ export class KambasSettingTab extends PluginSettingTab {
 				text: formatKeyLabel(activeKeyVal),
 			});
 			const keyEl = row.createDiv({ cls: ['pan-kb', 'pan-kb-zoom-icon'] });
-			setIcon(keyEl, targetKey === 'loupeHotkey' ? 'search' : 'maximize-2');
+
+			let icon = 'keyboard';
+			switch (targetKey) {
+				case 'loupeHotkey':
+					icon = 'search';
+					break;
+				case 'selectionZoomToFitHotkey':
+					icon = 'maximize-2';
+					break;
+				case 'grayscaleHotkey':
+					icon = 'contrast';
+					break;
+				case 'flipHorizontalHotkey':
+					icon = 'flip-horizontal';
+					break;
+				case 'flipVerticalHotkey':
+					icon = 'flip-vertical';
+					break;
+				case 'paletteHotkey':
+					icon = 'palette';
+					break;
+				case 'addTagHotkey':
+					icon = 'tag';
+					break;
+				case 'filterPanelHotkey':
+					icon = 'filter';
+					break;
+			}
+			setIcon(keyEl, icon);
 
 			if (isRecording) {
 				keyEl.classList.add('active');
