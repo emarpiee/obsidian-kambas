@@ -1,5 +1,6 @@
 import { ItemView, Plugin } from 'obsidian';
 
+import { isEditingText } from '../utils/hotkeyUtils';
 import { CanvasElement, CanvasItemView } from './CanvasTypes';
 
 export enum Direction {
@@ -150,21 +151,7 @@ export class CanvasKeyboardPan {
 	}
 
 	private isEditingText(evt: KeyboardEvent): boolean {
-		if (this.plugin.app.workspace.activeEditor) {
-			return true;
-		}
-		const target = evt.target as HTMLElement | null;
-		if (!target) return false;
-		const tagName = target.tagName.toLowerCase();
-		if (
-			tagName === 'input' ||
-			tagName === 'textarea' ||
-			target.isContentEditable ||
-			target.closest('.cm-editor')
-		) {
-			return true;
-		}
-		return false;
+		return isEditingText(evt);
 	}
 
 	public startPan(): void {

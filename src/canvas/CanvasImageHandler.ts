@@ -59,7 +59,7 @@ import {
 	NumberFormatStyle,
 	formatIncrementalNumber,
 } from '../utils/numberFormatters';
-import { matchHotkeyEvent } from '../utils/hotkeyUtils';
+import { isEditingText, matchHotkeyEvent } from '../utils/hotkeyUtils';
 
 export interface PendingImage {
 	filename: string;
@@ -1336,19 +1336,7 @@ export class CanvasImageHandler {
 	}
 
 	private handleKeyDown = (evt: KeyboardEvent): void => {
-		if (this.plugin.app.workspace.activeEditor) return;
-		const target = evt.target as HTMLElement | null;
-		if (target) {
-			const tag = target.tagName.toLowerCase();
-			if (
-				tag === 'input' ||
-				tag === 'textarea' ||
-				target.isContentEditable ||
-				target.closest('.cm-editor') ||
-				target.closest('.modal')
-			)
-				return;
-		}
+		if (isEditingText(evt)) return;
 
 		const activeView = this.app.workspace.getActiveViewOfType(
 			ItemView

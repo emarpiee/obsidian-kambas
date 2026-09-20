@@ -103,3 +103,57 @@ export function matchHotkeyEvent(
 	const pressedCode = (evt.code || '').toLowerCase();
 	return pressedKey === targetKey || pressedCode === `key${targetKey}`;
 }
+
+/**
+ * Returns true if the keyboard event occurred while the user is actively editing text
+ * (in an input, textarea, contenteditable element, markdown editor, group name editor, or modal),
+ * so that single-key or non-modifier hotkeys (like Space, WASD, G, H, etc.) are NOT intercepted.
+ */
+export function isEditingText(evt: KeyboardEvent): boolean {
+	const target = evt.target as HTMLElement | null;
+	const ownerDoc = target?.ownerDocument || document;
+	const activeEl = ownerDoc.activeElement as HTMLElement | null;
+
+	const isEditable = (el: HTMLElement | null): boolean => {
+		if (!el) return false;
+		const tag = el.tagName.toLowerCase();
+
+		// Real form text inputs and textareas (including group title inputs)
+		if (tag === 'input' || tag === 'textarea') return true;
+
+		// Contenteditable elements (including inline group title contenteditable headers)
+		if (
+			el.isContentEditable ||
+			el.closest('[contenteditable="true"]') !== null ||
+			el.closest('[contenteditable=""]') !== null
+		) {
+			return true;
+		}
+
+		// CodeMirror text editors inside markdown nodes or note views
+		if (el.closest('.cm-editor') !== null || el.closest('.cm-content') !== null) {
+			return true;
+		}
+
+		// Search bars, modals, prompts, dropdown menus
+		if (
+			el.closest('.modal') !== null ||
+			el.closest('.prompt') !== null ||
+			el.closest('.menu') !== null ||
+			el.closest('.suggestion-container') !== null
+		) {
+			return true;
+		}
+
+		return false;
+	};
+
+	if (isEditable(target)) return true;
+	if (isEditable(activeEl)) return true;
+
+	// For canvas text/markdown nodes in active edit mode (double-clicked)
+	if (ownerDoc.querySelector('.canvas-node.is-editing') !== null) return true;
+
+	return false;
+}
+

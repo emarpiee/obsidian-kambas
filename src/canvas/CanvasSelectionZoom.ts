@@ -3,7 +3,7 @@ import { ItemView } from 'obsidian';
 import type KambasPlugin from '../main';
 import { CanvasElement, CanvasItemView } from './CanvasTypes';
 
-import { matchHotkeyEvent } from '../utils/hotkeyUtils';
+import { isEditingText, matchHotkeyEvent } from '../utils/hotkeyUtils';
 
 /** Extended canvas type exposing internal selection set. */
 type CanvasEx = CanvasElement & {
@@ -32,24 +32,9 @@ export class CanvasSelectionZoom {
 		});
 	}
 
-	/** Blocks the hotkey only when a node is actively being edited, not just selected. */
+	/** Blocks the hotkey only when text or group title is actively being edited, not just selected. */
 	private isEditingText(evt: KeyboardEvent): boolean {
-		const target = evt.target as HTMLElement | null;
-		if (!target) return false;
-
-		const tagName = target.tagName.toLowerCase();
-
-		// Block on real form inputs always
-		if (tagName === 'input' || tagName === 'textarea') return true;
-
-		// Block inside CodeMirror editor (markdown notes open in a leaf)
-		if (target.closest('.cm-editor')) return true;
-
-		// For canvas: only block when a node is actively in edit mode (double-clicked).
-		const ownerDoc = target.ownerDocument || document;
-		if (ownerDoc.querySelector('.canvas-node.is-editing')) return true;
-
-		return false;
+		return isEditingText(evt);
 	}
 
 	private getCanvasViewForEvent(evt: Event): CanvasItemView | null {
