@@ -17,6 +17,11 @@ import { CanvasKeyboardPan } from './canvas/CanvasKeyboardPan';
 import { CanvasLoupeInspector } from './canvas/CanvasLoupeInspector';
 import { CanvasSelectionZoom } from './canvas/CanvasSelectionZoom';
 import { CanvasItemView } from './canvas/CanvasTypes';
+import {
+	checkAndPersistCanvasClose,
+	getCanvasAwayModeOnClose,
+	setCanvasAwayModeOnClose,
+} from './canvas/CanvasAwayModeSync';
 import { FolderSuggestModal } from './modals/FolderSuggestModal';
 import { OpacityModal } from './modals/OpacityModal';
 
@@ -32,6 +37,46 @@ export default class KambasPlugin extends Plugin {
 	public canvasKeyboardPan!: CanvasKeyboardPan;
 	private canvasSelectionZoom!: CanvasSelectionZoom;
 	private canvasLoupeInspector!: CanvasLoupeInspector;
+
+	private lastLeafCanvasFileMap = new Map<WorkspaceLeaf, TFile>();
+
+	private checkTrackedLeafFiles(): void {
+		const currentLeaves = new Set<WorkspaceLeaf>();
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			currentLeaves.add(leaf);
+			const view = leaf.view as unknown as CanvasItemView | null;
+			const currentFile = view?.file;
+			const lastFile = this.lastLeafCanvasFileMap.get(leaf);
+
+			if (lastFile) {
+				if (currentFile !== lastFile) {
+					// Canvas file was closed, replaced, or navigated away from on this leaf
+					void checkAndPersistCanvasClose(
+						this.app,
+						lastFile,
+						view?.file === lastFile ? view : null
+					);
+					if (currentFile && currentFile.extension === 'canvas') {
+						this.lastLeafCanvasFileMap.set(leaf, currentFile);
+					} else {
+						this.lastLeafCanvasFileMap.delete(leaf);
+					}
+				}
+			} else if (currentFile && currentFile.extension === 'canvas') {
+				this.lastLeafCanvasFileMap.set(leaf, currentFile);
+			}
+		});
+
+		// Check leaves that were closed/detached
+		for (const [leaf, lastFile] of Array.from(
+			this.lastLeafCanvasFileMap.entries()
+		)) {
+			if (!currentLeaves.has(leaf)) {
+				void checkAndPersistCanvasClose(this.app, lastFile);
+				this.lastLeafCanvasFileMap.delete(leaf);
+			}
+		}
+	}
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -124,6 +169,7 @@ export default class KambasPlugin extends Plugin {
 
 		// Restore saved transforms & mount embedded link images on active leaf or layout changes
 		const updateActiveCanvas = (): void => {
+			this.checkTrackedLeafFiles();
 			this.refreshBinders();
 			const activeView = this.app.workspace.getActiveViewOfType(ItemView);
 			if (activeView?.getViewType() !== 'canvas') {
@@ -148,6 +194,9 @@ export default class KambasPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on('active-leaf-change', updateActiveCanvas)
+		);
+		this.registerEvent(
+			this.app.workspace.on('file-open', updateActiveCanvas)
 		);
 		this.registerEvent(
 			this.app.workspace.on('layout-change', updateActiveCanvas)
@@ -800,6 +849,87 @@ export default class KambasPlugin extends Plugin {
 			})
 		);
 
+		// Canvas background right-click context menu
+		this.registerEvent(
+			(
+				this.app.workspace as unknown as {
+					on(
+						event: 'canvas:menu',
+						handler: (menu: Menu) => void
+					): import('obsidian').EventRef;
+				}
+			).on('canvas:menu', (menu: Menu) => {
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
+				if (
+					!activeView ||
+					activeView.getViewType() !== 'canvas' ||
+					!activeView.file
+				)
+					return;
+				const file = activeView.file;
+
+				menu.addSeparator();
+				menu.addItem((item: MenuItem) => {
+					item
+						.setTitle(getText().awayModeOnClose)
+						.setIcon('eye-off')
+						.onClick(async () => {
+							const current = await getCanvasAwayModeOnClose(
+								this.app,
+								file,
+								activeView.canvas
+							);
+							const nextState = !current;
+							await setCanvasAwayModeOnClose(
+								this.app,
+								file,
+								nextState,
+								activeView
+							);
+							const t = getText();
+							new Notice(
+								nextState
+									? t.awayModeOnCloseNoticeEnabled
+									: t.awayModeOnCloseNoticeDisabled
+							);
+						});
+				});
+			})
+		);
+
+		// File explorer / tab header context menu
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu: Menu, file) => {
+				if (file instanceof TFile && file.extension === 'canvas') {
+					menu.addItem((item: MenuItem) => {
+						item
+							.setTitle(getText().awayModeOnClose)
+							.setIcon('eye-off')
+							.onClick(async () => {
+								const current = await getCanvasAwayModeOnClose(
+									this.app,
+									file
+								);
+								const nextState = !current;
+								await setCanvasAwayModeOnClose(
+									this.app,
+									file,
+									nextState
+								);
+								const t = getText();
+								new Notice(
+									nextState
+										? t.awayModeOnCloseNoticeEnabled
+										: t.awayModeOnCloseNoticeDisabled
+								);
+							});
+					});
+				}
+			})
+		);
+
 		// Register native Obsidian command for Away Mode (only visible when focused in canvas)
 		this.addCommand({
 			id: 'toggle-away-mode',
@@ -812,6 +942,48 @@ export default class KambasPlugin extends Plugin {
 				if (activeView && activeView.getViewType() === 'canvas') {
 					if (!checking) {
 						this.canvasImageHandler.setAwayMode(activeView);
+					}
+					return true;
+				}
+				return false;
+			},
+		});
+
+		// Register command: Toggle Away Mode on canvas close
+		this.addCommand({
+			id: 'canvas-toggle-away-mode-on-close',
+			name: getText().awayModeOnClose,
+			icon: 'eye-off',
+			checkCallback: (checking: boolean) => {
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
+				if (
+					activeView &&
+					activeView.getViewType() === 'canvas' &&
+					activeView.file
+				) {
+					if (!checking) {
+						const file = activeView.file;
+						void getCanvasAwayModeOnClose(
+							this.app,
+							file,
+							activeView.canvas
+						).then(async (current) => {
+							const nextState = !current;
+							await setCanvasAwayModeOnClose(
+								this.app,
+								file,
+								nextState,
+								activeView
+							);
+							const t = getText();
+							new Notice(
+								nextState
+									? t.awayModeOnCloseNoticeEnabled
+									: t.awayModeOnCloseNoticeDisabled
+							);
+						});
 					}
 					return true;
 				}
@@ -953,6 +1125,11 @@ export default class KambasPlugin extends Plugin {
 	}
 
 	onunload(): void {
+		for (const lastFile of Array.from(this.lastLeafCanvasFileMap.values())) {
+			void checkAndPersistCanvasClose(this.app, lastFile);
+		}
+		this.lastLeafCanvasFileMap.clear();
+
 		for (const revert of this._patched) {
 			try {
 				revert();
@@ -1050,6 +1227,18 @@ export default class KambasPlugin extends Plugin {
 			: null;
 	}
 
+	public async handleCanvasClose(view: CanvasItemView): Promise<void> {
+		if (!view?.file) return;
+		const isAwayOnClose = await getCanvasAwayModeOnClose(
+			this.app,
+			view.file,
+			view.canvas
+		);
+		if (isAwayOnClose && this.canvasImageHandler) {
+			this.canvasImageHandler.enableAwayMode(view);
+		}
+	}
+
 	refreshBinders(): void {
 		let leaves: Set<WorkspaceLeaf>;
 		try {
@@ -1061,6 +1250,10 @@ export default class KambasPlugin extends Plugin {
 
 		for (const [leaf, binder] of Array.from(this.binders.entries())) {
 			if (leaves.has(leaf)) continue;
+			const view = leaf.view as unknown as CanvasItemView;
+			if (view && typeof view.getViewType === 'function' && view.getViewType() === 'canvas') {
+				void this.handleCanvasClose(view);
+			}
 			try {
 				binder.stop();
 			} catch (e) {
@@ -1074,6 +1267,28 @@ export default class KambasPlugin extends Plugin {
 			try {
 				const binder = new CanvasBinder(this, leaf.view);
 				if (binder.start()) this.binders.set(leaf, binder);
+
+				const view = leaf.view as unknown as CanvasItemView & {
+					_kambasClosePatched?: boolean;
+					onClose?: () => Promise<void> | void;
+				};
+				if (
+					view &&
+					!view._kambasClosePatched &&
+					typeof view.onClose === 'function'
+				) {
+					view._kambasClosePatched = true;
+					const origOnClose = view.onClose;
+					const plugin = this;
+					view.onClose = async function (): Promise<void> {
+						try {
+							await plugin.handleCanvasClose(view);
+						} catch {
+							/* ignore */
+						}
+						return origOnClose.apply(this);
+					};
+				}
 			} catch (e) {
 				console.error('[canvas-image-lod] failed to bind to a canvas', e);
 			}

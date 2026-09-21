@@ -23,6 +23,11 @@ import {
 	CanvasNodeData,
 	IMAGE_EXTENSIONS,
 } from './CanvasTypes';
+import {
+	getCanvasAwayModeOnClose,
+	persistCanvasAwayMode,
+	setCanvasAwayModeOnClose,
+} from './CanvasAwayModeSync';
 
 import {
 	ConvertEmbedChoiceResult,
@@ -945,6 +950,7 @@ export class CanvasImageHandler {
 				if (allNodesZero) {
 					edgesEl.setCssProps({ opacity: '0' });
 					canvasEl.classList.add('kambas-away-mode');
+					this.setAwayModeReadOnly(activeView, true);
 				} else {
 					edgesEl.setCssProps({ opacity: '' });
 					canvasEl.classList.remove('kambas-away-mode');
@@ -998,26 +1004,18 @@ export class CanvasImageHandler {
 		window.setTimeout(() => this.injectTagFilterButton(activeView), 200);
 	}
 
-	public setAwayMode(activeView: CanvasItemView): void {
+	public enableAwayMode(activeView: CanvasItemView): void {
+		this.setAwayModeState(activeView, true);
+	}
+
+	public setAwayModeState(activeView: CanvasItemView, isAway: boolean): void {
 		const file = activeView.file;
 		if (!file) return;
 
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
 
-		// Determine if currently in Away Mode (i.e. all nodes are opacity 0)
-		let currentlyAway = canvas.nodes.size > 0;
-		canvas.nodes.forEach((node) => {
-			const uData = (
-				node as unknown as { unknownData?: { kambasOpacity?: number } }
-			).unknownData;
-			if (uData?.kambasOpacity !== 0) {
-				currentlyAway = false;
-			}
-		});
-
-		// Toggle target opacity: if currently away, restore to 1; otherwise set to 0
-		const targetOpacity = currentlyAway ? 1 : 0;
+		const targetOpacity = isAway ? 0 : 1;
 		const selectedNodeIds: string[] = [];
 
 		canvas.nodes.forEach((canvasNode, id) => {
@@ -1058,7 +1056,7 @@ export class CanvasImageHandler {
 
 		const canvasEl =
 			(activeView.canvas as unknown as { wrapperEl?: HTMLElement })
-				?.wrapperEl ?? activeView.containerEl.querySelector('.canvas-wrapper');
+				?.wrapperEl ?? activeView.containerEl?.querySelector('.canvas-wrapper');
 		if (canvasEl) {
 			const edgesEl = canvasEl.querySelector<HTMLElement>('.canvas-edges');
 			if (edgesEl) {
@@ -1071,8 +1069,32 @@ export class CanvasImageHandler {
 			}
 		}
 
-		// Toggle native Obsidian Canvas read-only mode alongside Away Mode
-		const isAway = targetOpacity === 0;
+		this.setAwayModeReadOnly(activeView, isAway);
+
+		if (isAway) {
+			void persistCanvasAwayMode(this.app, file);
+		}
+
+		if (selectedNodeIds.length === 0) return;
+
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				void this.persistOpacity(file, selectedNodeIds, targetOpacity);
+			}
+		} else {
+			void this.persistOpacity(file, selectedNodeIds, targetOpacity);
+		}
+	}
+
+	public setAwayModeReadOnly(
+		activeView: CanvasItemView,
+		isAway: boolean
+	): void {
+		const canvas = activeView.canvas;
+		if (!canvas) return;
+
 		type NativeCanvasEx = {
 			readonly?: boolean;
 			isReadOnly?: boolean;
@@ -1111,22 +1133,31 @@ export class CanvasImageHandler {
 		vx.isReadOnly = isAway;
 		vx.readOnly = isAway;
 
+		const canvasEl =
+			(activeView.canvas as unknown as { wrapperEl?: HTMLElement })
+				?.wrapperEl ?? activeView.containerEl?.querySelector('.canvas-wrapper');
 		if (canvasEl) {
 			canvasEl.classList.toggle('is-readonly', isAway);
 			canvasEl.classList.toggle('is-read-only', isAway);
 		}
+	}
 
-		if (selectedNodeIds.length === 0) return;
+	public setAwayMode(activeView: CanvasItemView): void {
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes) return;
 
-		if (typeof canvas.requestSave === 'function') {
-			try {
-				canvas.requestSave();
-			} catch {
-				void this.persistOpacity(file, selectedNodeIds, targetOpacity);
+		// Determine if currently in Away Mode (i.e. all nodes are opacity 0)
+		let currentlyAway = canvas.nodes.size > 0;
+		canvas.nodes.forEach((node) => {
+			const uData = (
+				node as unknown as { unknownData?: { kambasOpacity?: number } }
+			).unknownData;
+			if (uData?.kambasOpacity !== 0) {
+				currentlyAway = false;
 			}
-		} else {
-			void this.persistOpacity(file, selectedNodeIds, targetOpacity);
-		}
+		});
+
+		this.setAwayModeState(activeView, !currentlyAway);
 	}
 
 	public setSelectedNodeOpacity(
@@ -4057,6 +4088,47 @@ export class CanvasImageHandler {
 			container.setCssProps({ '--kambas-dim-opacity': '0.12' });
 			this.savePanelState(panel);
 		});
+
+		// Away mode on close toggle row
+		const file = activeView.file;
+		if (file) {
+			const awayRow = footer.createDiv({
+				cls: 'kambas-tag-slider-row',
+				attr: { style: 'margin-top: 8px;' },
+			});
+			const label = awayRow.createEl('label', {
+				cls: 'kambas-away-mode-toggle-label',
+				attr: {
+					style:
+						'display: flex; align-items: center; justify-content: space-between; width: 100%; cursor: pointer; font-size: 12px; gap: 8px;',
+				},
+			});
+			label.createSpan({ text: t.awayModeOnClose });
+			const toggleInput = label.createEl('input', { type: 'checkbox' });
+
+			void getCanvasAwayModeOnClose(this.app, file, activeView.canvas).then(
+				(enabled) => {
+					toggleInput.checked = enabled;
+				}
+			);
+
+			toggleInput.addEventListener('change', (): void => {
+				void (async (): Promise<void> => {
+					const enabled = toggleInput.checked;
+					await setCanvasAwayModeOnClose(
+						this.app,
+						file,
+						enabled,
+						activeView
+					);
+					new Notice(
+						enabled
+							? t.awayModeOnCloseNoticeEnabled
+							: t.awayModeOnCloseNoticeDisabled
+					);
+				})();
+			});
+		}
 
 		this.tagToolbarBtn?.classList.add('is-active');
 

@@ -40,6 +40,7 @@ export interface CanvasFileData {
 	nodes?: CanvasNodeData[];
 	edges?: CanvasEdgeData[];
 	kambasTagsPublic?: boolean; // if true, canvas tags are synced to vault frontmatter
+	kambasAwayModeOnClose?: boolean; // if true, away mode is activated when closing the canvas
 }
 
 export interface CanvasElement {

@@ -111,6 +111,10 @@ export interface TranslationSchema {
 	togglePalette: string;
 	changeOpacity: string;
 	awayMode: string;
+	awayModeOnClose: string;
+	awayModeOnCloseDesc: string;
+	awayModeOnCloseNoticeEnabled: string;
+	awayModeOnCloseNoticeDisabled: string;
 	copyImageToClipboard: string;
 	moveSelectedMedia: string;
 	copySelectedMedia: string;
@@ -531,6 +535,13 @@ const en: TranslationSchema = {
 	togglePalette: 'Color palette',
 	changeOpacity: 'Change opacity',
 	awayMode: 'Away mode',
+	awayModeOnClose: 'Away mode on canvas close',
+	awayModeOnCloseDesc:
+		'Automatically activates Away mode (hiding nodes/edges and setting read-only mode) whenever this canvas file is closed.',
+	awayModeOnCloseNoticeEnabled:
+		'Away mode on close enabled for current canvas',
+	awayModeOnCloseNoticeDisabled:
+		'Away mode on close disabled for current canvas',
 	copyImageToClipboard: 'Copy media to clipboard',
 	moveSelectedMedia: 'Move media to...',
 	copySelectedMedia: 'Copy media to...',
@@ -891,6 +902,11 @@ const zh: TranslationSchema = {
 	togglePalette: '调色板',
 	changeOpacity: '更改不透明度',
 	awayMode: '离开模式',
+	awayModeOnClose: '关闭画布时启用离开模式',
+	awayModeOnCloseDesc:
+		'当关闭此画布文件时，自动激活离开模式（隐藏节点/边并设为只读模式）。',
+	awayModeOnCloseNoticeEnabled: '当前画布已启用关闭时离开模式',
+	awayModeOnCloseNoticeDisabled: '当前画布已禁用关闭时离开模式',
 	copyImageToClipboard: '复制媒体到剪贴板',
 	moveSelectedMedia: '移动媒体到...',
 	copySelectedMedia: '复制媒体到...',
@@ -1242,6 +1258,11 @@ const zhTW: TranslationSchema = {
 	togglePalette: '調色板',
 	changeOpacity: '更改不透明度',
 	awayMode: '離開模式',
+	awayModeOnClose: '關閉畫布時啟用離開模式',
+	awayModeOnCloseDesc:
+		'當關閉此畫布檔案時，自動啟用離開模式（隱藏節點/邊並設定為唯讀模式）。',
+	awayModeOnCloseNoticeEnabled: '當前畫布已啟用關閉時離開模式',
+	awayModeOnCloseNoticeDisabled: '當前畫布已停用關閉時離開模式',
 	copyImageToClipboard: '複製媒體至剪貼簿',
 	moveSelectedMedia: '移動媒體到...',
 	copySelectedMedia: '複製媒體到...',
@@ -1607,6 +1628,13 @@ const es: TranslationSchema = {
 	togglePalette: 'Paleta de colores',
 	changeOpacity: 'Cambiar opacidad',
 	awayMode: 'Modo ausente',
+	awayModeOnClose: 'Modo ausente al cerrar el lienzo',
+	awayModeOnCloseDesc:
+		'Activa automáticamente el modo ausente (ocultando nodos/bordes y estableciendo modo de solo lectura) cada vez que se cierra este archivo de lienzo.',
+	awayModeOnCloseNoticeEnabled:
+		'Modo ausente al cerrar activado para el lienzo actual',
+	awayModeOnCloseNoticeDisabled:
+		'Modo ausente al cerrar desactivado para el lienzo actual',
 	copyImageToClipboard: 'Copiar medios al portapapeles',
 	moveSelectedMedia: 'Mover medios a...',
 	copySelectedMedia: 'Copiar medios a...',
@@ -1995,6 +2023,13 @@ const fr: TranslationSchema = {
 	togglePalette: 'Palette de couleurs',
 	changeOpacity: 'Modifier l’opacité',
 	awayMode: 'Mode Absent',
+	awayModeOnClose: 'Mode absent lors de la fermeture du canevas',
+	awayModeOnCloseDesc:
+		'Active automatiquement le mode absent (masquant les nœuds/liens et activant le mode lecture seule) lors de la fermeture de ce fichier de canevas.',
+	awayModeOnCloseNoticeEnabled:
+		'Mode absent à la fermeture activé pour le canevas actuel',
+	awayModeOnCloseNoticeDisabled:
+		'Mode absent à la fermeture désactivé pour le canevas actuel',
 	copyImageToClipboard: 'Copier le média dans le presse-papiers',
 	moveSelectedMedia: 'Déplacer les médias vers...',
 	copySelectedMedia: 'Copier les médias vers...',
@@ -2380,6 +2415,13 @@ const de: TranslationSchema = {
 	togglePalette: 'Farbpalette',
 	changeOpacity: 'Deckkraft ändern',
 	awayMode: 'Abwesend-Modus',
+	awayModeOnClose: 'Abwesend-Modus beim Schließen des Canvas',
+	awayModeOnCloseDesc:
+		'Aktiviert automatisch den Abwesend-Modus (Ausblenden von Knoten/Kanten und Schreibschutz), sobald diese Canvas-Datei geschlossen wird.',
+	awayModeOnCloseNoticeEnabled:
+		'Abwesend-Modus beim Schließen für aktuellen Canvas aktiviert',
+	awayModeOnCloseNoticeDisabled:
+		'Abwesend-Modus beim Schließen für aktuellen Canvas deaktiviert',
 	copyImageToClipboard: 'Medien in Zwischenablage kopieren',
 	moveSelectedMedia: 'Medien verschieben nach...',
 	copySelectedMedia: 'Medien kopieren nach...',
@@ -2763,6 +2805,13 @@ const ja: TranslationSchema = {
 	togglePalette: 'カラーパレット',
 	changeOpacity: '不透明度を変更',
 	awayMode: 'アウェイモード',
+	awayModeOnClose: 'キャンバス終了時にアウェイモード',
+	awayModeOnCloseDesc:
+		'このキャンバスファイルを閉じたときに、自動的にアウェイモード（ノード/エッジを非表示にして読み取り専用モードに設定）を有効にします。',
+	awayModeOnCloseNoticeEnabled:
+		'現在のキャンバスで終了時アウェイモードを有効にしました',
+	awayModeOnCloseNoticeDisabled:
+		'現在のキャンバスで終了時アウェイモードを無効にしました',
 	copyImageToClipboard: 'メディアをクリップボードにコピー',
 	moveSelectedMedia: 'メディアを移動...',
 	copySelectedMedia: 'メディア를 コピー...',
@@ -3141,6 +3190,13 @@ const ko: TranslationSchema = {
 	togglePalette: '색상 팔레트',
 	changeOpacity: '불투명도 변경',
 	awayMode: '자리 비움 모드',
+	awayModeOnClose: '캔버스 닫을 때 자리 비움 모드',
+	awayModeOnCloseDesc:
+		'이 캔버스 파일을 닫을 때 자동으로 자리 비움 모드(노드/연결선 숨기기 및 읽기 전용 설정)를 활성화합니다.',
+	awayModeOnCloseNoticeEnabled:
+		'현재 캔버스에 닫을 때 자리 비움 모드가 활성화되었습니다.',
+	awayModeOnCloseNoticeDisabled:
+		'현재 캔버스에 닫을 때 자리 비움 모드가 비활성화되었습니다.',
 	copyImageToClipboard: '미디어를 클립보드에 복사',
 	moveSelectedMedia: '미디어 이동...',
 	copySelectedMedia: '미디어 복사...',
@@ -3513,6 +3569,13 @@ const ru: TranslationSchema = {
 	togglePalette: 'Цветовая палитра',
 	changeOpacity: 'Изменить прозрачность',
 	awayMode: 'Режим «Отсутствие»',
+	awayModeOnClose: 'Режим «Отсутствие» при закрытии холста',
+	awayModeOnCloseDesc:
+		'Автоматически активирует режим «Отсутствие» (скрывает узлы/связи и включает режим «только чтение») при закрытии этого файла холста.',
+	awayModeOnCloseNoticeEnabled:
+		'Режим «Отсутствие» при закрытии включён для текущего холста',
+	awayModeOnCloseNoticeDisabled:
+		'Режим «Отсутствие» при закрытии выключён для текущего холста',
 	copyImageToClipboard: 'Скопировать медиа в буфер обмена',
 	moveSelectedMedia: 'Переместить медиа в...',
 	copySelectedMedia: 'Скопировать медиа в...',
@@ -3892,6 +3955,13 @@ const pt: TranslationSchema = {
 	togglePalette: 'Paleta de cores',
 	changeOpacity: 'Alterar opacidade',
 	awayMode: 'Modo ausente',
+	awayModeOnClose: 'Modo ausente ao fechar a tela',
+	awayModeOnCloseDesc:
+		'Ativa automaticamente o modo ausente (ocultando nós/arestas e definindo como somente leitura) sempre que este arquivo de tela for fechado.',
+	awayModeOnCloseNoticeEnabled:
+		'Modo ausente ao fechar ativado para a tela atual',
+	awayModeOnCloseNoticeDisabled:
+		'Modo ausente ao fechar desativado para a tela atual',
 	copyImageToClipboard: 'Copiar mídia para a área de transferência',
 	moveSelectedMedia: 'Mover mídia para...',
 	copySelectedMedia: 'Copiar mídia para...',
@@ -4271,6 +4341,13 @@ const it: TranslationSchema = {
 	togglePalette: 'Tavolozza dei colori',
 	changeOpacity: 'Cambia opacità',
 	awayMode: 'Modalità assente',
+	awayModeOnClose: 'Modalità assente alla chiusura della tela',
+	awayModeOnCloseDesc:
+		'Attiva automaticamente la modalità assente (nascondendo nodi/bordi e impostando la modalità sola lettura) ogni volta che questo file della tela viene chiuso.',
+	awayModeOnCloseNoticeEnabled:
+		'Modalità assente alla chiusura abilitata per la tela corrente',
+	awayModeOnCloseNoticeDisabled:
+		'Modalità assente alla chiusura disabilitata per la tela corrente',
 	copyImageToClipboard: 'Copia media negli appunti',
 	moveSelectedMedia: 'Sposta media in...',
 	copySelectedMedia: 'Copia media in...',
@@ -4646,6 +4723,13 @@ const ar: TranslationSchema = {
 	togglePalette: 'لوحة الألوان',
 	changeOpacity: 'تغيير الشفافية',
 	awayMode: 'وضع الابتعاد',
+	awayModeOnClose: 'وضع الابتعاد عند إغلاق اللوحة',
+	awayModeOnCloseDesc:
+		'يفعّل تلقائيًا وضع الابتعاد (إخفاء العقد/الحواف وضبط وضع القراءة فقط) كلما تم إغلاق ملف اللوحة هذا.',
+	awayModeOnCloseNoticeEnabled:
+		'تم تمكين وضع الابتعاد عند الإغلاق للوحة الحالية',
+	awayModeOnCloseNoticeDisabled:
+		'تم تعطيل وضع الابتعاد عند الإغلاق للوحة الحالية',
 	copyImageToClipboard: 'نسخ الوسائط إلى الحافظة',
 	moveSelectedMedia: 'نقل الوسائط إلى...',
 	copySelectedMedia: 'نسخ الوسائط إلى...',
@@ -4902,6 +4986,13 @@ const he: TranslationSchema = {
 	togglePalette: 'פלטת צבעים',
 	changeOpacity: 'שנה אטימות',
 	awayMode: 'מצב היעדרות',
+	awayModeOnClose: 'מצב היעדרות בסגירת הקנבס',
+	awayModeOnCloseDesc:
+		'מפעיל באופן אוטומטי את מצב ההיעדרות (הסתרת צמתים/קצוות והגדרת מצב קריאה בלבד) בכל פעם שקובץ קנבס זה נסגר.',
+	awayModeOnCloseNoticeEnabled:
+		'מצב היעדרות בסגירה הופעל עבור הקנבס הנוכחי',
+	awayModeOnCloseNoticeDisabled:
+		'מצב היעדרות בסגירה הושבת עבור הקנבס הנוכחי',
 	copyImageToClipboard: 'העתק מדיה ללוח',
 	moveSelectedMedia: 'העבר מדיה אל...',
 	copySelectedMedia: 'העתק מדיה אל...',

@@ -233,6 +233,7 @@ Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab 
 ### Workspace Privacy
 
 - **Away Mode**: Triggered via Command Palette (`Away Mode`). Instantly hides all canvas content by reducing node opacity to 0% and locking interactive controls for quick visual privacy.
+- **Away Mode on Canvas Close**: Per-file setting (togglable via Command Palette `Away mode on canvas close`, canvas background right-click menu, file explorer menu, or Tag/Filter Panel footer). When enabled for a canvas file, closing the tab, opening another file in the same tab, or navigating away automatically activates Away Mode and persists 0% node/edge opacity to disk, ensuring instant visual privacy when re-opening or stepping back in history.
 
 ---
 
@@ -266,6 +267,7 @@ All features can be triggered directly from Obsidian's Command Palette (`Ctrl+P`
 | **Restore original images on current canvas (canvas image lod)** | Temporarily restore all original full-resolution images on the active canvas. |
 | **Toggle embedded media labels** | Show or hide native node labels above embedded Base64 media cards. |
 | **Away Mode** | Toggle presentation/focus mode to hide UI overlays. |
+| **Away mode on canvas close** | Toggle automatic Away Mode activation when closing, replacing, or navigating away from the active canvas file. |
 | **Tag & Color Filter Panel** | Open or close the floating Tag, Color, and Label filter panel. |
 | **Toggle tag visibility** | Hide or show tag badges across all canvas cards. |
 | **Toggle auto-zoom on tag selection** | Enable or disable automatic viewport zooming when selecting filter tags. |
