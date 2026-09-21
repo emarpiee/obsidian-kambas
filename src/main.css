@@ -7,9 +7,9 @@
 .canvas .canvas-nodes .canvas-node .canvas-node-content img.kambas-lod-proxied,
 .canvas-node-content img.kambas-lod-proxied,
 img.kambas-lod-proxied {
-	max-width: 100%;
-	width: var(--kambas-lod-width, auto);
-	aspect-ratio: var(--kambas-lod-aspect, auto);
+	max-width: 100% !important;
+	width: var(--kambas-lod-width, auto) !important;
+	aspect-ratio: var(--kambas-lod-aspect, auto) !important;
 }
 
 .status-bar-item.cil-status-working {
@@ -51,7 +51,7 @@ img.kambas-lod-proxied {
 .canvas-wrapper.kambas-smooth-zoom .canvas,
 .canvas.kambas-smooth-zoom .canvas-content,
 .canvas-view.kambas-smooth-zoom .canvas-content {
-	transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+	transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
 
@@ -99,7 +99,7 @@ body.kambas-hide-labels .canvas .canvas-nodes .canvas-node.kambas-has-embedded-i
 .canvas-node.is-link[data-url^="data:image/"]:not(.kambas-has-label) .canvas-node-title,
 body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-label,
 body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-title {
-	display: none;
+	display: none !important;
 }
 
 .canvas-node.kambas-has-embedded-img *::-webkit-scrollbar,
@@ -171,12 +171,12 @@ body.kambas-hide-labels .canvas-node.kambas-has-embedded-img .canvas-node-title 
 
 body .kambas-loupe-inspector .kambas-loupe-inner *,
 .kambas-loupe-inspector .kambas-loupe-inner * {
-	pointer-events: none;
+	pointer-events: none !important;
 }
 
 body .kambas-loupe-inspector .kambas-loupe-inner img,
 .kambas-loupe-inspector .kambas-loupe-inner img {
-	display: block;
+	display: block !important;
 }
 
 
@@ -666,7 +666,7 @@ body.kambas-tag-position-inside .kambas-tag-bar {
 body.kambas-hide-all-tags .canvas .canvas-nodes .canvas-node .kambas-tag-bar,
 body.kambas-hide-all-tags .canvas-node .kambas-tag-bar,
 body.kambas-hide-all-tags .kambas-tag-bar {
-	display: none;
+	display: none !important;
 }
 
 /* When node is selected, tags become clickable to open modal */
@@ -807,10 +807,10 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 /* ── Canvas node highlight (row hover → node glow) ───────────────────────── */
 .canvas .canvas-nodes .canvas-node.kambas-color-highlight,
 .canvas-node.kambas-color-highlight {
-	outline: 3px solid var(--interactive-accent);
-	outline-offset: 3px;
-	border-radius: var(--radius-m);
-	z-index: 10;
+	outline: 3px solid var(--interactive-accent) !important;
+	outline-offset: 3px !important;
+	border-radius: var(--radius-m) !important;
+	z-index: 10 !important;
 }
 
 /* ── Panel row highlights (node hover → row glow / dim) ─────────────────── */
@@ -1270,8 +1270,8 @@ body.kambas-hide-all-tags .kambas-tag-bar {
 /* Tag filter — dim non-matching nodes; opacity controlled by CSS variable */
 .canvas .canvas-nodes .canvas-node.kambas-tag-hidden,
 .canvas-node.kambas-tag-hidden {
-	opacity: var(--kambas-dim-opacity, 0.12);
-	pointer-events: none;
+	opacity: var(--kambas-dim-opacity, 0.12) !important;
+	pointer-events: none !important;
 	transition: opacity 0.2s ease;
 }
 

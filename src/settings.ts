@@ -1141,7 +1141,24 @@ export class KambasSettingTab extends PluginSettingTab {
 		};
 	}
 
-	private hasDuplicateHotkeys(hotkeysMap: Record<string, string>): boolean {
+	private hasDuplicateHotkeys(
+		hotkeysMap: Record<string, string>,
+		targetKey?: string
+	): boolean {
+		if (targetKey && hotkeysMap[targetKey] !== undefined) {
+			const targetVal = (
+				hotkeysMap[targetKey] === ' ' ? 'space' : hotkeysMap[targetKey]
+			).toLowerCase();
+			for (const [key, val] of Object.entries(hotkeysMap)) {
+				if (key === targetKey) continue;
+				const norm = (val === ' ' ? 'space' : val).toLowerCase();
+				if (norm === targetVal) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		const normalizedKeys = Object.values(hotkeysMap).map((k) =>
 			(k === ' ' ? 'space' : k).toLowerCase()
 		);
@@ -1156,7 +1173,7 @@ export class KambasSettingTab extends PluginSettingTab {
 		const currentHotkeys = this.getAllConfiguredHotkeys();
 		currentHotkeys[targetKey] = formattedKey;
 
-		if (this.hasDuplicateHotkeys(currentHotkeys)) {
+		if (this.hasDuplicateHotkeys(currentHotkeys, targetKey)) {
 			const t = getText();
 			new Notice(t.duplicateKeyNotice);
 			this.cleanupKeyListener();
