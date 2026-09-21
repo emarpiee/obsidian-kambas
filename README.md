@@ -114,7 +114,6 @@ Take complete control over animated GIF files directly on the canvas without ext
 - **Interactive Timeline & Scrubber**: Play/pause, step forward/backward frame-by-frame, scrub through frames, or adjust playback speeds (`0.25x`, `0.5x`, `1.0x`, `1.5x`, `2.0x`).
 - **Frame Extraction**: Extract any single frame from an animated GIF as a static image saved directly to your vault or embedded in the canvas.
 - **Multi-Select Synchronization**: Control playback, stepping, or seeking across multiple selected GIF nodes simultaneously.
-- **Zoom-Out Performance Freeze**: Automatically pauses heavy GIF animations when zooming out past a configurable threshold (default: `0.4x` scale) to conserve CPU and memory on large canvases, automatically resuming when zooming back in.
 - **Instant Toggle & Command Palette**: Enable or disable GIF controls at any time via plugin settings or the Command Palette (`Toggle GIF controls on/off`).
 
 ---
@@ -247,8 +246,6 @@ Access settings in **Obsidian Settings > Kambas**:
 | Setting | Description |
 | :--- | :--- |
 | **Enable GIF controls** | Show or hide the GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes (default: `true`). |
-| **Freeze GIF on zoom-out** | Pause GIF playback when canvas is zoomed out past threshold (default: `true`). |
-| **GIF zoom threshold** | Zoom scale threshold to pause GIF playback (0.1–1.0, default: `0.4`). |
 | **Show media labels** | Display native canvas node labels above embedded media cards. |
 | **Preserve media filename on ingest** | Automatically set native canvas node label to original file name when dropping, pasting, or embedding media. |
 | **Hide media label** | Hides raw data URI header text above embedded image cards. |
