@@ -807,32 +807,8 @@ export class CanvasGifHandler {
 		);
 	}
 
-	public updateZoomScale(scale: number, selectedNodeIds: string[] = []): void {
-		const freezeOnZoom = this.plugin?.settings?.freezeGifOnZoomOut ?? true;
-		const threshold = this.plugin?.settings?.gifZoomThreshold ?? 0.4;
-		const isZoomedOut = freezeOnZoom && scale < threshold;
-
-		for (const [nodeId, session] of this.activeSessions.entries()) {
-			if (session.isDisposed) continue;
-			const isSelected = selectedNodeIds.includes(nodeId);
-
-			if (isZoomedOut && !isSelected) {
-				if (session.isPlaying) {
-					session.isPlaying = false;
-					if (session.animFrameId !== null) {
-						cancelAnimationFrame(session.animFrameId);
-						session.animFrameId = null;
-					}
-				}
-			} else {
-				const isUserPaused = this.lastKnownState.get(nodeId)?.isPaused ?? false;
-				if (!isUserPaused && !session.isPlaying) {
-					session.isPlaying = true;
-					session.lastFrameTime = performance.now();
-					this.startAnimationLoop(session);
-				}
-			}
-		}
+	public updateZoomScale(_scale: number, _selectedNodeIds: string[] = []): void {
+		// Zoom scale update handler reserved for future canvas gif scale adjustments
 	}
 
 	private startAnimationLoop(session: ActiveGifSession): void {

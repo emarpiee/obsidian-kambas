@@ -75,8 +75,6 @@ export interface KambasSettings {
 	showEmbeddedMediaLabel?: boolean; // Display native node labels on embedded media nodes
 	preserveMediaFilenameOnIngest?: boolean; // Save original filename as label on drop/paste/convert
 	enableGifTools?: boolean; // Enable GIF playback and extraction tool
-	freezeGifOnZoomOut?: boolean; // Pause GIF playback when canvas is zoomed out
-	gifZoomThreshold?: number; // Zoom scale threshold to pause GIF playback (0.1 - 1.0)
 	tagBadgePosition: 'outside' | 'inside';
 	tagZoomOnSelect: boolean;
 	autoSelectFilteredItems?: boolean; // Automatically select canvas elements matching active filter panel selection
@@ -126,8 +124,6 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	showEmbeddedMediaLabel: true,
 	preserveMediaFilenameOnIngest: true,
 	enableGifTools: true,
-	freezeGifOnZoomOut: true,
-	gifZoomThreshold: 0.4,
 	tagBadgePosition: 'outside',
 	tagZoomOnSelect: true,
 	autoSelectFilteredItems: false,
