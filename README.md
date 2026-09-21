@@ -114,6 +114,7 @@ Take complete control over animated GIF files directly on the canvas without ext
 - **Interactive Timeline & Scrubber**: Play/pause, step forward/backward frame-by-frame, scrub through frames, or adjust playback speeds (`0.25x`, `0.5x`, `1.0x`, `1.5x`, `2.0x`).
 - **Frame Extraction**: Extract any single frame from an animated GIF as a static image saved directly to your vault or embedded in the canvas.
 - **Multi-Select Synchronization**: Control playback, stepping, or seeking across multiple selected GIF nodes simultaneously.
+- **Zoom-Out Performance Freeze**: Automatically pauses heavy GIF animations when zooming out past a configurable threshold (default: `0.4x` scale) to conserve CPU and memory on large canvases, automatically resuming when zooming back in.
 - **Instant Toggle & Command Palette**: Enable or disable GIF controls at any time via plugin settings or the Command Palette (`Toggle GIF controls on/off`).
 
 ---
@@ -128,6 +129,18 @@ Inspect fine image details and artwork without changing canvas zoom levels:
 - **Hotkey Lens Toggle**: Press `Q` (configurable) over any image node to open an interactive magnifying loupe lens.
 - **Smooth Tracking**: Features dampened motion interpolation for smooth, precise cursor movement over image details.
 - **Custom Optics**: Adjust magnification power (1.5x–10.0x), lens size (100px–600px), and lens shape (`circle`, `square`, `rounded`) in settings.
+
+---
+
+### Canvas Image Level of Detail (LOD) & Performance Engine
+
+High-density mood boards containing 100+ high-resolution images can strain system memory and cause viewport zoom stuttering. Kambas includes a 1:1 Canvas Image LOD rendering engine supporting both vault file image links and inline Base64 data URIs:
+
+- **Adaptive Multi-Resolution Tiers**: Automatically generates resolution-scaled image proxies (e.g. 128px, 320px, 768px, 1600px) and swaps them seamlessly based on viewport zoom distance.
+- **Local IndexedDB Caching**: Image proxies are generated asynchronously in background web workers and cached locally on device without polluting your vault or affecting Obsidian Sync limits.
+- **Viewport Culling & Memory Management**: Off-screen images are culled and background memory overhead is continuously managed to eliminate UI flicker, zoom hangs, and RAM leaks.
+- **Performance Profiles**: Select from four tailored profiles in settings — **Performance (Fastest)**, **Balanced (Recommended)**, **High Quality**, or **Custom (Advanced)**.
+- **Status Bar Diagnostics**: Displays real-time disk cache usage and active memory proxy counts in the Obsidian status bar.
 
 ---
 
@@ -203,19 +216,27 @@ Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab 
 
 ---
 
-### Keyboard Navigation
+### Keyboard Navigation & Hotkeys
 
 > [!NOTE]
-> Keyboard panning functionality is inspired by and based on the [Canvas Keyboard Pan](https://github.com/nathonius/obsidian-canvas-pan) plugin.
+> Keyboard panning functionality is inspired by and based on the [Canvas Keyboard Pan](https://github.com/nathonius/obsidian-canvas-pan) plugin. All navigation and action shortcuts can be customized in plugin settings using interactive key recorders with full modifier key support (`Ctrl`, `Alt`, `Shift`, `Meta`).
 
-- **Pan Canvas (Up / Down / Left / Right)**: `W` / `S` / `A` / `D` or `Arrow Keys`
-- **Zoom In / Out**: `+` / `-`
-- **Selection Zoom to Fit**: `Space`
-- **Loupe Inspector Lens**: `Q`
+- **Pan Canvas (Up / Down / Left / Right)**: `W` / `S` / `A` / `D` or `Arrow Keys` (configurable)
+- **Zoom In / Out**: `+` / `-` (configurable)
+- **Selection Zoom to Fit**: `Space` (configurable, features smooth cubic-bezier camera transition)
+- **Loupe Inspector Lens**: `Q` (configurable)
+- **Toggle Grayscale Filter**: `G` (configurable)
+- **Flip Horizontal**: `H` (configurable)
+- **Flip Vertical**: `V` (configurable)
+- **Toggle Color Palette Swatches**: `P` (configurable)
+- **Add / Edit Node Tag Modal**: `T` (configurable)
+- **Toggle Filter Panel (Tags / Colors / Labels)**: `F` (configurable)
 - **Set Media Label**: Command Palette (`Set media label for selected node`)
 - **Toggle Media Labels**: Command Palette (`Toggle embedded media labels`)
 - **Toggle GIF Controls**: Command Palette (`Toggle GIF controls on/off`)
-- **Toggle Tag Visibility**: Command Palette
+- **Toggle Tag Visibility**: Command Palette (`Toggle tag visibility`)
+- **Toggle Auto-Zoom on Tag Select**: Command Palette (`Toggle auto-zoom on tag selection`)
+- **Away Mode**: Command Palette (`Away Mode`)
 
 ---
 
@@ -226,6 +247,8 @@ Access settings in **Obsidian Settings > Kambas**:
 | Setting | Description |
 | :--- | :--- |
 | **Enable GIF controls** | Show or hide the GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes (default: `true`). |
+| **Freeze GIF on zoom-out** | Pause GIF playback when canvas is zoomed out past threshold (default: `true`). |
+| **GIF zoom threshold** | Zoom scale threshold to pause GIF playback (0.1–1.0, default: `0.4`). |
 | **Show media labels** | Display native canvas node labels above embedded media cards. |
 | **Preserve media filename on ingest** | Automatically set native canvas node label to original file name when dropping, pasting, or embedding media. |
 | **Hide media label** | Hides raw data URI header text above embedded image cards. |
@@ -244,7 +267,12 @@ Access settings in **Obsidian Settings > Kambas**:
 | **Base64 max dimension** | Maximum pixel resolution limit for Base64 compression (default: 2048px). |
 | **Base64 quality** | WebP compression quality slider (0.1–1.0). |
 | **Loupe optics** | Hotkey (`Q`), magnification (1.5x–10.0x), lens size (100px–600px), shape, and motion smoothing. |
-| **Selection zoom hotkey** | Hotkey to zoom and fit viewport around selected canvas nodes (default: `Space`). |
+| **Action Hotkeys** | Interactive key recorders for Grayscale (`G`), Flip H (`H`), Flip V (`V`), Palette (`P`), Tag Modal (`T`), Filter Panel (`F`), Loupe (`Q`), and Selection Zoom (`Space`). |
+| **Enable Canvas LOD** | Enable adaptive Level of Detail engine for high-density canvas performance. |
+| **Performance Profile** | Performance preset selector: Performance (Fastest), Balanced (Recommended), High Quality, or Custom. |
+| **Maximum Cache Storage** | Device cache storage cap in MB (IndexedDB) with direct Clear Cache control. |
+| **Show in status bar** | Display live LOD storage & proxy status in Obsidian status bar. |
+| **Advanced LOD Settings** | Fine-tune image sharpness factor, resolution tiers, min source width, quality, prewarming, concurrency, and fast panning rasterization. |
 
 ---
 

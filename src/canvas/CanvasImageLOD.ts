@@ -95,6 +95,28 @@ export function isProxyable(src: string, _settings?: LodSettings): boolean {
 	return false;
 }
 
+export function applyProxyStyles(img: HTMLImageElement): void {
+	if (img.classList.contains('kambas-embedded-img')) return;
+
+	const savedW = Number(img.dataset.cilLayoutWidth);
+	if (savedW > 0) {
+		img.style.setProperty('--kambas-lod-width', `${savedW}px`);
+		const aspect = Number(img.dataset.cilAspect);
+		if (aspect > 0) {
+			img.style.setProperty('--kambas-lod-aspect', `${aspect}`);
+		}
+		img.classList.add('kambas-lod-proxied');
+	}
+}
+
+export function restoreProxyStyles(img: HTMLImageElement): void {
+	img.classList.remove('kambas-lod-proxied');
+	img.style.removeProperty('--kambas-lod-width');
+	img.style.removeProperty('--kambas-lod-aspect');
+	delete img.dataset.cilLayoutWidth;
+	delete img.dataset.cilAspect;
+}
+
 export function getOrigSrcFromImg(img: HTMLImageElement): string {
 	if (img.dataset.cilOrig) {
 		const orig = img.dataset.cilOrig;
@@ -1058,10 +1080,22 @@ export class CanvasBinder {
 		}> = [];
 
 		for (const img of Array.from(imgs)) {
-			const orig = getOrigSrcFromImg(img);
+			const htmlImg = img;
+			const orig = getOrigSrcFromImg(htmlImg);
 			if (!orig || !isProxyable(orig, s)) continue;
 
-			const htmlImg = img;
+			if (!htmlImg.dataset.cilTier) {
+				const curW = htmlImg.offsetWidth;
+				if (curW > 0) {
+					htmlImg.dataset.cilLayoutWidth = String(curW);
+				}
+				if (htmlImg.naturalWidth > 0 && htmlImg.naturalHeight > 0) {
+					htmlImg.dataset.cilAspect = String(
+						htmlImg.naturalWidth / htmlImg.naturalHeight
+					);
+				}
+			}
+
 			const imgRect = htmlImg.getBoundingClientRect();
 			const isNearView =
 				imgRect.right >= viewMinX &&
@@ -1095,6 +1129,7 @@ export class CanvasBinder {
 						if (nat > 0) htmlImg.dataset.cilNat = String(nat);
 						htmlImg.dataset.cilTier = String(best.tier);
 						htmlImg.src = best.url;
+						applyProxyStyles(htmlImg);
 					} else {
 						void this.plugin.cache.request(orig, lowestTier);
 					}
@@ -1150,6 +1185,7 @@ export class CanvasBinder {
 						swapped++;
 					}
 					delete item.img.dataset.cilTier;
+					restoreProxyStyles(item.img);
 				}
 				continue;
 			}
@@ -1169,6 +1205,7 @@ export class CanvasBinder {
 			item.img.dataset.cilNat = String(item.nat);
 			item.img.dataset.cilTier = String(best.tier);
 			item.img.src = best.url;
+			applyProxyStyles(item.img);
 			swapped++;
 		}
 
@@ -1191,6 +1228,7 @@ export class CanvasBinder {
 				delete htmlImg.dataset.cilOrig;
 				delete htmlImg.dataset.cilTier;
 				delete htmlImg.dataset.cilNat;
+				restoreProxyStyles(htmlImg);
 			}
 		}
 	}

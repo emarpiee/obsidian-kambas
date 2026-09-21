@@ -4,6 +4,12 @@
 	image-rendering: -webkit-optimize-contrast;
 }
 
+img.kambas-lod-proxied {
+	max-width: 100% !important;
+	width: var(--kambas-lod-width, auto) !important;
+	aspect-ratio: var(--kambas-lod-aspect, auto) !important;
+}
+
 .status-bar-item.cil-status-working {
 	color: var(--text-warning);
 }
