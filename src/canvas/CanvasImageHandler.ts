@@ -7491,6 +7491,9 @@ export class CanvasImageHandler {
 		});
 
 		// Calculate current bounding box and node dimensions
+		const isTagsInside = document.body.classList.contains('kambas-tag-position-inside');
+		const isTagsHidden = document.body.classList.contains('kambas-hide-all-tags');
+
 		const nodeMetrics = rawSelectedNodes.map((item) => {
 			const raw = item.nodeObj as {
 				id?: string;
@@ -7500,6 +7503,8 @@ export class CanvasImageHandler {
 				height?: number;
 				nodeEl?: HTMLElement;
 				moveAndResize?: (dims: { x: number; y: number; width: number; height: number }) => void;
+				unknownData?: { kambasTags?: string[] };
+				kambasTags?: string[];
 			};
 			let x = typeof raw.x === 'number' ? raw.x : 0;
 			let y = typeof raw.y === 'number' ? raw.y : 0;
@@ -7511,7 +7516,24 @@ export class CanvasImageHandler {
 				if (!height || height <= 0) height = raw.nodeEl.offsetHeight || 200;
 			}
 
-			return { item, raw, x, y, width, height, newX: x, newY: y };
+			let tagExtraHeight = 0;
+			if (!isTagsInside && !isTagsHidden) {
+				if (raw.nodeEl) {
+					const tagBar = raw.nodeEl.querySelector<HTMLElement>('.kambas-tag-bar');
+					if (tagBar && tagBar.offsetHeight > 0) {
+						tagExtraHeight = tagBar.offsetHeight + 6;
+					} else {
+						const tags = raw.unknownData?.kambasTags || raw.kambasTags || [];
+						if (tags.length > 0) {
+							tagExtraHeight = 28;
+						}
+					}
+				}
+			}
+
+			const totalHeight = height + tagExtraHeight;
+
+			return { item, raw, x, y, width, height, totalHeight, tagExtraHeight, newX: x, newY: y };
 		});
 
 		const minX = Math.min(...nodeMetrics.map((m) => m.x));
@@ -7530,7 +7552,7 @@ export class CanvasImageHandler {
 			nodeMetrics.forEach((m) => {
 				m.newX = minX;
 				m.newY = currentY;
-				currentY += m.height + GAP;
+				currentY += m.totalHeight + GAP;
 			});
 		} else if (layout === 'grid') {
 			const N = nodeMetrics.length;
@@ -7544,7 +7566,7 @@ export class CanvasImageHandler {
 				const c = idx % cols;
 				const r = Math.floor(idx / cols);
 				if (m.width > colWidths[c]) colWidths[c] = m.width;
-				if (m.height > rowHeights[r]) rowHeights[r] = m.height;
+				if (m.totalHeight > rowHeights[r]) rowHeights[r] = m.totalHeight;
 			});
 
 			const colXOffsets = new Array<number>(cols).fill(0);
