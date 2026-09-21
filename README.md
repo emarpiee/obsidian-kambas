@@ -67,10 +67,40 @@ Right-click any canvas node to access enhanced controls:
   <img width="800" height="435" alt="obsidian-kambas-opacity" src="https://github.com/user-attachments/assets/3a1a3b8f-f53a-4211-81b1-e3b0461ebc0d" />
 
 - **Reset to original size**: Restore a scaled node to its native pixel dimensions.
+- **Arrange selected elements**: Organize selected canvas elements into **Grid**, **Row**, or **Column** layouts sorted **By label** (A-Z / Z-A, with smart content title fallback) or **By tag** (A-Z / Z-A).
+- **Set media label…**: Assign custom native canvas header labels (`node.label`) to selected cards with interactive zero-padded counter formatting (`label-##` $\rightarrow$ `01`, `02`).
 - **Copy media to clipboard**: Copy raw image data directly to system clipboard.
 - **Swap media…**: Replace an existing image or video with another from your vault, local disk, or clipboard — preserving node position and aspect ratio.
 - **Embed in canvas file…**: Convert vault-linked image nodes into inline Base64 data URIs (with optional deletion of source vault file).
 - **Move / Copy media to…**: Relocate or duplicate vault-linked media files using a modal picker with clean incremental numbering (`canvas_image-01`).
+
+---
+
+### Canvas Element Arrangement
+
+Organize selected cards on the canvas with a 2-tier right-click context menu (**Arrange selected elements**):
+
+- **Layout Modes**:
+  - **In grid**: Arranges nodes into an automatically sized square/rectangular grid ($\text{cols} = \lceil \sqrt{N} \rceil$) with dynamic cell widths and heights to prevent card overlapping.
+  - **In row**: Positions nodes side-by-side in a single horizontal row starting at the selection's top-left origin $(\min X, \min Y)$.
+  - **In column**: Stacks nodes top-to-bottom in a single vertical column.
+- **Smart Sorting Criteria**:
+  - **By label (A-Z / Z-A)**: Sorts by custom node header label (`node.label`). For unlabeled cards, it seamlessly falls back to card titles, note headers, or file names.
+  - **By tag (A-Z / Z-A)**: Sorts alphabetically by primary canvas tag (`kambasTags[0]`).
+- **Interactive Features**:
+  - **Misfire-Free 2-Tier Submenus**: Hovering over layout options (`In grid`, `In row`, `In column`) immediately presents direct click actions, auto-closing sibling submenus when hover changes.
+  - **Full Undo / Redo**: Integrated with native canvas undo stack (`Ctrl+Z` / `Ctrl+Y`) and saved synchronously to `.canvas` file JSON.
+
+---
+
+### Native Canvas Node Labels & Filename Preservation
+
+Kambas integrates directly with native Obsidian Canvas node header labels (`node.label`), keeping your workspace organized:
+
+- **Preserve Filenames on Ingest**: Automatically populates native node labels with original file names when dropping, pasting, or embedding media assets into the canvas.
+- **Set Media Label Modal**: Assign custom labels across single or multiple selected nodes with zero-padded counter syntax (`label-##` $\rightarrow$ `label-01`, `label-02`; `label-###` $\rightarrow$ `label-001`, `label-002`).
+- **Embedded Media Indicator**: Embedded Base64 media cards display a distinct visual indicator icon (`cpu`) alongside their label header to distinguish embedded media from vault file links.
+- **Media Label Naming Strategy**: Includes **"Media label / original filename"** as a selectable naming option in the *Move / Copy media to folder* modal.
 
 ---
 
@@ -127,7 +157,7 @@ When moving or copying media assets within your vault:
 
 ---
 
-### Filter Panel (Tags & Colors)
+### Filter Panel (Tags, Colors & Labels)
 
 <img width="1106" height="877" alt="image" src="https://github.com/user-attachments/assets/d84518d1-d41a-45cc-88dd-76496fab636a" />
 
@@ -136,20 +166,20 @@ A floating, resizable, position-remembered panel accessed from the **Tags** butt
 
 #### How Filtering Works
 
-Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab:
-- **Exclude wins over include**: If a node matches an included tag but also an excluded color, it is hidden.
+Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab across three tabs (`[ TAGS ]`, `[ COLORS ]`, `[ LABELS ]`):
+- **Exclude wins over include**: If a node matches an included tag but also an excluded color or label, it is hidden.
 - **Non-matching nodes dim**: Filtered-out nodes dim cleanly (adjustable opacity down to 12%) rather than abruptly disappearing.
 
 #### Contextual "In View" Intelligence
 
-- **"N in view" badges**: Displays how many currently visible nodes co-contain each tag or color.
+- **"N in view" badges**: Displays how many currently visible nodes co-contain each tag, color, or label.
 - **Auto-Sorting**: Rows sort dynamically by visible count to surface relevant co-occurring attributes first.
 - **Dimmed Unrelated Rows**: Attributes absent from visible nodes display at reduced opacity (45%).
 
 #### Bidirectional Cross-Highlighting
 
 - Hovering filter rows highlights matching canvas elements with custom borders.
-- Hovering canvas image nodes highlights their corresponding tag and color rows in the panel.
+- Hovering canvas image nodes highlights their corresponding tag, color, and label rows in the panel.
 
 #### Tags Tab
 
@@ -165,6 +195,12 @@ Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab:
 - **Canvas Card Color Filtering**: Filter by Obsidian node border/background colors.
 - **Extraction Modes**: Configurable to **Auto** (on tab open), **Manual** ("Scan canvas colors" button), or **Disabled**.
 
+#### Labels Tab
+
+- **Node Label Filtering**: View and filter canvas elements by their native node header labels (embedded media labels, vault media names, text note headers, or group titles).
+- **Live Label Search**: Real-time search filter input to quickly find specific labeled elements on dense canvases.
+- **Alphabetical Sorting**: Automatically collects and sorts all canvas labels alphabetically.
+
 ---
 
 ### Keyboard Navigation
@@ -176,6 +212,8 @@ Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab:
 - **Zoom In / Out**: `+` / `-`
 - **Selection Zoom to Fit**: `Space`
 - **Loupe Inspector Lens**: `Q`
+- **Set Media Label**: Command Palette (`Set media label for selected node`)
+- **Toggle Media Labels**: Command Palette (`Toggle embedded media labels`)
 - **Toggle GIF Controls**: Command Palette (`Toggle GIF controls on/off`)
 - **Toggle Tag Visibility**: Command Palette
 
@@ -188,6 +226,8 @@ Access settings in **Obsidian Settings > Kambas**:
 | Setting | Description |
 | :--- | :--- |
 | **Enable GIF controls** | Show or hide the GIF playback toolbar, timeline scrubber, and frame extraction on GIF nodes (default: `true`). |
+| **Show media labels** | Display native canvas node labels above embedded media cards. |
+| **Preserve media filename on ingest** | Automatically set native canvas node label to original file name when dropping, pasting, or embedding media. |
 | **Hide media label** | Hides raw data URI header text above embedded image cards. |
 | **Color palette swatches** | Number of dominant colors to extract (3–10). |
 | **Palette color separator** | Delimiter used when copying palette colors (e.g. `, `, `\n`). |
