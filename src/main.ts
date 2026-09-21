@@ -877,6 +877,39 @@ export default class KambasPlugin extends Plugin {
 			},
 		});
 
+		// Register command: Toggle auto-select filtered items
+		this.addCommand({
+			id: 'canvas-toggle-auto-select-filtered-items',
+			name:
+				getText().toggleAutoSelectFilteredItemsCommand ??
+				'Toggle auto-select filtered items',
+			icon: 'check-square',
+			checkCallback: (checking: boolean) => {
+				const activeView = this.app.workspace.getActiveViewOfType(
+					ItemView
+				) as unknown as CanvasItemView | null;
+				if (activeView && activeView.getViewType() === 'canvas') {
+					if (!checking) {
+						this.settings.autoSelectFilteredItems =
+							!this.settings.autoSelectFilteredItems;
+						void this.saveSettings();
+						new Notice(
+							this.settings.autoSelectFilteredItems
+								? 'Auto-select filtered items: ON'
+								: 'Auto-select filtered items: OFF'
+						);
+						if (this.settings.autoSelectFilteredItems) {
+							this.canvasImageHandler.selectFilteredNodes(activeView);
+						} else {
+							this.canvasImageHandler.deselectAllNodes(activeView);
+						}
+					}
+					return true;
+				}
+				return false;
+			},
+		});
+
 		// Register command: Toggle GIF controls on/off
 		this.addCommand({
 			id: 'toggle-gif-controls',

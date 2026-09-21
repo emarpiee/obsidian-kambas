@@ -6172,6 +6172,7 @@ export class CanvasImageHandler {
 			if (allowZoom) {
 				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 			}
+			this.deselectAllNodes(activeView);
 			this.scanAndRestoreTransforms(activeView);
 		} else {
 			const rawCanvasData = (
@@ -6261,10 +6262,127 @@ export class CanvasImageHandler {
 			if (allowZoom) {
 				window.setTimeout(() => this.zoomToVisibleNodes(activeView), 80);
 			}
+			if (this.plugin.settings.autoSelectFilteredItems) {
+				window.setTimeout(() => this.selectFilteredNodes(activeView), 50);
+			}
 		}
 		const file = activeView.file;
 		if (file) this.saveFilterState(file);
 		this.updateToolbarButtonState();
+	}
+
+	/**
+	 * Selects all canvas elements matching the active filter selection in the panel.
+	 */
+	public selectFilteredNodes(activeView?: CanvasItemView): void {
+		const workspaceView = this.app.workspace.getActiveViewOfType(
+			ItemView
+		) as unknown as CanvasItemView | null;
+		const view = activeView ?? workspaceView;
+		if (!view || view.getViewType() !== 'canvas') return;
+		const canvas = view.canvas;
+		if (!canvas?.nodes) return;
+
+		const hasAnyFilter =
+			this.activeTagFilters.size > 0 ||
+			this.activeTagExcludes.size > 0 ||
+			this.activeColorFilters.size > 0 ||
+			this.activeColorExcludes.size > 0 ||
+			this.activeLabelFilters.size > 0 ||
+			this.activeLabelExcludes.size > 0;
+
+		if (!hasAnyFilter) {
+			this.deselectAllNodes(view);
+			return;
+		}
+
+		const matchingNodes = new Set<object>();
+		canvas.nodes.forEach((node) => {
+			if (!node.nodeEl?.classList.contains('kambas-tag-hidden')) {
+				matchingNodes.add(node);
+			}
+		});
+
+		type CvEx = {
+			selectAll?: (nodes?: Set<object>) => void;
+			deselectAll?: () => void;
+		};
+		const cx = canvas as unknown as CvEx;
+
+		if (typeof cx.selectAll === 'function') {
+			cx.selectAll(matchingNodes);
+		} else {
+			if (typeof cx.deselectAll === 'function') {
+				try {
+					cx.deselectAll();
+				} catch {
+					/* ignore */
+				}
+			}
+			matchingNodes.forEach((node) => {
+				const raw = node as { select?: () => void };
+				if (typeof raw.select === 'function') {
+					try {
+						raw.select();
+					} catch {
+						/* ignore */
+					}
+				}
+			});
+		}
+	}
+
+	/**
+	 * Deselects all canvas elements on the active canvas.
+	 */
+	public deselectAllNodes(activeView?: CanvasItemView): void {
+		const workspaceView = this.app.workspace.getActiveViewOfType(
+			ItemView
+		) as unknown as CanvasItemView | null;
+		const view = activeView ?? workspaceView;
+		if (!view || view.getViewType() !== 'canvas') return;
+		const canvas = view.canvas;
+		if (!canvas?.nodes) return;
+
+		type CvEx = {
+			deselectAll?: () => void;
+			selection?: Set<object>;
+			updateSelection?: () => void;
+		};
+		const cx = canvas as unknown as CvEx;
+
+		if (typeof cx.deselectAll === 'function') {
+			try {
+				cx.deselectAll();
+			} catch {
+				/* ignore */
+			}
+		}
+
+		canvas.nodes.forEach((node) => {
+			node.nodeEl?.classList.remove('is-selected');
+			const nu = node as { unselect?: () => void };
+			if (typeof nu.unselect === 'function') {
+				try {
+					nu.unselect();
+				} catch {
+					/* ignore */
+				}
+			}
+			try {
+				cx.selection?.delete(node);
+			} catch {
+				/* ignore */
+			}
+		});
+
+		if (typeof cx.updateSelection === 'function') {
+			try {
+				cx.updateSelection();
+			} catch {
+				/* ignore */
+			}
+		}
 	}
 
 	/** Zoom / pan the canvas to fit all nodes that are not hidden by tag filter. */

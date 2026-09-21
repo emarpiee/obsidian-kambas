@@ -199,6 +199,9 @@ export interface TranslationSchema {
 	tagBadgePositionInside: string;
 	tagZoomOnSelectName: string;
 	tagZoomOnSelectDesc: string;
+	autoSelectFilteredItemsName: string;
+	autoSelectFilteredItemsDesc: string;
+	toggleAutoSelectFilteredItemsCommand: string;
 	tagPanelAutoCloseName: string;
 	tagPanelAutoCloseDesc: string;
 	paletteCopySeparatorName: string;
@@ -619,6 +622,11 @@ const en: TranslationSchema = {
 	tagZoomOnSelectName: 'Auto-zoom on tag selection',
 	tagZoomOnSelectDesc:
 		'Automatically zoom and fit visible elements when selecting or clearing tag filters in the panel.',
+	autoSelectFilteredItemsName: 'Auto-select filtered items',
+	autoSelectFilteredItemsDesc:
+		'Automatically select canvas elements matching active filter panel selection',
+	toggleAutoSelectFilteredItemsCommand:
+		'Toggle auto-select filtered items',
 	tagPanelAutoCloseName: 'Auto-close panel when unfocused',
 	tagPanelAutoCloseDesc:
 		'Automatically close the filter panel when clicking outside or losing focus.',
@@ -971,6 +979,9 @@ const zh: TranslationSchema = {
 	tagBadgePositionInside: '内侧（左下角）',
 	tagZoomOnSelectName: '选择标签时自动缩放',
 	tagZoomOnSelectDesc: '在面板中选择或清除标签筛选时，自动缩放并适应可见元素。',
+	autoSelectFilteredItemsName: '自动选择筛选项',
+	autoSelectFilteredItemsDesc: '自动选择画布中匹配面板筛选条件的所有元素',
+	toggleAutoSelectFilteredItemsCommand: '切换自动选择筛选项',
 	tagPanelAutoCloseName: '失去焦点时自动关闭面板',
 	tagPanelAutoCloseDesc: '在点击面板外部或失去焦点时自动关闭筛选面板。',
 	paletteCopySeparatorName: '调色板复制分隔符',
@@ -1319,6 +1330,9 @@ const zhTW: TranslationSchema = {
 	tagBadgePositionInside: '內側（左下角）',
 	tagZoomOnSelectName: '選擇標籤時自動縮放',
 	tagZoomOnSelectDesc: '在面板中選擇或清除標籤篩選時，自動縮放並適應可見元素。',
+	autoSelectFilteredItemsName: '自動選擇篩選項目',
+	autoSelectFilteredItemsDesc: '自動選擇畫布中符合面板篩選條件的所有元素',
+	toggleAutoSelectFilteredItemsCommand: '切換自動選擇篩選項目',
 	tagPanelAutoCloseName: '失去焦點時自動關閉面板',
 	tagPanelAutoCloseDesc: '在點擊面板外部或失去焦點時自動關閉篩選面板。',
 	paletteCopySeparatorName: '調色板複製分隔符',
@@ -1687,6 +1701,11 @@ const es: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automático al seleccionar etiqueta',
 	tagZoomOnSelectDesc:
 		'Ajusta y hace zoom automáticamente en los elementos visibles al seleccionar o limpiar filtros de etiquetas.',
+	autoSelectFilteredItemsName: 'Seleccionar automáticamente elementos filtrados',
+	autoSelectFilteredItemsDesc:
+		'Seleccionar automáticamente los elementos del lienzo que coincidan con el filtro activo',
+	toggleAutoSelectFilteredItemsCommand:
+		'Alternar selección automática de elementos filtrados',
 	tagPanelAutoCloseName: 'Cerrar panel al perder el foco',
 	tagPanelAutoCloseDesc:
 		'Cierra automáticamente el panel de filtros al hacer clic fuera o perder el foco.',
@@ -2068,6 +2087,11 @@ const fr: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automatique lors de la sélection d’étiquette',
 	tagZoomOnSelectDesc:
 		'Zoome et ajuste automatiquement les éléments visibles lors de la sélection ou de l’effacement des filtres d’étiquettes.',
+	autoSelectFilteredItemsName: 'Sélection automatique des éléments filtrés',
+	autoSelectFilteredItemsDesc:
+		'Sélectionner automatiquement les éléments du canevas correspondant aux filtres actifs',
+	toggleAutoSelectFilteredItemsCommand:
+		'Basculer la sélection automatique des éléments filtrés',
 	tagPanelAutoCloseName: 'Fermer automatiquement le panneau hors focus',
 	tagPanelAutoCloseDesc:
 		'Ferme automatiquement le panneau de filtres lors d’un clic à l’extérieur ou de la perte de focus.',
@@ -2449,6 +2473,11 @@ const de: TranslationSchema = {
 	tagZoomOnSelectName: 'Automatischer Zoom bei Tag-Auswahl',
 	tagZoomOnSelectDesc:
 		'Zoomt und passt sichtbare Elemente automatisch an, wenn Tag-Filter im Panel ausgewählt oder zurückgesetzt werden.',
+	autoSelectFilteredItemsName: 'Gefilterte Elemente automatisch auswählen',
+	autoSelectFilteredItemsDesc:
+		'Wählt automatisch Leinwandelemente aus, die den aktiven Filtern entsprechen',
+	toggleAutoSelectFilteredItemsCommand:
+		'Automatische Auswahl gefilterter Elemente umschalten',
 	tagPanelAutoCloseName: 'Panel bei Fokusverlust automatisch schließen',
 	tagPanelAutoCloseDesc:
 		'Schließt das Filter-Panel automatisch bei Klick außerhalb oder Fokusverlust.',
@@ -2824,6 +2853,11 @@ const ja: TranslationSchema = {
 	tagZoomOnSelectName: 'タグ選択時の自動ズーム',
 	tagZoomOnSelectDesc:
 		'パネルでタグフィルターを選択または解除したときに、表示要素に合わせて自動的にズーム・フィットさせます。',
+	autoSelectFilteredItemsName: 'フィルター項目を自動選択',
+	autoSelectFilteredItemsDesc:
+		'アクティブなフィルターに一致するキャンバス要素を自動的に選択します',
+	toggleAutoSelectFilteredItemsCommand:
+		'フィルター項目の自動選択を切り替え',
 	tagPanelAutoCloseName: 'フォーカス喪失時にパネルを自動閉鎖',
 	tagPanelAutoCloseDesc:
 		'パネル外部をクリックした際やフォーカスが外れた際に、フィルターパネルを自動的に閉じます。',
@@ -3197,6 +3231,10 @@ const ko: TranslationSchema = {
 	tagZoomOnSelectName: '태그 선택 시 자동 확대/축소',
 	tagZoomOnSelectDesc:
 		'패널에서 태그 필터를 선택하거나 해제할 때 표시되는 요소에 맞춰 자동으로 확대/축소합니다.',
+	autoSelectFilteredItemsName: '필터링된 항목 자동 선택',
+	autoSelectFilteredItemsDesc:
+		'활성 필터 조건에 일치하는 캔버스 요소를 자동으로 선택합니다',
+	toggleAutoSelectFilteredItemsCommand: '필터링된 항목 자동 선택 토글',
 	tagPanelAutoCloseName: '포커스 해제 시 패널 자동 닫기',
 	tagPanelAutoCloseDesc:
 		'패널 외부를 클릭하거나 포커스를 잃었을 때 필터 패널을 자동으로 닫습니다.',
@@ -3566,6 +3604,11 @@ const ru: TranslationSchema = {
 	tagZoomOnSelectName: 'Автомасштабирование при выборе тега',
 	tagZoomOnSelectDesc:
 		'Автоматически приближает и подгоняет видимые элементы при выборе или сбросе фильтров тегов.',
+	autoSelectFilteredItemsName: 'Автовыбор отфильтрованных элементов',
+	autoSelectFilteredItemsDesc:
+		'Автоматически выбирать элементы холста, соответствующие активным фильтрам',
+	toggleAutoSelectFilteredItemsCommand:
+		'Переключить автовыбор отфильтрованных элементов',
 	tagPanelAutoCloseName: 'Автозакрытие панели при потере фокуса',
 	tagPanelAutoCloseDesc:
 		'Автоматически закрывать панель фильтров при клике снаружи или потере фокуса.',
@@ -3943,6 +3986,11 @@ const pt: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automático ao selecionar tag',
 	tagZoomOnSelectDesc:
 		'Aproxima e ajusta automaticamente os elementos visíveis ao selecionar ou limpar filtros de tag.',
+	autoSelectFilteredItemsName: 'Selecionar automaticamente itens filtrados',
+	autoSelectFilteredItemsDesc:
+		'Selecionar automaticamente elementos da tela correspondentes ao filtro ativo',
+	toggleAutoSelectFilteredItemsCommand:
+		'Alternar seleção automática de itens filtrados',
 	tagPanelAutoCloseName: 'Fechar painel automaticamente ao perder o foco',
 	tagPanelAutoCloseDesc:
 		'Fecha automaticamente o painel de filtros ao clicar fora ou perder o foco.',
@@ -4316,6 +4364,11 @@ const it: TranslationSchema = {
 	tagZoomOnSelectName: 'Zoom automatico alla selezione tag',
 	tagZoomOnSelectDesc:
 		'Ingrandisce e adatta automaticamente gli elementi visibili quando si selezionano o rimuovono i filtri tag.',
+	autoSelectFilteredItemsName: 'Seleziona automaticamente elementi filtrati',
+	autoSelectFilteredItemsDesc:
+		'Seleziona automaticamente gli elementi della canvas corrispondenti ai filtri attivi',
+	toggleAutoSelectFilteredItemsCommand:
+		'Attiva/disattiva selezione automatica elementi filtrati',
 	tagPanelAutoCloseName:
 		'Chiudi automaticamente il pannello quando perde il focus',
 	tagPanelAutoCloseDesc:
@@ -4682,6 +4735,9 @@ const ar: TranslationSchema = {
 	tagZoomOnSelectName: 'التكبير التلقائي عند تحديد الوسم',
 	tagZoomOnSelectDesc:
 		'تكبير وملاءمة العناصر المرئية تلقائيًا عند تحديد تصفية الوسوم أو مسحها.',
+	autoSelectFilteredItemsName: 'تحديد العناصر المفلترة تلقائياً',
+	autoSelectFilteredItemsDesc: 'تحديد عناصر اللوحة المطابقة للتصفية النشطة تلقائياً',
+	toggleAutoSelectFilteredItemsCommand: 'تبديل تحديد العناصر المفلترة تلقائياً',
 	tagPanelAutoCloseName: 'إغلاق اللوحة تلقائيًا عند فقدان التركيز',
 	tagPanelAutoCloseDesc:
 		'إغلاق لوحة التصفية تلقائيًا عند النقر بالخارج أو فقدان التركيز.',
@@ -4935,6 +4991,9 @@ const he: TranslationSchema = {
 	tagZoomOnSelectName: 'תקריב אוטומטי בעת בחירת תגית',
 	tagZoomOnSelectDesc:
 		'מבצע תקריב ומתאים אוטומטית רכיבים גלויים בעת בחירה או ניקוי מסנני תגיות.',
+	autoSelectFilteredItemsName: 'בחירה אוטומטית של פריטים מסוננים',
+	autoSelectFilteredItemsDesc: 'בחר אוטומטית אלמנטים בקנבס התואמים לסינון הפעיל',
+	toggleAutoSelectFilteredItemsCommand: 'הפעל/בטל בחירה אוטומטית של פריטים מסוננים',
 	tagPanelAutoCloseName: 'סגור לוח אוטומטית בעת איבוד מיקוד',
 	tagPanelAutoCloseDesc:
 		'סוגר אוטומטית את לוח המסננים בעת לחיצה מחוץ ללוח או איבוד מיקוד.',

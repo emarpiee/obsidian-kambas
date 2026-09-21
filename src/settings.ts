@@ -79,6 +79,7 @@ export interface KambasSettings {
 	gifZoomThreshold?: number; // Zoom scale threshold to pause GIF playback (0.1 - 1.0)
 	tagBadgePosition: 'outside' | 'inside';
 	tagZoomOnSelect: boolean;
+	autoSelectFilteredItems?: boolean; // Automatically select canvas elements matching active filter panel selection
 	tagPanelAutoClose: boolean; // Auto-close filter panel when canvas/panel loses focus
 	paletteSwatchCount: number; // 3 to 10 swatches
 	paletteCopySeparator: string; // Separator for copied hex values
@@ -129,6 +130,7 @@ export const DEFAULT_SETTINGS: KambasSettings = {
 	gifZoomThreshold: 0.4,
 	tagBadgePosition: 'outside',
 	tagZoomOnSelect: true,
+	autoSelectFilteredItems: false,
 	tagPanelAutoClose: true,
 	paletteSwatchCount: 5,
 	paletteCopySeparator: ', ',
@@ -304,6 +306,21 @@ export class KambasSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.tagZoomOnSelect ?? true)
 					.onChange(async (value) => {
 						this.plugin.settings.tagZoomOnSelect = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t.autoSelectFilteredItemsName ?? 'Auto-select filtered items')
+			.setDesc(
+				t.autoSelectFilteredItemsDesc ??
+					'Automatically select canvas elements matching active filter panel selection.'
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.autoSelectFilteredItems ?? false)
+					.onChange(async (value) => {
+						this.plugin.settings.autoSelectFilteredItems = value;
 						await this.plugin.saveSettings();
 					})
 			);
