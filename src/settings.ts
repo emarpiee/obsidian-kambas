@@ -1089,6 +1089,10 @@ export class KambasSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t.lodShowStatusBarName || 'Show in status bar')
+			.setDesc(
+				t.lodShowStatusBarDesc ||
+					'Display live LOD cache storage usage and active image proxy counts in the status bar.'
+			)
 			.addToggle((tgl) =>
 				tgl
 					.setValue(this.plugin.settings.lodShowStatusBar ?? true)

@@ -68,6 +68,7 @@ export interface TranslationSchema {
 	lodCacheClearedNotice: string;
 	lodOtherHeading?: string;
 	lodShowStatusBarName?: string;
+	lodShowStatusBarDesc?: string;
 	lodShowStatusBarNotice?: string;
 	debugName?: string;
 	debugDesc?: string;
@@ -481,6 +482,8 @@ const en: TranslationSchema = {
 	lodCacheClearedNotice: 'Cache cleared',
 	lodOtherHeading: 'Status Bar & Diagnostics',
 	lodShowStatusBarName: 'Show in status bar',
+	lodShowStatusBarDesc:
+		'Display live LOD cache storage usage and active image proxy counts in the status bar.',
 	lodShowStatusBarNotice: 'Reload the plugin to apply',
 	debugName: 'Debug logging',
 	debugDesc:
