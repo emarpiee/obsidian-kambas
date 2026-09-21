@@ -1,4 +1,4 @@
-import { ItemView, Menu, Notice, Plugin, TFile, WorkspaceLeaf } from 'obsidian';
+import { ItemView, Menu, MenuItem, Notice, Plugin, TFile, WorkspaceLeaf } from 'obsidian';
 
 import { getText } from './i18n';
 import './main.css';
@@ -357,6 +357,158 @@ export default class KambasPlugin extends Plugin {
 					.onClick(() => {
 						this.canvasImageHandler.openTagModal(activeView, targetNodeEl);
 					});
+			});
+
+			menu.addItem((item: MenuItem) => {
+				item
+					.setTitle(t.arrangeSelected ?? 'Arrange selected elements')
+					.setIcon('layout-grid');
+
+				type MenuWithSubmenu = MenuItem & { setSubmenu: () => Menu };
+				type MenuExt = Menu & {
+					menuEl?: HTMLElement;
+					containerEl?: HTMLElement;
+					hide?: () => void;
+				};
+
+				const arrangeSubmenu = (item as MenuWithSubmenu).setSubmenu() as MenuExt;
+				const arrangeEl = arrangeSubmenu.menuEl ?? arrangeSubmenu.containerEl;
+				if (arrangeEl) {
+					arrangeEl.addEventListener('mouseleave', () => {
+						window.setTimeout(() => {
+							if (arrangeEl && !arrangeEl.matches(':hover')) {
+								arrangeSubmenu.hide?.();
+							}
+						}, 250);
+					});
+
+					arrangeEl.addEventListener(
+						'mouseover',
+						(evt) => {
+							const hoveredItem = (evt.target as HTMLElement | null)?.closest(
+								'.menu-item'
+							);
+							if (!hoveredItem) return;
+							createdLayoutSubmenus.forEach((entry) => {
+								if (entry.itemEl && entry.itemEl !== hoveredItem) {
+									entry.submenu.hide?.();
+								}
+							});
+						},
+						true
+					);
+				}
+
+				const layouts = [
+					{
+						id: 'grid' as const,
+						title: t.arrangeInGrid ?? 'In grid',
+						icon: 'layout-grid',
+					},
+					{
+						id: 'row' as const,
+						title: t.arrangeInRow ?? 'In row',
+						icon: 'move-right',
+					},
+					{
+						id: 'column' as const,
+						title: t.arrangeInColumn ?? 'In column',
+						icon: 'move-down',
+					},
+				];
+
+				const createdLayoutSubmenus: Array<{
+					itemEl?: HTMLElement;
+					submenu: MenuExt;
+				}> = [];
+
+				for (const layoutOption of layouts) {
+					arrangeSubmenu.addItem((subItem: MenuItem) => {
+						subItem
+							.setTitle(layoutOption.title)
+							.setIcon(layoutOption.icon);
+
+						const layoutSubmenu = (subItem as MenuWithSubmenu).setSubmenu() as MenuExt;
+						const subItemObj = subItem as unknown as {
+							dom?: HTMLElement;
+							domEl?: HTMLElement;
+							element?: HTMLElement;
+							itemEl?: HTMLElement;
+						};
+						const itemEl =
+							subItemObj.dom ||
+							subItemObj.domEl ||
+							subItemObj.element ||
+							subItemObj.itemEl;
+
+						createdLayoutSubmenus.push({ itemEl, submenu: layoutSubmenu });
+
+						const layoutEl = layoutSubmenu.menuEl ?? layoutSubmenu.containerEl;
+						if (layoutEl) {
+							layoutEl.addEventListener('mouseleave', () => {
+								window.setTimeout(() => {
+									if (layoutEl && !layoutEl.matches(':hover')) {
+										layoutSubmenu.hide?.();
+									}
+								}, 250);
+							});
+						}
+
+						if (itemEl) {
+							itemEl.addEventListener('mouseenter', () => {
+								createdLayoutSubmenus.forEach((entry) => {
+									if (entry.submenu !== layoutSubmenu) {
+										entry.submenu.hide?.();
+									}
+								});
+							});
+						}
+
+						const actions = [
+							{
+								criterion: 'label' as const,
+								order: 'asc' as const,
+								title: t.arrangeByLabelAsc ?? 'By label (A-Z)',
+								icon: 'arrow-up-narrow-wide',
+							},
+							{
+								criterion: 'label' as const,
+								order: 'desc' as const,
+								title: t.arrangeByLabelDesc ?? 'By label (Z-A)',
+								icon: 'arrow-down-wide-narrow',
+							},
+							{
+								criterion: 'tag' as const,
+								order: 'asc' as const,
+								title: t.arrangeByTagAsc ?? 'By tag (A-Z)',
+								icon: 'arrow-up-narrow-wide',
+							},
+							{
+								criterion: 'tag' as const,
+								order: 'desc' as const,
+								title: t.arrangeByTagDesc ?? 'By tag (Z-A)',
+								icon: 'arrow-down-wide-narrow',
+							},
+						];
+
+						for (const act of actions) {
+							layoutSubmenu.addItem((actItem: MenuItem) => {
+								actItem
+									.setTitle(act.title)
+									.setIcon(act.icon)
+									.onClick(() => {
+										this.canvasImageHandler.arrangeSelectedNodes(
+											activeView,
+											layoutOption.id,
+											act.criterion,
+											act.order,
+											targetNodeEl
+										);
+									});
+							});
+						}
+					});
+				}
 			});
 
 			if (hasAnyEmbeddedMedia) {

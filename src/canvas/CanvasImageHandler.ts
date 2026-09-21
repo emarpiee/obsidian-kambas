@@ -7342,4 +7342,271 @@ export class CanvasImageHandler {
 			new Notice(t.noCompressibleNotice);
 		}
 	}
+
+	/**
+	 * Arrange selected canvas elements into Grid, Row, or Column layout sorted by criterion.
+	 */
+	public arrangeSelectedNodes(
+		activeView: CanvasItemView,
+		layout: 'grid' | 'row' | 'column',
+		criterion: 'label' | 'tag' | 'name',
+		order: 'asc' | 'desc',
+		targetNodeEl?: HTMLElement | null
+	): void {
+		const canvas = activeView.canvas;
+		if (!canvas || !canvas.nodes) return;
+
+		const canvasObj = canvas as { selection?: Set<unknown> };
+		const selectionSet = canvasObj?.selection;
+		const rawSelectedNodes: Array<{ id: string; nodeObj: unknown }> = [];
+		const addedIds = new Set<string>();
+
+		if (selectionSet && selectionSet.size > 0) {
+			selectionSet.forEach((nodeObj) => {
+				const rawNode = nodeObj as { id?: string; nodeEl?: HTMLElement };
+				let foundId = rawNode.id;
+				if (!foundId && canvas.nodes) {
+					canvas.nodes.forEach((val, key) => {
+						if (val === nodeObj) foundId = key;
+					});
+				}
+				if (foundId && !addedIds.has(foundId)) {
+					if (this.isNodeSelected(canvas, nodeObj, targetNodeEl)) {
+						rawSelectedNodes.push({ id: foundId, nodeObj });
+						addedIds.add(foundId);
+					}
+				}
+			});
+		}
+
+		canvas.nodes.forEach((nodeObj, id) => {
+			if (addedIds.has(id)) return;
+			if (this.isNodeSelected(canvas, nodeObj, targetNodeEl)) {
+				rawSelectedNodes.push({ id, nodeObj });
+				addedIds.add(id);
+			}
+		});
+
+		if (rawSelectedNodes.length < 2) {
+			return;
+		}
+
+		// Save current state for undo history
+		this.pushCanvasUndoHistory(canvas);
+
+		const rawCanvasData = (canvas as unknown as { data?: CanvasFileData }).data;
+
+		// Extract sort key for each selected node
+		const getNodeSortKey = (item: { id: string; nodeObj: unknown }): string | number => {
+			const nodeObj = item.nodeObj as {
+				id?: string;
+				color?: string;
+				label?: string;
+				text?: string;
+				url?: string;
+				filePath?: string;
+				file?: { name?: string };
+				unknownData?: {
+					color?: string;
+					label?: string;
+					kambasTags?: string[];
+					text?: string;
+					url?: string;
+					file?: string;
+				};
+				kambasTags?: string[];
+			};
+
+			const cdn = rawCanvasData?.nodes?.find((n) => n.id === item.id);
+
+			switch (criterion) {
+				case 'label': {
+					const lbl =
+						this.getNodeLabel(nodeObj, cdn) ||
+						nodeObj.label ||
+						nodeObj.unknownData?.label ||
+						cdn?.label;
+					if (lbl && lbl.trim().length > 0) {
+						return lbl.trim().toLowerCase();
+					}
+				}
+				/* fallthrough */
+				case 'name': {
+					let name: string;
+					if (nodeObj.file?.name) {
+						name = nodeObj.file.name;
+					} else if (nodeObj.filePath) {
+						name = nodeObj.filePath;
+					} else if (cdn?.file) {
+						name = cdn.file;
+					} else if (nodeObj.text || cdn?.text || nodeObj.unknownData?.text) {
+						const txt = nodeObj.text || cdn?.text || nodeObj.unknownData?.text || '';
+						name = txt.split('\n')[0];
+					} else if (nodeObj.url || cdn?.url || nodeObj.unknownData?.url) {
+						name = nodeObj.url || cdn?.url || nodeObj.unknownData?.url || '';
+					} else if (nodeObj.label || cdn?.label) {
+						name = nodeObj.label || cdn?.label || '';
+					} else {
+						name = item.id;
+					}
+					return name.trim().toLowerCase();
+				}
+				case 'tag': {
+					const tags =
+						nodeObj.unknownData?.kambasTags ||
+						nodeObj.kambasTags ||
+						cdn?.kambasTags ||
+						[];
+					if (Array.isArray(tags) && tags.length > 0) {
+						return String(tags[0]).trim().toLowerCase();
+					}
+					return '';
+				}
+			}
+		};
+
+		// Sort nodes array
+		rawSelectedNodes.sort((a, b) => {
+			const keyA = getNodeSortKey(a);
+			const keyB = getNodeSortKey(b);
+			const cmp =
+				typeof keyA === 'number' && typeof keyB === 'number'
+					? keyA - keyB
+					: String(keyA).localeCompare(String(keyB), undefined, {
+							numeric: true,
+							sensitivity: 'base',
+					  });
+			const finalCmp = cmp !== 0 ? cmp : a.id.localeCompare(b.id);
+			return order === 'asc' ? finalCmp : -finalCmp;
+		});
+
+		// Calculate current bounding box and node dimensions
+		const nodeMetrics = rawSelectedNodes.map((item) => {
+			const raw = item.nodeObj as {
+				id?: string;
+				x?: number;
+				y?: number;
+				width?: number;
+				height?: number;
+				nodeEl?: HTMLElement;
+				moveAndResize?: (dims: { x: number; y: number; width: number; height: number }) => void;
+			};
+			let x = typeof raw.x === 'number' ? raw.x : 0;
+			let y = typeof raw.y === 'number' ? raw.y : 0;
+			let width = typeof raw.width === 'number' ? raw.width : 200;
+			let height = typeof raw.height === 'number' ? raw.height : 200;
+
+			if (raw.nodeEl) {
+				if (!width || width <= 0) width = raw.nodeEl.offsetWidth || 200;
+				if (!height || height <= 0) height = raw.nodeEl.offsetHeight || 200;
+			}
+
+			return { item, raw, x, y, width, height, newX: x, newY: y };
+		});
+
+		const minX = Math.min(...nodeMetrics.map((m) => m.x));
+		const minY = Math.min(...nodeMetrics.map((m) => m.y));
+		const GAP = 30;
+
+		if (layout === 'row') {
+			let currentX = minX;
+			nodeMetrics.forEach((m) => {
+				m.newX = currentX;
+				m.newY = minY;
+				currentX += m.width + GAP;
+			});
+		} else if (layout === 'column') {
+			let currentY = minY;
+			nodeMetrics.forEach((m) => {
+				m.newX = minX;
+				m.newY = currentY;
+				currentY += m.height + GAP;
+			});
+		} else if (layout === 'grid') {
+			const N = nodeMetrics.length;
+			const cols = Math.ceil(Math.sqrt(N));
+			const rows = Math.ceil(N / cols);
+
+			const colWidths = new Array<number>(cols).fill(0);
+			const rowHeights = new Array<number>(rows).fill(0);
+
+			nodeMetrics.forEach((m, idx) => {
+				const c = idx % cols;
+				const r = Math.floor(idx / cols);
+				if (m.width > colWidths[c]) colWidths[c] = m.width;
+				if (m.height > rowHeights[r]) rowHeights[r] = m.height;
+			});
+
+			const colXOffsets = new Array<number>(cols).fill(0);
+			for (let c = 1; c < cols; c++) {
+				colXOffsets[c] = colXOffsets[c - 1] + colWidths[c - 1] + GAP;
+			}
+
+			const rowYOffsets = new Array<number>(rows).fill(0);
+			for (let r = 1; r < rows; r++) {
+				rowYOffsets[r] = rowYOffsets[r - 1] + rowHeights[r - 1] + GAP;
+			}
+
+			nodeMetrics.forEach((m, idx) => {
+				const c = idx % cols;
+				const r = Math.floor(idx / cols);
+				m.newX = minX + colXOffsets[c];
+				m.newY = minY + rowYOffsets[r];
+			});
+		}
+
+		// Apply coordinate updates
+		for (const m of nodeMetrics) {
+			const raw = m.raw;
+			raw.x = m.newX;
+			raw.y = m.newY;
+
+			if (typeof raw.moveAndResize === 'function') {
+				try {
+					raw.moveAndResize({
+						x: m.newX,
+						y: m.newY,
+						width: m.width,
+						height: m.height,
+					});
+				} catch {
+					/* ignore */
+				}
+			}
+
+			if (raw.nodeEl) {
+				raw.nodeEl.style.transform = `translate(${m.newX}px, ${m.newY}px)`;
+			}
+
+			if (rawCanvasData?.nodes) {
+				const cdn = rawCanvasData.nodes.find((n) => n.id === m.item.id);
+				if (cdn) {
+					cdn.x = m.newX;
+					cdn.y = m.newY;
+				}
+			}
+		}
+
+		// Save and notify canvas viewport
+		if (typeof canvas.requestSave === 'function') {
+			try {
+				canvas.requestSave();
+			} catch {
+				/* ignore */
+			}
+		}
+
+		const canvasFile = activeView.file;
+		if (canvasFile && rawCanvasData) {
+			this.scheduleVaultModify(canvasFile, rawCanvasData);
+		}
+
+		if (typeof canvas.markViewportChanged === 'function') {
+			try {
+				canvas.markViewportChanged();
+			} catch {
+				/* ignore */
+			}
+		}
+	}
 }
