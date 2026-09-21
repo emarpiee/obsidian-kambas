@@ -224,7 +224,10 @@ export class TagModal extends Modal {
 
 	private renderChips(): void {
 		this.chipRow.empty();
-		for (const tag of this.tags) {
+		const t = getText();
+
+		for (let i = 0; i < this.tags.length; i++) {
+			const tag = this.tags[i];
 			const state = this.tagStates.get(tag) ?? 'full';
 			const isMixed = state === 'mixed';
 			const count = this.tagCounts.get(tag);
@@ -232,13 +235,20 @@ export class TagModal extends Modal {
 			const chip = this.chipRow.createSpan({
 				cls: `kambas-tag-chip ${isMixed ? 'is-mixed' : ''}`,
 			});
+			chip.setAttribute('draggable', 'true');
+			chip.setAttribute('data-index', String(i));
+
 			const customColor = this.tagColors?.[tag.toLowerCase()];
 			if (customColor?.bg) chip.style.backgroundColor = customColor.bg;
 			if (customColor?.text) chip.style.color = customColor.text;
 
-			if (isMixed) {
-				chip.title = `Partial tag (${count}/${this.selectedCount} items). Click chip to apply to all selected items.`;
-			}
+			chip.title = isMixed
+				? `Partial tag (${count}/${this.selectedCount} items). Click to apply to all selected items. • ${t.dragTagToReorder}`
+				: t.dragTagToReorder;
+
+			// Drag handle
+			const dragHandle = chip.createSpan({ cls: 'kambas-tag-chip-drag-handle' });
+			setIcon(dragHandle, 'grip-vertical');
 
 			const labelSpan = chip.createSpan({ cls: 'kambas-tag-chip-label' });
 			this.formatTagLabel(labelSpan, tag, isMixed ? count : undefined);
@@ -254,6 +264,7 @@ export class TagModal extends Modal {
 				});
 			}
 
+			// Remove button
 			const removeBtn = chip.createSpan({ cls: 'kambas-tag-chip-remove' });
 			setIcon(removeBtn, 'x');
 			removeBtn.addEventListener('mousedown', (e) => {
@@ -261,7 +272,63 @@ export class TagModal extends Modal {
 				e.stopPropagation();
 				this.removeTag(tag);
 			});
+
+			// Drag event listeners for drag-and-drop reordering
+			chip.addEventListener('dragstart', (e) => {
+				chip.addClass('is-dragging');
+				if (e.dataTransfer) {
+					e.dataTransfer.setData('text/plain', String(i));
+					e.dataTransfer.effectAllowed = 'move';
+				}
+			});
+
+			chip.addEventListener('dragover', (e) => {
+				e.preventDefault();
+				if (e.dataTransfer) {
+					e.dataTransfer.dropEffect = 'move';
+				}
+				chip.addClass('is-dragover');
+			});
+
+			chip.addEventListener('dragleave', () => {
+				chip.removeClass('is-dragover');
+			});
+
+			chip.addEventListener('drop', (e) => {
+				e.preventDefault();
+				chip.removeClass('is-dragover');
+				const fromIndexStr = e.dataTransfer?.getData('text/plain');
+				if (fromIndexStr !== undefined && fromIndexStr !== '') {
+					const fromIndex = parseInt(fromIndexStr, 10);
+					if (!isNaN(fromIndex) && fromIndex !== i) {
+						this.moveTag(fromIndex, i);
+					}
+				}
+			});
+
+			chip.addEventListener('dragend', () => {
+				this.chipRow.querySelectorAll('.kambas-tag-chip').forEach((c) => {
+					c.removeClass('is-dragging');
+					c.removeClass('is-dragover');
+				});
+			});
 		}
+	}
+
+	private moveTag(fromIndex: number, toIndex: number): void {
+		if (
+			fromIndex < 0 ||
+			fromIndex >= this.tags.length ||
+			toIndex < 0 ||
+			toIndex >= this.tags.length
+		) {
+			return;
+		}
+		const [movedTag] = this.tags.splice(fromIndex, 1);
+		this.tags.splice(toIndex, 0, movedTag);
+		this.renderChips();
+		this.renderPresets();
+		this.onSubmit(this.tags, this.tagStates);
 	}
 
 	private renderPresets(): void {

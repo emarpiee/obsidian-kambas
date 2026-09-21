@@ -3762,6 +3762,16 @@ export class CanvasImageHandler {
 					if (!updated.includes(tag)) updated.push(tag);
 				}
 
+				// Reorder updated tags to match the order in modal tags
+				updated.sort((a, b) => {
+					const idxA = tags.indexOf(a);
+					const idxB = tags.indexOf(b);
+					if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+					if (idxA !== -1) return -1;
+					if (idxB !== -1) return 1;
+					return 0;
+				});
+
 				rawNode.unknownData.kambasTags =
 					updated.length > 0 ? updated : undefined;
 				nodeTagsMap.set(id, updated.length > 0 ? updated : undefined);
