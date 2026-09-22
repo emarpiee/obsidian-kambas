@@ -250,6 +250,7 @@ export default class KambasPlugin extends Plugin {
 				ItemView
 			) as unknown as CanvasItemView | null;
 			if (!activeView || activeView.getViewType() !== 'canvas') return;
+			if (this.canvasImageHandler.isAwayMode(activeView)) return;
 
 			const canvas = activeView.canvas;
 			if (!canvas?.nodes) return;
@@ -818,6 +819,7 @@ export default class KambasPlugin extends Plugin {
 					ItemView
 				) as unknown as CanvasItemView | null;
 				if (!activeView || activeView.getViewType() !== 'canvas') return;
+				if (this.canvasImageHandler.isAwayMode(activeView)) return;
 				const t = getText();
 
 				const canvasEdge = edge as {

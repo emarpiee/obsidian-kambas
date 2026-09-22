@@ -1138,6 +1138,27 @@ export class CanvasImageHandler {
 		}
 	}
 
+	public isAwayMode(activeView: CanvasItemView): boolean {
+		const canvasEl =
+			(activeView.canvas as unknown as { wrapperEl?: HTMLElement })
+				?.wrapperEl ?? activeView.containerEl?.querySelector('.canvas-wrapper');
+		if (canvasEl?.classList.contains('kambas-away-mode')) {
+			return true;
+		}
+		const canvas = activeView.canvas;
+		if (!canvas?.nodes || canvas.nodes.size === 0) return false;
+		let currentlyAway = true;
+		canvas.nodes.forEach((node) => {
+			const uData = (
+				node as unknown as { unknownData?: { kambasOpacity?: number } }
+			).unknownData;
+			if (uData?.kambasOpacity !== 0) {
+				currentlyAway = false;
+			}
+		});
+		return currentlyAway;
+	}
+
 	public setAwayMode(activeView: CanvasItemView): void {
 		const canvas = activeView.canvas;
 		if (!canvas?.nodes) return;
