@@ -23,11 +23,7 @@ import {
 	CanvasNodeData,
 	IMAGE_EXTENSIONS,
 } from './CanvasTypes';
-import {
-	getCanvasAwayModeOnClose,
-	persistCanvasAwayMode,
-	setCanvasAwayModeOnClose,
-} from './CanvasAwayModeSync';
+import { persistCanvasAwayMode } from './CanvasAwayModeSync';
 
 import {
 	ConvertEmbedChoiceResult,
@@ -4088,47 +4084,6 @@ export class CanvasImageHandler {
 			container.setCssProps({ '--kambas-dim-opacity': '0.12' });
 			this.savePanelState(panel);
 		});
-
-		// Away mode on close toggle row
-		const file = activeView.file;
-		if (file) {
-			const awayRow = footer.createDiv({
-				cls: 'kambas-tag-slider-row',
-				attr: { style: 'margin-top: 8px;' },
-			});
-			const label = awayRow.createEl('label', {
-				cls: 'kambas-away-mode-toggle-label',
-				attr: {
-					style:
-						'display: flex; align-items: center; justify-content: space-between; width: 100%; cursor: pointer; font-size: 12px; gap: 8px;',
-				},
-			});
-			label.createSpan({ text: t.awayModeOnClose });
-			const toggleInput = label.createEl('input', { type: 'checkbox' });
-
-			void getCanvasAwayModeOnClose(this.app, file, activeView.canvas).then(
-				(enabled) => {
-					toggleInput.checked = enabled;
-				}
-			);
-
-			toggleInput.addEventListener('change', (): void => {
-				void (async (): Promise<void> => {
-					const enabled = toggleInput.checked;
-					await setCanvasAwayModeOnClose(
-						this.app,
-						file,
-						enabled,
-						activeView
-					);
-					new Notice(
-						enabled
-							? t.awayModeOnCloseNoticeEnabled
-							: t.awayModeOnCloseNoticeDisabled
-					);
-				})();
-			});
-		}
 
 		this.tagToolbarBtn?.classList.add('is-active');
 

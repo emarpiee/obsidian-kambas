@@ -233,7 +233,7 @@ Kambas uses a **3-state logic** (Neutral ☐, Include ✓, Exclude ✕) per tab 
 ### Workspace Privacy
 
 - **Away Mode**: Triggered via Command Palette (`Away Mode`). Instantly hides all canvas content by reducing node opacity to 0% and locking interactive controls for quick visual privacy.
-- **Away Mode on Canvas Close**: Per-file setting (togglable via Command Palette `Away mode on canvas close`, canvas background right-click menu, file explorer menu, or Tag/Filter Panel footer). When enabled for a canvas file, closing the tab, opening another file in the same tab, or navigating away automatically activates Away Mode and persists 0% node/edge opacity to disk, ensuring instant visual privacy when re-opening or stepping back in history.
+- **Away Mode on Canvas Close**: Per-file setting (togglable exclusively via Command Palette `Away mode on canvas close`). When enabled for a canvas file, closing the tab, opening another file in the same tab, or navigating away automatically activates Away Mode and persists 0% node/edge opacity to disk, ensuring instant visual privacy when re-opening or stepping back in history.
 
 ---
 
