@@ -158,6 +158,7 @@ export async function checkAndPersistCanvasClose(
 	activeView?: CanvasItemView | null
 ): Promise<void> {
 	if (!file || file.extension !== 'canvas') return;
+	if (activeView?.containerEl?.closest('.canvas-node')) return;
 	const isAwayOnClose = await getCanvasAwayModeOnClose(
 		app,
 		file,

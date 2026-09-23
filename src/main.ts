@@ -45,6 +45,9 @@ export default class KambasPlugin extends Plugin {
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			currentLeaves.add(leaf);
 			const view = leaf.view as unknown as CanvasItemView | null;
+			if (view?.containerEl?.closest('.canvas-node')) {
+				return;
+			}
 			const currentFile = view?.file;
 			const lastFile = this.lastLeafCanvasFileMap.get(leaf);
 
@@ -56,13 +59,21 @@ export default class KambasPlugin extends Plugin {
 						lastFile,
 						view?.file === lastFile ? view : null
 					);
-					if (currentFile && currentFile.extension === 'canvas') {
+					if (
+						currentFile &&
+						currentFile.extension === 'canvas' &&
+						view?.getViewType?.() === 'canvas'
+					) {
 						this.lastLeafCanvasFileMap.set(leaf, currentFile);
 					} else {
 						this.lastLeafCanvasFileMap.delete(leaf);
 					}
 				}
-			} else if (currentFile && currentFile.extension === 'canvas') {
+			} else if (
+				currentFile &&
+				currentFile.extension === 'canvas' &&
+				view?.getViewType?.() === 'canvas'
+			) {
 				this.lastLeafCanvasFileMap.set(leaf, currentFile);
 			}
 		});
@@ -171,7 +182,26 @@ export default class KambasPlugin extends Plugin {
 		const updateActiveCanvas = (): void => {
 			this.checkTrackedLeafFiles();
 			this.refreshBinders();
-			const activeView = this.app.workspace.getActiveViewOfType(ItemView);
+			let activeView = this.app.workspace.getActiveViewOfType(ItemView);
+			if (
+				activeView &&
+				activeView.getViewType() !== 'canvas' &&
+				activeView.containerEl?.closest(
+					'.canvas-wrapper, .canvas, .canvas-node'
+				)
+			) {
+				// Focused view is an inline embedded note/base inside a canvas; resolve parent canvas view
+				for (const leaf of this.app.workspace.getLeavesOfType('canvas')) {
+					const cView = leaf.view as unknown as CanvasItemView;
+					if (
+						cView?.containerEl &&
+						cView.containerEl.contains(activeView.containerEl)
+					) {
+						activeView = cView as unknown as ItemView;
+						break;
+					}
+				}
+			}
 			if (activeView?.getViewType() !== 'canvas') {
 				for (const b of this.binders.values()) b.suspend();
 				this.canvasImageHandler?.gifHandler?.detachAll();
@@ -1152,6 +1182,7 @@ export default class KambasPlugin extends Plugin {
 
 	public async handleCanvasClose(view: CanvasItemView): Promise<void> {
 		if (!view?.file) return;
+		if (view?.containerEl?.closest('.canvas-node')) return;
 		const isAwayOnClose = await getCanvasAwayModeOnClose(
 			this.app,
 			view.file,
