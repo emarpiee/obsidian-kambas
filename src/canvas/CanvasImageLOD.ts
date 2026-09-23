@@ -618,7 +618,7 @@ export class ProxyCache {
 					if (frame0VideoFrame) {
 						try {
 							frame0VideoFrame.close();
-						} catch (_) {
+						} catch {
 							/* ignore */
 						}
 					}
@@ -798,7 +798,7 @@ export class CanvasBinder {
 
 	start(): boolean {
 		const root = this.view?.contentEl;
-		if (!root || typeof root.querySelector !== 'function') return false;
+		if (!root || !root.instanceOf(HTMLElement)) return false;
 		this.wrapperEl = root.querySelector('.canvas-wrapper');
 		this.canvasEl =
 			root.querySelector('.canvas-wrapper .canvas') ||
@@ -891,7 +891,7 @@ export class CanvasBinder {
 	revalidate(): boolean {
 		if (this.canvasEl && this.canvasEl.isConnected) return true;
 		const root = this.view?.contentEl;
-		if (!root || typeof root.querySelector !== 'function') return false;
+		if (!root || !root.instanceOf(HTMLElement)) return false;
 		const canvas =
 			root.querySelector('.canvas-wrapper .canvas') ||
 			root.querySelector('.canvas');

@@ -1,6 +1,5 @@
 /* Canvas Image LOD styles */
 .cil-fast {
-	image-rendering: optimizeSpeed;
 	image-rendering: -webkit-optimize-contrast;
 }
 

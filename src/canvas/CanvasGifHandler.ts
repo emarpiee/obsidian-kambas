@@ -129,7 +129,7 @@ export class CanvasGifHandler {
 		if (typeof rawCanvas.requestSave === 'function') {
 			try {
 				rawCanvas.requestSave();
-			} catch (_) {
+			} catch {
 				// ignore
 			}
 		}

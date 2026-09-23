@@ -1,9 +1,13 @@
 import {
 	App,
+	DropdownComponent,
 	ItemView,
 	Notice,
 	PluginSettingTab,
 	Setting,
+	SliderComponent,
+	TextComponent,
+	ToggleComponent,
 	setIcon,
 } from 'obsidian';
 
@@ -187,6 +191,14 @@ export class KambasSettingTab extends PluginSettingTab {
 	constructor(app: App, plugin: KambasPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+	}
+
+	getSettingDefinitions(): unknown[] {
+		return [];
+	}
+
+	update(): void {
+		this.display();
 	}
 
 	hide(): void {
@@ -603,7 +615,7 @@ export class KambasSettingTab extends PluginSettingTab {
 							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.East],
 					};
 					await this.plugin.saveSettings();
-					this.display();
+					this.update();
 				});
 			})
 			.addButton((button) => {
@@ -675,7 +687,7 @@ export class KambasSettingTab extends PluginSettingTab {
 					this.plugin.settings.keyboardPan.maxSpeed =
 						DEFAULT_KEYBOARD_PAN_SETTINGS.maxSpeed;
 					await this.plugin.saveSettings();
-					this.display();
+					this.update();
 				});
 			})
 			.addSlider((slider) => {
@@ -712,7 +724,7 @@ export class KambasSettingTab extends PluginSettingTab {
 							DEFAULT_KEYBOARD_PAN_SETTINGS.keys[Direction.ZoomOut],
 					};
 					await this.plugin.saveSettings();
-					this.display();
+					this.update();
 				});
 			})
 			.addButton((button) => {
@@ -778,7 +790,7 @@ export class KambasSettingTab extends PluginSettingTab {
 					this.plugin.settings.keyboardPan.zoomSpeed =
 						DEFAULT_KEYBOARD_PAN_SETTINGS.zoomSpeed;
 					await this.plugin.saveSettings();
-					this.display();
+					this.update();
 				});
 			})
 			.addSlider((slider) => {
@@ -816,14 +828,14 @@ export class KambasSettingTab extends PluginSettingTab {
 			);
 
 		let isApplyingPreset = false;
-		let dropdownComponent: any = null;
-		let qualityFactorSlider: any = null;
-		let tiersText: any = null;
-		let minWidthText: any = null;
-		let qualitySlider: any = null;
-		let prewarmToggle: any = null;
-		let concurrencySlider: any = null;
-		let fastRasterToggle: any = null;
+		let dropdownComponent: DropdownComponent | null = null;
+		let qualityFactorSlider: SliderComponent | null = null;
+		let tiersText: TextComponent | null = null;
+		let minWidthText: TextComponent | null = null;
+		let qualitySlider: SliderComponent | null = null;
+		let prewarmToggle: ToggleComponent | null = null;
+		let concurrencySlider: SliderComponent | null = null;
+		let fastRasterToggle: ToggleComponent | null = null;
 
 		let advancedContainer: HTMLElement | null = null;
 
@@ -874,9 +886,9 @@ export class KambasSettingTab extends PluginSettingTab {
 								isApplyingPreset = false;
 							}
 
-							if (advancedContainer) advancedContainer.style.display = 'none';
+							if (advancedContainer) advancedContainer.setCssProps({ display: 'none' });
 						} else {
-							if (advancedContainer) advancedContainer.style.display = 'block';
+							if (advancedContainer) advancedContainer.setCssProps({ display: 'block' });
 						}
 						await this.plugin.saveSettings();
 					});
@@ -941,8 +953,9 @@ export class KambasSettingTab extends PluginSettingTab {
 				})
 		);
 
-		advancedContainer.style.display =
-			this.plugin.settings.lodPreset === 'custom' ? 'block' : 'none';
+		advancedContainer.setCssProps({
+			display: this.plugin.settings.lodPreset === 'custom' ? 'block' : 'none',
+		});
 
 		new Setting(advancedContainer)
 			.setName(t.lodAdvancedHeading || 'Advanced Level of Detail Settings')
@@ -959,7 +972,7 @@ export class KambasSettingTab extends PluginSettingTab {
 				if (dropdownComponent) {
 					dropdownComponent.setValue('custom');
 				}
-				advancedContainer.style.display = 'block';
+				advancedContainer.setCssProps({ display: 'block' });
 				await this.plugin.saveSettings();
 			}
 		};
@@ -1228,7 +1241,7 @@ export class KambasSettingTab extends PluginSettingTab {
 			const t = getText();
 			new Notice(t.duplicateKeyNotice);
 			this.cleanupKeyListener();
-			this.display();
+			this.update();
 			return;
 		}
 
@@ -1238,13 +1251,13 @@ export class KambasSettingTab extends PluginSettingTab {
 		};
 		await this.plugin.saveSettings();
 		this.cleanupKeyListener();
-		this.display();
+		this.update();
 	}
 
 	private getHotkeySetting(targetKey: SingleHotkeyKey): string {
 		return (
 			this.plugin.settings[targetKey] ??
-			(DEFAULT_SETTINGS[targetKey] as string) ??
+			DEFAULT_SETTINGS[targetKey] ??
 			''
 		);
 	}

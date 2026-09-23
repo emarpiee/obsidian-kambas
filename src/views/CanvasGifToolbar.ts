@@ -121,7 +121,7 @@ export class CanvasGifToolbar {
 			},
 		});
 		setIcon(this.extractBtn, 'camera');
-		const _extractLabel = this.extractBtn.createSpan({
+		this.extractBtn.createSpan({
 			cls: 'kambas-gif-btn-text',
 			text: t.gifExtractFrameLabel || 'Extract',
 		});

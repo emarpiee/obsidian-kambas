@@ -116,8 +116,8 @@ export class CanvasGifDecoder {
 			if (videoFrame) {
 				try {
 					videoFrame.close();
-				} catch (_) {
-					// Already closed
+				} catch {
+					// ignore
 				}
 			}
 			this.isDecoding = false;
@@ -160,7 +160,7 @@ export class CanvasGifDecoder {
 			if (videoFrame) {
 				try {
 					videoFrame.close();
-				} catch (_) {
+				} catch {
 					// ignore
 				}
 			}
@@ -172,7 +172,7 @@ export class CanvasGifDecoder {
 		if (this.decoder) {
 			try {
 				this.decoder.close();
-			} catch (_) {
+			} catch {
 				// ignore
 			}
 			this.decoder = null;

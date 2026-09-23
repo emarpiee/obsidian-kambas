@@ -76,7 +76,7 @@ export function getImageDimensions(
 			if (objectUrlToRevoke) {
 				try {
 					URL.revokeObjectURL(objectUrlToRevoke);
-				} catch (_) {
+				} catch {
 					// ignore
 				}
 				objectUrlToRevoke = null;
@@ -180,7 +180,7 @@ export function extractImagePalette(
 			if (objectUrlToRevoke) {
 				try {
 					URL.revokeObjectURL(objectUrlToRevoke);
-				} catch (_) {
+				} catch {
 					// ignore
 				}
 				objectUrlToRevoke = null;
@@ -552,7 +552,7 @@ export async function getNodeDominantColorName(
 			if (objectUrlToRevoke) {
 				try {
 					URL.revokeObjectURL(objectUrlToRevoke);
-				} catch (_) {
+				} catch {
 					// ignore
 				}
 				objectUrlToRevoke = null;
@@ -746,7 +746,7 @@ export async function compressAndOptimizeBase64(
 			if (objectUrlToRevoke) {
 				try {
 					URL.revokeObjectURL(objectUrlToRevoke);
-				} catch (_) {
+				} catch {
 					// ignore
 				}
 				objectUrlToRevoke = null;
