@@ -1,6 +1,6 @@
 
-> [!NOTE]
-> **Work in Progress** — Kambas is actively developed. Features and interfaces may evolve between releases.
+> [!WARNING]
+> **Possibly unmaintained** — I've lost hope in the Obsidian team polishing their Canvas implementation, so Kambas may no longer receive updates. My focus has moved to **[Canvast](https://github.com/emarpiee/canvast)**. Kambas still works as-is, but expect few or no fixes going forward.
 
 # Kambas
 
